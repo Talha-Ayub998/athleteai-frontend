@@ -18,9 +18,7 @@ export default function AuthLayout({
             <GridShape />
             <div className="flex flex-col items-center max-w-xs">
               <Link to="/" className="block mb-4">
-                <h1 className="text-4xl font-bold dark:text-white">
-                  Athlete AI
-                </h1>
+                <h1 className="text-4xl font-bold text-white">Athlete AI</h1>
               </Link>
               <p className="text-center text-gray-400 dark:text-white/60">
                 All in one platform for Athlete's performance monitoring

@@ -18,6 +18,8 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
+import ForgotPassword from "./pages/AuthPages/ForgotPassword";
+import ComingSoon from "./pages/OtherPage/ComingSoon";
 
 export default function App() {
   return (
@@ -27,8 +29,9 @@ export default function App() {
         <Routes>
           {/* Dashboard Layout */}
           <Route index path="/" element={<SignIn />} />
+          <Route index path="/home" element={<ComingSoon />} />
           <Route element={<AppLayout />}>
-            <Route index path="/home" element={<Home />} />
+            {/* <Route index path="/home" element={<Home />} /> */}
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
@@ -55,8 +58,9 @@ export default function App() {
           </Route>
 
           {/* Auth Layout */}
-          <Route path="/signin" element={<SignIn />} />
+          {/* <Route path="/signin" element={<SignIn />} /> */}
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/reset-password" element={<ForgotPassword />} />
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
