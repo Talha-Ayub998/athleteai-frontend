@@ -74,8 +74,12 @@ export default function SignUpForm() {
       if (axios.isAxiosError(err) && err.response && err.response.data) {
         const data = err.response.data;
         const errors = Object.entries(data)
-          .map(([key, value]) => `${key}: ${(value as string[]).join(", ")}`)
-          .join(" | ");
+        .map(([key, value]) => {
+          const msg = (value as string[]).join(", ");
+          if (key === "password") return msg;
+          return `${key}: ${msg}`;
+        })
+        .join(" | ");
         setError(errors || "Registration failed. Please try again.");
       } else {
         setError("Network error. Please check your connection and try again.");
