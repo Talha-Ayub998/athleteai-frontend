@@ -40,7 +40,7 @@ export default function SignUpForm() {
 
     try {
       const response = await axios.post(
-        "http://54.215.71.202/api/users/register/",
+        "https://54.215.71.202.nip.io/api/users/register/",
         formData,
         {
           headers: {
