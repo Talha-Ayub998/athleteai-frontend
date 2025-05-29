@@ -41,12 +41,24 @@ export default function SignUpForm() {
       return;
     }
   
+    // Password match check
     if (password !== password2) {
       setError("Passwords do not match.");
       setLoading(false);
       return;
     }
   
+    // Password strength check
+    const strongPasswordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    if (!strongPasswordRegex.test(password)) {
+      setError(
+        "Password must be at least 8 characters long and include letters, numbers, and special characters. Avoid common or numeric-only passwords."
+      );
+      setLoading(false);
+      return;
+    }
+  
+    // Submit to backend
     try {
       const response = await axios.post(
         "https://54.215.71.202.nip.io/api/users/register/",
@@ -75,12 +87,12 @@ export default function SignUpForm() {
       if (axios.isAxiosError(err) && err.response && err.response.data) {
         const data = err.response.data;
         const errors = Object.entries(data)
-        .map(([key, value]) => {
-          const msg = (value as string[]).join(", ");
-          if (key === "password") return msg;
-          return `${key}: ${msg}`;
-        })
-        .join(" | ");
+          .map(([key, value]) => {
+            const msg = (value as string[]).join(", ");
+            if (key === "password") return msg;
+            return `${key}: ${msg}`;
+          })
+          .join(" | ");
         setError(errors || "Registration failed. Please try again.");
       } else {
         setError("Network error. Please check your connection and try again.");
@@ -88,7 +100,8 @@ export default function SignUpForm() {
     } finally {
       setLoading(false);
     }
-  };  
+  };
+  
 
   return (
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
@@ -259,6 +272,10 @@ export default function SignUpForm() {
                 </p>
                 </div>
                 {/* Confirm Password */}
+                <div>
+                <Label>
+                  Confirm Password<span className="text-error-500">*</span>
+                </Label>
                 <div className="relative">
                   <Input
                     placeholder="Confirm your password"
@@ -278,6 +295,7 @@ export default function SignUpForm() {
                     )}
                   </span>
                 </div>
+              </div>
 
                 {/* User Type Checkboxes */}
                 {/* <div className="space-y-3">
