@@ -8,6 +8,7 @@ import Input from "../form/input/InputField";
 export default function SignUpForm() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -258,18 +259,26 @@ export default function SignUpForm() {
                 </p>
                 </div>
                 {/* Confirm Password */}
-                <div>
-                  <Label>
-                    Confirm Password<span className="text-error-500">*</span>
-                  </Label>
+                <div className="relative">
                   <Input
-                    type="password"
-                    name="password2"
                     placeholder="Confirm your password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="password2"
                     value={formData.password2}
                     onChange={handleInputChange}
                   />
+                  <span
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                    ) : (
+                      <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                    )}
+                  </span>
                 </div>
+
                 {/* User Type Checkboxes */}
                 {/* <div className="space-y-3">
                   <div className="flex items-center gap-3">
