@@ -248,6 +248,14 @@ export default function SignUpForm() {
                       )}
                     </span>
                   </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  Your password must:
+                  <ul className="list-disc list-inside mt-1 space-y-1">
+                    <li>Be at least 8 characters long</li>
+                    <li>Include letters, numbers, and special characters</li>
+                    <li>Avoid common or numeric-only passwords</li>
+                  </ul>
+                </p>
                 </div>
                 {/* Confirm Password */}
                 <div>
