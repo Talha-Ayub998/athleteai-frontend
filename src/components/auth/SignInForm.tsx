@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import axios from "axios";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
+import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
@@ -161,7 +161,6 @@ export default function SignInForm() {
                     placeholder="info@gmail.com"
                     value={formData.email}
                     onChange={handleInputChange}
-                    required
                   />
                 </div>
                 <div>
@@ -175,7 +174,6 @@ export default function SignInForm() {
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={handleInputChange}
-                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -203,12 +201,7 @@ export default function SignInForm() {
                     Forgot password?
                   </Link>
                 </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  size="sm"
-                  disabled={loading}
-                >
+                <Button className="w-full" size="sm" disabled={loading}>
                   {loading ? (
                     <>
                       <svg

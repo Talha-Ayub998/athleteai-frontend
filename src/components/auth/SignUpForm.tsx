@@ -184,7 +184,6 @@ export default function SignUpForm() {
                       placeholder="Enter your username"
                       value={formData.username}
                       onChange={handleInputChange}
-                      required
                     />
                   </div>
                   {/* <!-- Last Name --> */}
@@ -212,7 +211,6 @@ export default function SignUpForm() {
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    required
                   />
                 </div>
                 {/* Password */}
@@ -227,7 +225,6 @@ export default function SignUpForm() {
                       name="password"
                       value={formData.password}
                       onChange={handleInputChange}
-                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -252,7 +249,6 @@ export default function SignUpForm() {
                     placeholder="Confirm your password"
                     value={formData.password2}
                     onChange={handleInputChange}
-                    required
                   />
                 </div>
                 {/* User Type Checkboxes */}
