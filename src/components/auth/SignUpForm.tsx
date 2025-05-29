@@ -1,13 +1,83 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import axios from "axios";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 
 export default function SignUpForm() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    password2: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    // Basic validation
+    if (formData.password !== formData.password2) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://54.215.71.202/api/users/register/",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        setSuccess(true);
+        setFormData({
+          username: "",
+          email: "",
+          password: "",
+          password2: "",
+        });
+
+        // Navigate to home after successful registration
+        setTimeout(() => {
+          navigate("/");
+        }, 1500); // Small delay to show success message
+      }
+    } catch (err) {
+      if (err.response && err.response.data) {
+        setError(
+          err.response.data.message || "Registration failed. Please try again."
+        );
+      } else {
+        setError("Network error. Please check your connection and try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
       <div className="w-full max-w-md mx-auto mb-5 sm:pt-10">
@@ -26,11 +96,28 @@ export default function SignUpForm() {
               Sign Up
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Enter your email and password to sign up!
+              Enter your details to create your account!
             </p>
           </div>
+
+          {/* Success Message */}
+          {success && (
+            <div className="mb-5 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
+              <p className="text-sm text-green-700 dark:text-green-400">
+                Account created successfully! You can now sign in.
+              </p>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+            </div>
+          )}
+
           <div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
+            {/* <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
               <button className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
                 <svg
                   width="20"
@@ -81,24 +168,27 @@ export default function SignUpForm() {
                   Or
                 </span>
               </div>
-            </div>
-            <form>
+            </div> */}
+            <form onSubmit={handleSubmit}>
               <div className="space-y-5">
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  {/* <!-- First Name --> */}
+                <div className="grid grid-cols-1 gap-5">
+                  {/* Username */}
                   <div className="sm:col-span-1">
                     <Label>
-                      First Name<span className="text-error-500">*</span>
+                      Username<span className="text-error-500">*</span>
                     </Label>
                     <Input
                       type="text"
-                      id="fname"
-                      name="fname"
-                      placeholder="Enter your first name"
+                      id="username"
+                      name="username"
+                      placeholder="Enter your username"
+                      value={formData.username}
+                      onChange={handleInputChange}
+                      required
                     />
                   </div>
                   {/* <!-- Last Name --> */}
-                  <div className="sm:col-span-1">
+                  {/* <div className="sm:col-span-1">
                     <Label>
                       Last Name<span className="text-error-500">*</span>
                     </Label>
@@ -108,9 +198,9 @@ export default function SignUpForm() {
                       name="lname"
                       placeholder="Enter your last name"
                     />
-                  </div>
+                  </div> */}
                 </div>
-                {/* <!-- Email --> */}
+                {/* Email */}
                 <div>
                   <Label>
                     Email<span className="text-error-500">*</span>
@@ -120,9 +210,12 @@ export default function SignUpForm() {
                     id="email"
                     name="email"
                     placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
                   />
                 </div>
-                {/* <!-- Password --> */}
+                {/* Password */}
                 <div>
                   <Label>
                     Password<span className="text-error-500">*</span>
@@ -131,6 +224,10 @@ export default function SignUpForm() {
                     <Input
                       placeholder="Enter your password"
                       type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -144,8 +241,45 @@ export default function SignUpForm() {
                     </span>
                   </div>
                 </div>
+                {/* Confirm Password */}
+                <div>
+                  <Label>
+                    Confirm Password<span className="text-error-500">*</span>
+                  </Label>
+                  <Input
+                    type="password"
+                    name="password2"
+                    placeholder="Confirm your password"
+                    value={formData.password2}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                {/* User Type Checkboxes */}
+                {/* <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      className="w-5 h-5"
+                      checked={formData.is_athlete}
+                      onChange={(checked) => setFormData(prev => ({ ...prev, is_athlete: checked }))}
+                    />
+                    <p className="inline-block font-normal text-gray-500 dark:text-gray-400">
+                      I am an athlete
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      className="w-5 h-5"
+                      checked={formData.is_admin}
+                      onChange={(checked) => setFormData(prev => ({ ...prev, is_admin: checked }))}
+                    />
+                    <p className="inline-block font-normal text-gray-500 dark:text-gray-400">
+                      I am an admin
+                    </p>
+                  </div>
+                </div> */}
                 {/* <!-- Checkbox --> */}
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   <Checkbox
                     className="w-5 h-5"
                     checked={isChecked}
@@ -161,11 +295,41 @@ export default function SignUpForm() {
                       Privacy Policy
                     </span>
                   </p>
-                </div>
-                {/* <!-- Button --> */}
+                </div> */}
+                {/* Submit Button */}
                 <div>
-                  <button className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600">
-                    Sign Up
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Creating Account...
+                      </>
+                    ) : (
+                      "Sign Up"
+                    )}
                   </button>
                 </div>
               </div>

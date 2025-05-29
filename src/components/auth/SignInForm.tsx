@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import axios from "axios";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
@@ -7,8 +8,65 @@ import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
 
 export default function SignInForm() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await axios.post(
+        "http://54.215.71.202/api/users/login/",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        // Store token if provided
+        if (response.data.token) {
+          localStorage.setItem("authToken", response.data.token);
+        }
+
+        // Store user data if provided
+        if (response.data.user) {
+          localStorage.setItem("userData", JSON.stringify(response.data.user));
+        }
+
+        // Navigate to home
+        navigate("/home");
+      }
+    } catch (err) {
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || "Invalid email or password.");
+      } else {
+        setError("Network error. Please check your connection and try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1">
       <div className="w-full max-w-md pt-10 mx-auto">
@@ -30,6 +88,14 @@ export default function SignInForm() {
               Enter your email and password to sign in!
             </p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+            </div>
+          )}
+
           <div>
             {/* <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
               <button className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
@@ -83,13 +149,20 @@ export default function SignInForm() {
                 </span>
               </div>
             </div> */}
-            <form>
+            <form onSubmit={handleSubmit}>
               <div className="space-y-6">
                 <div>
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
                   </Label>
-                  <Input type="email" placeholder="info@gmail.com" />
+                  <Input
+                    type="email"
+                    name="email"
+                    placeholder="info@gmail.com"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
                 <div>
                   <Label>
@@ -98,7 +171,11 @@ export default function SignInForm() {
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
+                      name="password"
                       placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -126,11 +203,40 @@ export default function SignInForm() {
                     Forgot password?
                   </Link>
                 </div>
-                <Link to={"home"}>
-                  <Button className="w-full" size="sm">
-                    Sign in
-                  </Button>
-                </Link>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="sm"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Signing In...
+                    </>
+                  ) : (
+                    "Sign in"
+                  )}
+                </Button>
               </div>
             </form>
 
