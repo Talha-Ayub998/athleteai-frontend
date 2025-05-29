@@ -1,15 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import axios from "axios";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
+import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
-import Checkbox from "../form/input/Checkbox";
 
 export default function SignUpForm() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -66,7 +64,7 @@ export default function SignUpForm() {
         }, 1500); // Small delay to show success message
       }
     } catch (err) {
-      if (err.response && err.response.data) {
+      if (axios.isAxiosError(err) && err.response && err.response.data) {
         setError(
           err.response.data.message || "Registration failed. Please try again."
         );

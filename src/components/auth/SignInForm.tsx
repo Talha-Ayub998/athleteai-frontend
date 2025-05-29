@@ -18,7 +18,7 @@ export default function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -26,7 +26,7 @@ export default function SignInForm() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -57,10 +57,10 @@ export default function SignInForm() {
         navigate("/home");
       }
     } catch (err) {
-      if (err.response && err.response.data) {
+      if (axios.isAxiosError(err) && err.response && err.response.data) {
         setError(err.response.data.message || "Invalid email or password.");
       } else {
-        setError("Network error. Please check your connection and try again.");
+        setError("An unexpected error occurred.");
       }
     } finally {
       setLoading(false);
