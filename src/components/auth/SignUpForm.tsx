@@ -30,14 +30,22 @@ export default function SignUpForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    // Basic validation
-    if (formData.password !== formData.password2) {
-      setError("Passwords do not match");
+  
+    const { username, email, password, password2 } = formData;
+  
+    // Frontend field validation
+    if (!username || !email || !password || !password2) {
+      setError("Please fill out all required fields.");
       setLoading(false);
       return;
     }
-
+  
+    if (password !== password2) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+  
     try {
       const response = await axios.post(
         "https://54.215.71.202.nip.io/api/users/register/",
@@ -48,7 +56,7 @@ export default function SignUpForm() {
           },
         }
       );
-
+  
       if (response.status === 200 || response.status === 201) {
         setSuccess(true);
         setFormData({
@@ -57,24 +65,25 @@ export default function SignUpForm() {
           password: "",
           password2: "",
         });
-
-        // Navigate to home after successful registration
+  
         setTimeout(() => {
           navigate("/");
-        }, 1500); // Small delay to show success message
+        }, 1500);
       }
     } catch (err) {
       if (axios.isAxiosError(err) && err.response && err.response.data) {
-        setError(
-          err.response.data.message || "Registration failed. Please try again."
-        );
+        const data = err.response.data;
+        const errors = Object.entries(data)
+          .map(([key, value]) => `${key}: ${(value as string[]).join(", ")}`)
+          .join(" | ");
+        setError(errors || "Registration failed. Please try again.");
       } else {
         setError("Network error. Please check your connection and try again.");
       }
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   return (
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
