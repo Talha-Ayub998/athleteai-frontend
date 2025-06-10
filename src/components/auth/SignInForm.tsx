@@ -30,16 +30,16 @@ export default function SignInForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
-  
+
     const { email, password } = formData;
-  
+
     // Frontend required field validation
     if (!email || !password) {
       setError("Please enter both email and password.");
       setLoading(false);
       return;
     }
-  
+
     try {
       const response = await axios.post(
         "https://54.215.71.202.nip.io/api/users/login/",
@@ -50,24 +50,24 @@ export default function SignInForm() {
           },
         }
       );
-  
+
       if (response.status === 200 || response.status === 201) {
-        if (response.data.token) {
-          localStorage.setItem("authToken", response.data.token);
+        if (response.data.access) {
+          localStorage.setItem("authToken", response.data.access);
         }
-  
+
         if (response.data.user) {
           localStorage.setItem("userData", JSON.stringify(response.data.user));
         }
-  
-        navigate("/home");
+
+        navigate("/");
       }
     } catch (err) {
       if (axios.isAxiosError(err) && err.response && err.response.data) {
         const data = err.response.data;
-    
+
         let msg = "";
-    
+
         if (typeof data === "string") {
           msg = data;
         } else if (data.detail) {
@@ -79,17 +79,15 @@ export default function SignInForm() {
             .map(([key, value]) => `${key}: ${(value as string[]).join(", ")}`)
             .join(" | ");
         }
-    
+
         setError(msg || "Login failed. Please try again.");
       } else {
         setError("An unexpected error occurred. Please try again later.");
       }
-    }
-     finally {
+    } finally {
       setLoading(false);
     }
   };
-  
 
   return (
     <div className="flex flex-col flex-1">

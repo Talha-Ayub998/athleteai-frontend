@@ -94,7 +94,7 @@ const AppHeader: React.FC = () => {
               src="./images/logo/logo-dark.svg"
               alt="Logo"
             /> */}
-            <h1 className="text-2xl font-bold">Athlete AI</h1>
+            <h1 className="text-xl font-bold dark:text-white">Athlete AI</h1>
           </Link>
 
           <button
@@ -165,7 +165,7 @@ const AppHeader: React.FC = () => {
             {/* <!-- Notification Menu Area --> */}
           </div>
           {/* <!-- User Area --> */}
-          <UserDropdown />s
+          <UserDropdown />
         </div>
       </div>
     </header>

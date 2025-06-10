@@ -31,25 +31,26 @@ export default function SignUpForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
-  
+
     const { username, email, password, password2 } = formData;
-  
+
     // Frontend field validation
     if (!username || !email || !password || !password2) {
       setError("Please fill out all required fields.");
       setLoading(false);
       return;
     }
-  
+
     // Password match check
     if (password !== password2) {
       setError("Passwords do not match.");
       setLoading(false);
       return;
     }
-  
+
     // Password strength check
-    const strongPasswordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    const strongPasswordRegex =
+      /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!strongPasswordRegex.test(password)) {
       setError(
         "Password must be at least 8 characters long and include letters, numbers, and special characters. Avoid common or numeric-only passwords."
@@ -57,7 +58,7 @@ export default function SignUpForm() {
       setLoading(false);
       return;
     }
-  
+
     // Submit to backend
     try {
       const response = await axios.post(
@@ -69,7 +70,7 @@ export default function SignUpForm() {
           },
         }
       );
-  
+
       if (response.status === 200 || response.status === 201) {
         setSuccess(true);
         setFormData({
@@ -78,7 +79,7 @@ export default function SignUpForm() {
           password: "",
           password2: "",
         });
-  
+
         setTimeout(() => {
           navigate("/");
         }, 1500);
@@ -101,7 +102,6 @@ export default function SignUpForm() {
       setLoading(false);
     }
   };
-  
 
   return (
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
@@ -262,40 +262,42 @@ export default function SignUpForm() {
                       )}
                     </span>
                   </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  Your password must:
-                  <ul className="list-disc list-inside mt-1 space-y-1">
-                    <li>Be at least 8 characters long</li>
-                    <li>Include letters, numbers, and special characters</li>
-                    <li>Avoid common or numeric-only passwords</li>
-                  </ul>
-                </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Your password must:
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>Be at least 8 characters long</li>
+                      <li>Include letters, numbers, and special characters</li>
+                      <li>Avoid common or numeric-only passwords</li>
+                    </ul>
+                  </p>
                 </div>
                 {/* Confirm Password */}
                 <div>
-                <Label>
-                  Confirm Password<span className="text-error-500">*</span>
-                </Label>
-                <div className="relative">
-                  <Input
-                    placeholder="Confirm your password"
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="password2"
-                    value={formData.password2}
-                    onChange={handleInputChange}
-                  />
-                  <span
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                    ) : (
-                      <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                    )}
-                  </span>
+                  <Label>
+                    Confirm Password<span className="text-error-500">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      placeholder="Confirm your password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="password2"
+                      value={formData.password2}
+                      onChange={handleInputChange}
+                    />
+                    <span
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                      ) : (
+                        <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                      )}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
                 {/* User Type Checkboxes */}
                 {/* <div className="space-y-3">
