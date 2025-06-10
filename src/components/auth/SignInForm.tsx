@@ -18,6 +18,8 @@ export default function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -41,15 +43,11 @@ export default function SignInForm() {
     }
 
     try {
-      const response = await axios.post(
-        "https://54.215.71.202.nip.io/api/users/login/",
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await axios.post(`${baseUrl}/users/login/`, formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (response.status === 200 || response.status === 201) {
         if (response.data.access) {

@@ -26,20 +26,20 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    subItems: [{ name: "Reports", path: "/home", pro: false }],
-  },
+  // {
+  //   icon: <GridIcon />,
+  //   name: "Dashboard",
+  //   subItems: [{ name: "Reports", path: "/home", pro: false }],
+  // },
   {
     icon: <ListIcon />,
-    name: "Pdf Viewer",
-    path: "/pdf-viewer",
+    name: "Reports",
+    path: "/reports",
   },
   {
     icon: <FileIcon />,
-    name: "Data Upload",
-    path: "/data-upload",
+    name: "Upload File",
+    path: "/upload-file",
   },
   // {
   //   name: "Forms",

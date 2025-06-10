@@ -1,9 +1,4 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 // Import your pages and components
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
@@ -29,6 +24,8 @@ import Home from "./pages/Dashboard/Home";
 
 import PublicRoute from "./components/auth/PublicRoute";
 import PrivateRoute from "./components/auth/PrivateRoute";
+import UploadFile from "./pages/UploadFile/UploadFile";
+import Reports from "./pages/Reports/Reports";
 
 export default function App() {
   return (
@@ -60,6 +57,8 @@ export default function App() {
 
           {/* All other protected routes */}
           <Route path="home" element={<Home />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="upload-file" element={<UploadFile />} />
           <Route path="profile" element={<UserProfiles />} />
           <Route path="calendar" element={<Calendar />} />
           <Route path="blank" element={<Blank />} />
