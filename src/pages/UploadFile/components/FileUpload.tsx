@@ -2,10 +2,10 @@ import React, { useState, useRef } from "react";
 import { Upload, Loader2 } from "lucide-react";
 import axios from "axios";
 import ComponentCard from "../../../components/common/ComponentCard";
-import FileInfo from "./FileInfo";
-import UploadProgress from "./UploadProgress";
-import RemoveButton from "./RemoveButton";
-import FileIcon from "./FileIcon";
+// import FileInfo from "./FileInfo";
+// import UploadProgress from "./UploadProgress";
+// import RemoveButton from "./RemoveButton";
+// import FileIcon from "./FileIcon";
 import FilesList from "./FilesList";
 import UploadStatistics from "./UploadStatistics";
 import UploadFilesArea from "./UploadFilesArea";
@@ -20,7 +20,7 @@ const FileUpload = () => {
   const MAX_FILES = 5;
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
-  const handleFileSelect = (selectedFiles) => {
+  const handleFileSelect = (selectedFiles: FileList | File[]) => {
     const fileArray = Array.from(selectedFiles);
 
     // Check if adding these files would exceed the limit
@@ -32,7 +32,7 @@ const FileUpload = () => {
       return;
     }
 
-    const newFiles = fileArray.map((file) => ({
+    const newFiles = fileArray.map((file: File) => ({
       id: Date.now() + Math.random(),
       file,
       name: file.name,
