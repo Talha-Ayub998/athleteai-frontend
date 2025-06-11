@@ -6,6 +6,7 @@ import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
+import axiosInstance from "../../api/axiosInstance";
 
 export default function SignInForm() {
   const navigate = useNavigate();
@@ -35,7 +36,6 @@ export default function SignInForm() {
 
     const { email, password } = formData;
 
-    // Frontend required field validation
     if (!email || !password) {
       setError("Please enter both email and password.");
       setLoading(false);
@@ -43,27 +43,30 @@ export default function SignInForm() {
     }
 
     try {
-      const response = await axios.post(`${baseUrl}/users/login/`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await axiosInstance.post("/users/login/", formData);
 
       if (response.status === 200 || response.status === 201) {
-        if (response.data.access) {
-          localStorage.setItem("authToken", response.data.access);
+        const { access, refresh, user } = response.data;
+
+        console.log("refresh on login", refresh);
+
+        if (access) {
+          localStorage.setItem("authToken", access);
         }
 
-        if (response.data.user) {
-          localStorage.setItem("userData", JSON.stringify(response.data.user));
+        if (refresh) {
+          localStorage.setItem("refreshToken", JSON.stringify(refresh));
+        }
+
+        if (user) {
+          localStorage.setItem("userData", JSON.stringify(user));
         }
 
         navigate("/");
       }
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response && err.response.data) {
+      if (axios.isAxiosError(err) && err.response?.data) {
         const data = err.response.data;
-
         let msg = "";
 
         if (typeof data === "string") {
@@ -86,7 +89,6 @@ export default function SignInForm() {
       setLoading(false);
     }
   };
-
   return (
     <div className="flex flex-col flex-1">
       <div className="w-full max-w-md pt-10 mx-auto">

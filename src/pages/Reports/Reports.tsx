@@ -25,6 +25,7 @@ import Statistics from "./components/Statistics";
 import NoReportFound from "./components/NoReportFound";
 import LoadingReports from "./components/LoadingReports";
 import { formatFileSize } from "../../utils/files/formatFileSize";
+import axiosInstance from "../../api/axiosInstance";
 
 const Reports = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -47,23 +48,16 @@ const Reports = () => {
     }
 
     getReportsList();
-  }, [authToken, baseUrl]);
+  }, []);
 
   const getReportsList = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${baseUrl}/reports/my-files/`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      console.log(response.status);
+      const response = await axiosInstance.get("/reports/my-files/");
       setReports(response.data);
       setSelectedItems(new Set()); // Clear selections when data refreshes
     } catch (error) {
       console.error("Error fetching reports:", error);
-      alert("Failed to fetch reports.");
     } finally {
       setLoading(false);
     }

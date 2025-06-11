@@ -4,6 +4,7 @@ import axios from "axios";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
+import axiosInstance from "../../api/axiosInstance";
 
 export default function SignUpForm() {
   const navigate = useNavigate();
@@ -34,21 +35,18 @@ export default function SignUpForm() {
 
     const { username, email, password, password2 } = formData;
 
-    // Frontend field validation
     if (!username || !email || !password || !password2) {
       setError("Please fill out all required fields.");
       setLoading(false);
       return;
     }
 
-    // Password match check
     if (password !== password2) {
       setError("Passwords do not match.");
       setLoading(false);
       return;
     }
 
-    // Password strength check
     const strongPasswordRegex =
       /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!strongPasswordRegex.test(password)) {
@@ -59,17 +57,8 @@ export default function SignUpForm() {
       return;
     }
 
-    // Submit to backend
     try {
-      const response = await axios.post(
-        "https://54.215.71.202.nip.io/api/users/register/",
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await axiosInstance.post("/users/register/", formData);
 
       if (response.status === 200 || response.status === 201) {
         setSuccess(true);
@@ -85,13 +74,12 @@ export default function SignUpForm() {
         }, 1500);
       }
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response && err.response.data) {
+      if (axios.isAxiosError(err) && err.response?.data) {
         const data = err.response.data;
         const errors = Object.entries(data)
           .map(([key, value]) => {
             const msg = (value as string[]).join(", ");
-            if (key === "password") return msg;
-            return `${key}: ${msg}`;
+            return key === "password" ? msg : `${key}: ${msg}`;
           })
           .join(" | ");
         setError(errors || "Registration failed. Please try again.");

@@ -115,12 +115,11 @@ const FileUpload = () => {
     setIsUploading(true);
 
     const formData = new FormData();
-
     pendingFiles.forEach((fileItem) => {
       formData.append("file", fileItem.file); // append under same key
     });
 
-    // Mark all files as uploading
+    // Mark files as uploading
     setFiles((prev) =>
       prev.map((f) =>
         pendingFiles.find((pf) => pf.id === f.id)
@@ -130,29 +129,24 @@ const FileUpload = () => {
     );
 
     try {
-      const response = await axios.post(
-        `${baseUrl}/reports/upload/`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${authToken}`,
-          },
-          onUploadProgress: (progressEvent) => {
-            const progress = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            // Apply the same progress to all files for simplicity
-            setUploadProgress((prev) => {
-              const newProgress = { ...prev };
-              pendingFiles.forEach((file) => {
-                newProgress[file.id] = progress;
-              });
-              return newProgress;
+      const response = await axiosInstance.post("/reports/upload/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${authToken}`,
+        },
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress((prev) => {
+            const newProgress = { ...prev };
+            pendingFiles.forEach((file) => {
+              newProgress[file.id] = progress;
             });
-          },
-        }
-      );
+            return newProgress;
+          });
+        },
+      });
 
       setFiles((prev) =>
         prev.map((f) =>
