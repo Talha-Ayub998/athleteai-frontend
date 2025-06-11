@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 // Import your pages and components
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
@@ -53,10 +58,10 @@ export default function App() {
           }
         >
           {/* Index route - Home component renders at / */}
-          <Route index element={<Home />} />
+          <Route index element={<Navigate to="reports" />} />
 
           {/* All other protected routes */}
-          <Route path="home" element={<Home />} />
+          {/* <Route path="home" element={<Home />} /> */}
           <Route path="reports" element={<Reports />} />
           <Route path="upload-file" element={<UploadFile />} />
           <Route path="profile" element={<UserProfiles />} />

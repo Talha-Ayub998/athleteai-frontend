@@ -8,6 +8,8 @@ import {
   Image,
   Video,
   Music,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import {
   Table,
@@ -17,8 +19,12 @@ import {
   TableCell,
 } from "../../components/ui/table";
 import axios from "axios";
-import ComponentCard from "../../components/common/ComponentCard";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
+import ActionButtons from "./components/ActionButtons";
+import Statistics from "./components/Statistics";
+import NoReportFound from "./components/NoReportFound";
+import LoadingReports from "./components/LoadingReports";
+import { formatFileSize } from "../../utils/files/formatFileSize";
 
 const Reports = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -29,6 +35,10 @@ const Reports = () => {
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [sortConfig, setSortConfig] = useState({
+    key: "original_name",
+    direction: "asc",
+  });
 
   useEffect(() => {
     if (!authToken) {
@@ -48,6 +58,7 @@ const Reports = () => {
         },
       });
 
+      console.log(response.status);
       setReports(response.data);
       setSelectedItems(new Set()); // Clear selections when data refreshes
     } catch (error) {
@@ -56,14 +67,6 @@ const Reports = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const formatDate = (dateString) => {
@@ -112,6 +115,39 @@ const Reports = () => {
       newSelected.add(key);
     }
     setSelectedItems(newSelected);
+  };
+
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedReports = () => {
+    const sortableItems = [...reports];
+    if (!sortConfig.key) return sortableItems;
+
+    sortableItems.sort((a, b) => {
+      // Handle different data types
+      if (sortConfig.key === "original_name") {
+        // String comparison
+        const nameA = a.original_name.toLowerCase();
+        const nameB = b.original_name.toLowerCase();
+        return sortConfig.direction === "asc"
+          ? nameA.localeCompare(nameB)
+          : nameB.localeCompare(nameA);
+      } else if (sortConfig.key === "size_bytes") {
+        // Numeric comparison
+        return sortConfig.direction === "asc"
+          ? a.size_bytes - b.size_bytes
+          : b.size_bytes - a.size_bytes;
+      }
+      return 0;
+    });
+
+    return sortableItems;
   };
 
   const handleDownload = async () => {
@@ -197,6 +233,8 @@ const Reports = () => {
     );
   }
 
+  const sortedReports = getSortedReports();
+
   return (
     <div className="space-y-6">
       <PageBreadcrumb pageTitle="My Reports" />
@@ -212,95 +250,27 @@ const Reports = () => {
             </div>
 
             {/* Action Buttons */}
-            {selectedItems.size > 0 && (
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleDownload}
-                  disabled={isDownloading}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-md transition-colors duration-200"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  {isDownloading
-                    ? "Downloading..."
-                    : `Download (${selectedItems.size})`}
-                </button>
-
-                <button
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm font-medium rounded-md transition-colors duration-200"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  {isDeleting
-                    ? "Deleting..."
-                    : `Delete (${selectedItems.size})`}
-                </button>
-              </div>
-            )}
+            <ActionButtons
+              selectedItems={selectedItems}
+              handleDelete={handleDelete}
+              handleDownload={handleDownload}
+              isDeleting={isDeleting}
+              isDownloading={isDownloading}
+            />
           </div>
         </div>
 
         {/* Statistics */}
-        <div className="p-4 border-t border-gray-100 dark:border-gray-800 sm:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {reports.length}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Total Files
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {selectedItems.size}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Selected
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {reports.reduce(
-                  (total, report) => total + report.size_bytes,
-                  0
-                ) > 0
-                  ? formatFileSize(
-                      reports.reduce(
-                        (total, report) => total + report.size_bytes,
-                        0
-                      )
-                    )
-                  : "0 Bytes"}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Total Size
-              </p>
-            </div>
-          </div>
-        </div>
+        <Statistics reports={reports} selectedItems={selectedItems} />
       </div>
 
       {/* Table Card */}
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600 dark:text-gray-400">
-                Loading reports...
-              </span>
-            </div>
+            <LoadingReports />
           ) : reports.length === 0 ? (
-            <div className="text-center py-12">
-              <File className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400 text-lg">
-                No reports found
-              </p>
-              <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
-                Upload some files to get started
-              </p>
-            </div>
+            <NoReportFound />
           ) : (
             <Table>
               <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
@@ -321,15 +291,49 @@ const Reports = () => {
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   >
-                    File
+                    <button
+                      onClick={() => requestSort("original_name")}
+                      className="flex items-center gap-1"
+                    >
+                      File
+                      {sortConfig.key === "original_name" ? (
+                        sortConfig.direction === "asc" ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )
+                      ) : (
+                        <div className="flex flex-col">
+                          <ChevronUp className="w-3 h-3 -mb-1 text-gray-400" />
+                          <ChevronDown className="w-3 h-3 text-gray-400" />
+                        </div>
+                      )}
+                    </button>
                   </TableCell>
                   <TableCell
                     isHeader
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   >
-                    Size
+                    <button
+                      onClick={() => requestSort("size_bytes")}
+                      className="flex items-center gap-1"
+                    >
+                      Size
+                      {sortConfig.key === "size_bytes" ? (
+                        sortConfig.direction === "asc" ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )
+                      ) : (
+                        <div className="flex flex-col">
+                          <ChevronUp className="w-3 h-3 -mb-1 text-gray-400" />
+                          <ChevronDown className="w-3 h-3 text-gray-400" />
+                        </div>
+                      )}
+                    </button>
                   </TableCell>
                   <TableCell
                     isHeader
@@ -347,7 +351,7 @@ const Reports = () => {
               </TableHeader>
 
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {reports.map((report) => (
+                {sortedReports.map((report) => (
                   <TableRow
                     key={report.key}
                     className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
