@@ -10,6 +10,7 @@ import {
   Loader2,
 } from "lucide-react";
 import axios from "axios";
+import ComponentCard from "../../../components/common/ComponentCard";
 
 const FileUpload = () => {
   const [files, setFiles] = useState([]);
@@ -156,7 +157,7 @@ const FileUpload = () => {
 
         try {
           const response = await axios.post(
-            `${baseUrl}/reports/upload`,
+            `${baseUrl}/reports/upload/`,
             formData,
             {
               headers: {
@@ -215,18 +216,7 @@ const FileUpload = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          File Upload
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Upload your files by clicking or dragging them here
-        </p>
-      </div>
-
-      {/* Upload Area */}
+    <ComponentCard title="Upload your files by clicking or dragging them here">
       <div className="p-6">
         <div
           className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
@@ -482,7 +472,7 @@ const FileUpload = () => {
           </div>
         )}
       </div>
-    </div>
+    </ComponentCard>
   );
 };
 
