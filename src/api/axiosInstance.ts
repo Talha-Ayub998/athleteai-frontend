@@ -65,7 +65,8 @@ axiosInstance.interceptors.response.use(
       }
 
       isRefreshing = true;
-      const refreshToken = localStorage.getItem("refreshToken");
+      const refreshToken = JSON.parse(localStorage.getItem("refreshToken") || '""');
+
 
       // function getCookie(name: string) {
       //   const value = `; ${document.cookie}`;
