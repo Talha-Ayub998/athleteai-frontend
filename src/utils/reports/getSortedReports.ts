@@ -14,8 +14,8 @@ export const getSortedReports = (reports, sortConfig) => {
         ? a.size_bytes - b.size_bytes
         : b.size_bytes - a.size_bytes;
     } else if (sortConfig.key === "last_modified") {
-      const dateA = new Date(a.last_modified);
-      const dateB = new Date(b.last_modified);
+      const dateA = new Date(a.last_modified).getTime();
+      const dateB = new Date(b.last_modified).getTime();
       return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     }
     return 0;
