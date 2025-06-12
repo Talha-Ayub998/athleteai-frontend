@@ -74,7 +74,7 @@ axiosInstance.interceptors.response.use(
       }
       const csrfToken = getCookie("csrftoken");
 
-      console.log("csrfToken", csrfToken);
+      // console.log("csrfToken", csrfToken);
 
       try {
         const response = await axios.post(
@@ -82,11 +82,11 @@ axiosInstance.interceptors.response.use(
           { refresh: refreshToken },
           {
             headers: {
-              "X-CSRFTOKEN": csrfToken,
+              // "X-CSRFTOKEN": csrfToken,
               "Content-Type": "application/json",
               Accept: "application/json",
             },
-            // withCredentials: true, // Enable if backend expects cookies
+            withCredentials: true, // Enable if backend expects cookies
           }
         );
 
