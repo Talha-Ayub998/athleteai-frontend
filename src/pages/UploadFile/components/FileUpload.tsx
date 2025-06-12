@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
 import { Upload, Loader2 } from "lucide-react";
-import axios from "axios";
+// import axios from "axios";
 import ComponentCard from "../../../components/common/ComponentCard";
+import axiosInstance from "../../../api/axiosInstance";
 // import FileInfo from "./FileInfo";
 // import UploadProgress from "./UploadProgress";
 // import RemoveButton from "./RemoveButton";
@@ -18,7 +19,7 @@ const FileUpload = () => {
   const fileInputRef = useRef(null);
 
   const MAX_FILES = 5;
-  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+  // const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
   const handleFileSelect = (selectedFiles: FileList | File[]) => {
     const fileArray = Array.from(selectedFiles);
