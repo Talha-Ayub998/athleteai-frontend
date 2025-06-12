@@ -367,7 +367,6 @@ const Reports = () => {
                             const link = document.createElement("a");
                             link.href = report.url;
                             link.download = report.original_name;
-                            link.target = "_blank";
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
