@@ -372,9 +372,6 @@ const Reports = () => {
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
                             {report.original_name}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {report.stored_name}
-                          </p>
                         </div>
                       </div>
                     </TableCell>
