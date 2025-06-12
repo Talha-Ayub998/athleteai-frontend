@@ -124,19 +124,20 @@ const Reports = () => {
     if (!sortConfig.key) return sortableItems;
 
     sortableItems.sort((a, b) => {
-      // Handle different data types
       if (sortConfig.key === "original_name") {
-        // String comparison
         const nameA = a.original_name.toLowerCase();
         const nameB = b.original_name.toLowerCase();
         return sortConfig.direction === "asc"
           ? nameA.localeCompare(nameB)
           : nameB.localeCompare(nameA);
       } else if (sortConfig.key === "size_bytes") {
-        // Numeric comparison
         return sortConfig.direction === "asc"
           ? a.size_bytes - b.size_bytes
           : b.size_bytes - a.size_bytes;
+      } else if (sortConfig.key === "last_modified") {
+        const dateA = new Date(a.last_modified);
+        const dateB = new Date(b.last_modified);
+        return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
       }
       return 0;
     });
@@ -333,7 +334,24 @@ const Reports = () => {
                     isHeader
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                   >
-                    Created At
+                    <button
+                      onClick={() => requestSort("last_modified")}
+                      className="flex items-center gap-1"
+                    >
+                      Created At
+                      {sortConfig.key === "last_modified" ? (
+                        sortConfig.direction === "asc" ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )
+                      ) : (
+                        <div className="flex flex-col">
+                          <ChevronUp className="w-3 h-3 -mb-1 text-gray-400" />
+                          <ChevronDown className="w-3 h-3 text-gray-400" />
+                        </div>
+                      )}
+                    </button>
                   </TableCell>
                   <TableCell
                     isHeader
