@@ -1,8 +1,8 @@
 import React from "react";
-import FileIcon from "./FileIcon";
 import FileInfo from "./FileInfo";
 import UploadProgress from "./UploadProgress";
 import RemoveButton from "./RemoveButton";
+import FileIconSection from "./FileIcon";
 
 const FilesList = ({ files, uploadProgress, removeFile }) => {
   return (
@@ -13,7 +13,7 @@ const FilesList = ({ files, uploadProgress, removeFile }) => {
           className="flex items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 "
         >
           {/* File Icon/Preview */}
-          <FileIcon file={file} />
+          <FileIconSection file={file} />
 
           {/* File Info */}
           <FileInfo file={file} />

@@ -1,22 +1,6 @@
-import { File, FileText, Image, Music, Video } from "lucide-react";
-import React from "react";
+import FileIcon from "../../../components/common/FileIcon";
 
-const FileIcon = ({ file }) => {
-  const getFileIcon = (type) => {
-    if (type.startsWith("image/"))
-      return <Image className="w-5 h-5 text-blue-500" />;
-    if (type.startsWith("video/"))
-      return <Video className="w-5 h-5 text-purple-500" />;
-    if (type.startsWith("audio/"))
-      return <Music className="w-5 h-5 text-green-500" />;
-    if (
-      type.includes("pdf") ||
-      type.includes("document") ||
-      type.includes("text")
-    )
-      return <FileText className="w-5 h-5 text-red-500" />;
-    return <File className="w-5 h-5 text-gray-500" />;
-  };
+const FileIconSection = ({ file }) => {
   return (
     <div className="flex-shrink-0 mr-3">
       {file.preview ? (
@@ -27,11 +11,11 @@ const FileIcon = ({ file }) => {
         />
       ) : (
         <div className="w-10 h-10 bg-white dark:bg-gray-600 rounded-md flex items-center justify-center">
-          {getFileIcon(file.type)}
+          <FileIcon fileName={file.type} />
         </div>
       )}
     </div>
   );
 };
 
-export default FileIcon;
+export default FileIconSection;

@@ -26,6 +26,8 @@ import NoReportFound from "./components/NoReportFound";
 import LoadingReports from "./components/LoadingReports";
 import { formatFileSize } from "../../utils/files/formatFileSize";
 import axiosInstance from "../../api/axiosInstance";
+import { getSortedReports } from "../../utils/reports/getSortedReports";
+import FileIcon from "../../components/common/FileIcon";
 
 const Reports = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -75,24 +77,6 @@ const Reports = () => {
     );
   };
 
-  const getFileIcon = (fileName) => {
-    const extension = fileName.split(".").pop()?.toLowerCase();
-
-    if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(extension)) {
-      return <Image className="w-5 h-5 text-blue-500" />;
-    }
-    if (["mp4", "avi", "mov", "wmv", "flv"].includes(extension)) {
-      return <Video className="w-5 h-5 text-purple-500" />;
-    }
-    if (["mp3", "wav", "flac", "aac"].includes(extension)) {
-      return <Music className="w-5 h-5 text-green-500" />;
-    }
-    if (["pdf", "doc", "docx", "txt"].includes(extension)) {
-      return <FileText className="w-5 h-5 text-red-500" />;
-    }
-    return <File className="w-5 h-5 text-gray-500" />;
-  };
-
   const handleSelectAll = () => {
     if (selectedItems.size === reports.length) {
       setSelectedItems(new Set());
@@ -117,32 +101,6 @@ const Reports = () => {
       direction = "desc";
     }
     setSortConfig({ key, direction });
-  };
-
-  const getSortedReports = () => {
-    const sortableItems = [...reports];
-    if (!sortConfig.key) return sortableItems;
-
-    sortableItems.sort((a, b) => {
-      if (sortConfig.key === "original_name") {
-        const nameA = a.original_name.toLowerCase();
-        const nameB = b.original_name.toLowerCase();
-        return sortConfig.direction === "asc"
-          ? nameA.localeCompare(nameB)
-          : nameB.localeCompare(nameA);
-      } else if (sortConfig.key === "size_bytes") {
-        return sortConfig.direction === "asc"
-          ? a.size_bytes - b.size_bytes
-          : b.size_bytes - a.size_bytes;
-      } else if (sortConfig.key === "last_modified") {
-        const dateA = new Date(a.last_modified);
-        const dateB = new Date(b.last_modified);
-        return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
-      }
-      return 0;
-    });
-
-    return sortableItems;
   };
 
   const handleDownload = async () => {
@@ -228,7 +186,7 @@ const Reports = () => {
     );
   }
 
-  const sortedReports = getSortedReports();
+  const sortedReports = getSortedReports(reports, sortConfig);
 
   return (
     <div className="space-y-6">
@@ -384,7 +342,7 @@ const Reports = () => {
                     <TableCell className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 mr-3">
-                          {getFileIcon(report.original_name)}
+                          <FileIcon fileName={report.original_name} />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-white">
