@@ -20,10 +20,10 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-const getCsrfToken = () => {
-  const match = document.cookie.match(/csrftoken=([^;]+)/);
-  return match ? match[1] : null;
-};
+// const getCsrfToken = () => {
+//   const match = document.cookie.match(/csrftoken=([^;]+)/);
+//   return match ? match[1] : null;
+// };
 
 const axiosInstance = axios.create({
   baseURL: baseUrl,
@@ -67,12 +67,12 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
       const refreshToken = localStorage.getItem("refreshToken");
 
-      function getCookie(name: string) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop()?.split(";").shift();
-      }
-      const csrfToken = getCookie("csrftoken");
+      // function getCookie(name: string) {
+      //   const value = `; ${document.cookie}`;
+      //   const parts = value.split(`; ${name}=`);
+      //   if (parts.length === 2) return parts.pop()?.split(";").shift();
+      // }
+      // const csrfToken = getCookie("csrftoken");
 
       // console.log("csrfToken", csrfToken);
 
@@ -82,11 +82,9 @@ axiosInstance.interceptors.response.use(
           { refresh: refreshToken },
           {
             headers: {
-              // "X-CSRFTOKEN": csrfToken,
               "Content-Type": "application/json",
               Accept: "application/json",
-            },
-            withCredentials: true, // Enable if backend expects cookies
+            }
           }
         );
 
