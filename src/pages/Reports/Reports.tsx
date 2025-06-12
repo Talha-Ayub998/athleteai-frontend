@@ -1,16 +1,6 @@
 // import axios from "axios"; // Import axios in your project
 import React, { useEffect, useState } from "react";
-import {
-  Download,
-  Trash2,
-  File,
-  FileText,
-  Image,
-  Video,
-  Music,
-  ChevronUp,
-  ChevronDown,
-} from "lucide-react";
+import { Download, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -121,16 +111,13 @@ const Reports = () => {
         const link = document.createElement("a");
         link.href = report.url;
         link.download = report.original_name;
-        link.target = "_blank"; // Open in new tab as fallback
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
 
         // Small delay between downloads to avoid overwhelming the browser
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       }
-
-      alert(`Started downloading ${selectedReports.length} file(s).`);
     } catch (error) {
       console.error("Error downloading files:", error);
       alert("Failed to download some files.");
