@@ -53,7 +53,9 @@ axiosInstance.interceptors.response.use(
         })
           .then((token) => {
             originalRequest.headers.Authorization = `Bearer ${token}`;
+            delete originalRequest._retry;
             return axiosInstance(originalRequest);
+
           })
           .catch((err) => Promise.reject(err));
       }
