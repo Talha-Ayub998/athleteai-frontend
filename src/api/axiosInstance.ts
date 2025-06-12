@@ -20,14 +20,8 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// const getCsrfToken = () => {
-//   const match = document.cookie.match(/csrftoken=([^;]+)/);
-//   return match ? match[1] : null;
-// };
-
 const axiosInstance = axios.create({
   baseURL: baseUrl,
-  // withCredentials: true, // Enable only if using cookies
 });
 
 axiosInstance.interceptors.request.use(
@@ -67,16 +61,6 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
       const refreshToken = JSON.parse(localStorage.getItem("refreshToken") || '""');
 
-
-      // function getCookie(name: string) {
-      //   const value = `; ${document.cookie}`;
-      //   const parts = value.split(`; ${name}=`);
-      //   if (parts.length === 2) return parts.pop()?.split(";").shift();
-      // }
-      // const csrfToken = getCookie("csrftoken");
-
-      // console.log("csrfToken", csrfToken);
-
       try {
         const response = await axios.post(
           `${baseUrl}${refreshEndpoint}`,
@@ -89,8 +73,7 @@ axiosInstance.interceptors.response.use(
           }
         );
 
-        const { access: newAccessToken, refresh: newRefreshToken } =
-          response.data;
+        const { access: newAccessToken, refresh: newRefreshToken } = response.data;
 
         localStorage.setItem("authToken", newAccessToken);
         if (newRefreshToken) {
@@ -99,20 +82,19 @@ axiosInstance.interceptors.response.use(
 
         axiosInstance.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        delete originalRequest._retry; // ✅ important
 
         processQueue(null, newAccessToken);
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        console.log("refreshError", refreshError);
-
-        // if (refreshError.response?.status === 401) {
-        //   localStorage.removeItem("authToken");
-        //   localStorage.removeItem("refreshToken");
-        //   localStorage.removeItem("userData");
-        //   window.location.href = "/login";
-        // }
-
+        console.log("🔴 Refresh token failed", refreshError);
         processQueue(refreshError, null);
+
+        // Optional auto-logout
+        // localStorage.removeItem("authToken");
+        // localStorage.removeItem("refreshToken");
+        // window.location.href = "/login";
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
