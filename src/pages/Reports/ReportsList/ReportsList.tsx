@@ -7,19 +7,20 @@ import {
   TableBody,
   TableRow,
   TableCell,
-} from "../../components/ui/table";
+} from "../../../components/ui/table";
 import axios from "axios";
-import PageBreadcrumb from "../../components/common/PageBreadCrumb";
+import { Link } from "react-router";
+import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import ActionButtons from "./components/ActionButtons";
 import Statistics from "./components/Statistics";
 import NoReportFound from "./components/NoReportFound";
 import LoadingReports from "./components/LoadingReports";
-import { formatFileSize } from "../../utils/files/formatFileSize";
-import axiosInstance from "../../api/axiosInstance";
-import { getSortedReports } from "../../utils/reports/getSortedReports";
-import FileIcon from "../../components/common/FileIcon";
+import { formatFileSize } from "../../../utils/files/formatFileSize";
+import axiosInstance from "../../../api/axiosInstance";
+import { getSortedReports } from "../../../utils/reports/getSortedReports";
+import FileIcon from "../../../components/common/FileIcon";
 
-const Reports = () => {
+const ReportsList = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const authToken = localStorage.getItem("authToken");
 
@@ -177,7 +178,7 @@ const Reports = () => {
 
   return (
     <div className="space-y-6">
-      <PageBreadcrumb pageTitle="My Reports" />
+      <PageBreadcrumb pageTitle="Reports" path={"Reports"} />
       {/* Header Card */}
 
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
@@ -321,22 +322,30 @@ const Reports = () => {
                       <input
                         type="checkbox"
                         checked={selectedItems.has(report.key)}
-                        onChange={() => handleSelectItem(report.key)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleSelectItem(report.key);
+                        }}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                     </TableCell>
 
-                    <TableCell className="px-6 py-4">
-                      <div className="flex items-center">
+                    <TableCell className="px-6 py-4 ">
+                      <Link
+                        to={`/reports/${encodeURIComponent(
+                          report.original_name
+                        )}`}
+                        className="flex items-center hover:text-blue-600 dark:hover:text-blue-400"
+                      >
                         <div className="flex-shrink-0 mr-3">
                           <FileIcon fileName={report.original_name} />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white hover:underline">
                             {report.original_name}
                           </p>
                         </div>
-                      </div>
+                      </Link>
                     </TableCell>
 
                     <TableCell className="px-6 py-4 text-sm text-gray-900 dark:text-white">
@@ -350,7 +359,8 @@ const Reports = () => {
                     <TableCell className="px-6 py-4">
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             const link = document.createElement("a");
                             link.href = report.url;
                             link.download = report.original_name;
@@ -365,7 +375,8 @@ const Reports = () => {
                         </button>
 
                         <button
-                          onClick={async () => {
+                          onClick={async (e) => {
+                            e.stopPropagation();
                             const confirmDelete = window.confirm(
                               `Are you sure you want to delete "${report.original_name}"?`
                             );
@@ -409,4 +420,4 @@ const Reports = () => {
   );
 };
 
-export default Reports;
+export default ReportsList;

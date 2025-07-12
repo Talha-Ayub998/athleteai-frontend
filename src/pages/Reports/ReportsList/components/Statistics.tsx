@@ -1,5 +1,5 @@
 import React from "react";
-import { formatFileSize } from "../../../utils/files/formatFileSize";
+import { formatFileSize } from "../../../../utils/files/formatFileSize";
 
 const Statistics = ({ reports, selectedItems }) => {
   return (

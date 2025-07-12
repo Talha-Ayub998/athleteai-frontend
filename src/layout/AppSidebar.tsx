@@ -106,7 +106,14 @@ const AppSidebar: React.FC = () => {
 
   // const isActive = (path: string) => location.pathname === path;
   const isActive = useCallback(
-    (path: string) => location.pathname === path,
+    (path: string) => {
+      // Check if the current pathname starts with the given path
+      // This allows nested routes like /reports/report-number to be active for /reports
+      if (path === "/") {
+        return location.pathname === "/";
+      }
+      return location.pathname.startsWith(path);
+    },
     [location.pathname]
   );
 

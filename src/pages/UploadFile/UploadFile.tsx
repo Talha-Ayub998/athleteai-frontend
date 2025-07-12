@@ -5,7 +5,7 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 const UploadFile = () => {
   return (
     <div>
-      <PageBreadcrumb pageTitle="File Upload" />
+      <PageBreadcrumb pageTitle="File Upload" path={"File Upload"} />
       <FileUpload />
     </div>
   );

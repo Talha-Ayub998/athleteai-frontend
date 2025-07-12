@@ -30,7 +30,8 @@ import Home from "./pages/Dashboard/Home";
 import PublicRoute from "./components/auth/PublicRoute";
 import PrivateRoute from "./components/auth/PrivateRoute";
 import UploadFile from "./pages/UploadFile/UploadFile";
-import Reports from "./pages/Reports/Reports";
+import ReportsList from "./pages/Reports/ReportsList/ReportsList";
+import Report from "./pages/Reports/Report/Report";
 
 export default function App() {
   return (
@@ -62,7 +63,8 @@ export default function App() {
 
           {/* All other protected routes */}
           {/* <Route path="home" element={<Home />} /> */}
-          <Route path="reports" element={<Reports />} />
+          <Route path="reports" element={<ReportsList />} />
+          <Route path="reports/:reportId" element={<Report />} />
           <Route path="upload-file" element={<UploadFile />} />
           <Route path="profile" element={<UserProfiles />} />
           <Route path="calendar" element={<Calendar />} />
