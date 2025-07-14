@@ -1,5 +1,12 @@
 import React from "react";
-import { Image, Video, Music, FileText, File } from "lucide-react"; // adjust imports if needed
+import {
+  Image,
+  Video,
+  Music,
+  FileText,
+  File,
+  FileSpreadsheet,
+} from "lucide-react"; // adjust imports if needed
 
 const FileIcon = ({ fileName }) => {
   const extension = fileName?.split(".").pop()?.toLowerCase();
@@ -15,6 +22,9 @@ const FileIcon = ({ fileName }) => {
   }
   if (["pdf", "doc", "docx", "txt"].includes(extension)) {
     return <FileText className="w-5 h-5 text-red-500" />;
+  }
+  if (["sheet"].includes(extension)) {
+    return <FileSpreadsheet className="w-5 h-5 text-blue-500" />;
   }
 
   return <File className="w-5 h-5 text-gray-500" />;

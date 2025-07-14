@@ -8,6 +8,8 @@ export const getStatusText = (status) => {
       return "Complete";
     case "error":
       return "Error";
+    case "processing":
+      return "Processing file...";
     default:
       return "Pending";
   }

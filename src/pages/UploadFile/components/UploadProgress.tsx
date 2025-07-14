@@ -1,12 +1,12 @@
 import React from "react";
-import { getStatusColor } from "../../../utils/files/getStatusColor";
+// import { getStatusColor } from "../../../utils/files/getStatusColor";
 import { Loader2 } from "lucide-react";
 import { getStatusText } from "../../../utils/files/getStatusText";
 
-const UploadProgress = ({ file, uploadProgress }) => {
+const UploadProgress = ({ file }) => {
   // Safely get the progress value, default to 0 if not found
-  const progressValue =
-    uploadProgress && uploadProgress[file.id] ? uploadProgress[file.id] : 0;
+  // const progressValue =
+  //   uploadProgress && uploadProgress[file.id] ? uploadProgress[file.id] : 0;
 
   return (
     <div className="flex-shrink-0 mr-3 w-24">

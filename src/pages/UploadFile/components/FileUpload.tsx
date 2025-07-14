@@ -1,70 +1,64 @@
-import React, { useState, useRef } from "react";
-import { Upload, Loader2 } from "lucide-react";
-// import axios from "axios";
+import React, { useState, useRef, useEffect } from "react";
 import ComponentCard from "../../../components/common/ComponentCard";
 import axiosInstance from "../../../api/axiosInstance";
-// import FileInfo from "./FileInfo";
-// import UploadProgress from "./UploadProgress";
-// import RemoveButton from "./RemoveButton";
-// import FileIcon from "./FileIcon";
-import FilesList from "./FilesList";
-import UploadStatistics from "./UploadStatistics";
 import UploadFilesArea from "./UploadFilesArea";
+import FilesList from "./FilesList";
+import { Modal } from "../../../components/ui/modal";
 
 const FileUpload = () => {
-  const [files, setFiles] = useState([]);
+  const [file, setFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({}); // Initialize as empty object
+  const [uploadProgress, setUploadProgress] = useState(0); // Single value
+  const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
-  const MAX_FILES = 5;
-  // const baseUrl = import.meta.env.VITE_API_BASE_URL;
+  useEffect(() => {
+    if (
+      isUploading &&
+      file &&
+      file.status === "uploading" &&
+      uploadProgress === 100
+    ) {
+      setFile((prev) => ({ ...prev, status: "processing" }));
+    }
+  }, [isUploading, uploadProgress, file]);
 
   const handleFileSelect = (selectedFiles: FileList | File[]) => {
-    const fileArray = Array.from(selectedFiles);
-
-    // Check if adding these files would exceed the limit
-    const availableSlots = MAX_FILES - files.length;
-    if (fileArray.length > availableSlots) {
-      alert(
-        `You can only upload a maximum of ${MAX_FILES} files. You have ${availableSlots} slots remaining.`
-      );
+    setError("");
+    const selectedFile = Array.from(selectedFiles)[0];
+    if (!selectedFile) return;
+    if (!selectedFile.name.endsWith(".xlsx")) {
+      setError("Only .xlsx Excel files are allowed.");
       return;
     }
-
-    const newFiles = fileArray.map((file: File) => ({
+    setFile({
       id: Date.now() + Math.random(),
-      file,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      preview: file.type.startsWith("image/")
-        ? URL.createObjectURL(file)
-        : null,
-      status: "pending", // pending, uploading, completed, error
-    }));
-    setFiles((prev) => [...prev, ...newFiles]);
+      file: selectedFile,
+      name: selectedFile.name,
+      size: selectedFile.size,
+      type: selectedFile.type,
+      preview: null,
+      status: "pending",
+    });
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
-
-    // Don't allow drop if max files reached
-    if (files.length >= MAX_FILES) {
-      alert(`Maximum of ${MAX_FILES} files allowed.`);
+    if (file) {
+      alert(
+        "Only one file can be uploaded. Remove the current file to add another."
+      );
       return;
     }
-
-    const droppedFiles = e.dataTransfer.files;
-    handleFileSelect(droppedFiles);
+    const droppedFile = e.dataTransfer.files[0];
+    handleFileSelect([droppedFile]);
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    // Only show drag over effect if we can accept more files
-    if (files.length < MAX_FILES) {
+    if (!file) {
       setIsDragOver(true);
     }
   };
@@ -75,60 +69,38 @@ const FileUpload = () => {
   };
 
   const handleInputChange = (e) => {
-    // Don't allow file selection if max files reached
-    if (files.length >= MAX_FILES) {
-      alert(`Maximum of ${MAX_FILES} files allowed.`);
+    if (file) {
+      alert(
+        "Only one file can be uploaded. Remove the current file to add another."
+      );
       e.target.value = null;
       return;
     }
-
     handleFileSelect(e.target.files);
-    e.target.value = null; // Reset input to allow selecting same file again
+    e.target.value = null;
   };
 
-  const removeFile = (fileId) => {
-    setFiles((prev) => {
-      const fileToRemove = prev.find((f) => f.id === fileId);
-      if (fileToRemove && fileToRemove.preview) {
-        URL.revokeObjectURL(fileToRemove.preview);
-      }
-      return prev.filter((f) => f.id !== fileId);
-    });
+  const removeFile = () => {
+    setFile(null);
+    setError("");
   };
 
-  const uploadFiles = async () => {
+  const uploadFile = async () => {
+    setError("");
     const authToken = localStorage.getItem("authToken");
-
     if (!authToken) {
-      alert("Authentication token not found. Please login again.");
+      setError("Authentication token not found. Please login again.");
       return;
     }
-
-    const pendingFiles = files.filter(
-      (file) => file.status === "pending" || file.status === "error"
-    );
-
-    if (pendingFiles.length === 0) {
-      alert("No files to upload.");
+    if (!file || (file.status !== "pending" && file.status !== "error")) {
+      setError("No file to upload.");
       return;
     }
-
     setIsUploading(true);
-
+    setUploadProgress(0);
+    setFile((prev) => ({ ...prev, status: "uploading" }));
     const formData = new FormData();
-    pendingFiles.forEach((fileItem) => {
-      formData.append("file", fileItem.file); // append under same key
-    });
-
-    // Mark files as uploading
-    setFiles((prev) =>
-      prev.map((f) =>
-        pendingFiles.find((pf) => pf.id === f.id)
-          ? { ...f, status: "uploading" }
-          : f
-      )
-    );
-
+    formData.append("file", file.file);
     try {
       const response = await axiosInstance.post("/reports/upload/", formData, {
         headers: {
@@ -139,78 +111,64 @@ const FileUpload = () => {
           const progress = Math.round(
             (progressEvent.loaded * 100) / progressEvent.total
           );
-          setUploadProgress((prev) => {
-            const newProgress = { ...prev };
-            pendingFiles.forEach((file) => {
-              newProgress[file.id] = progress;
-            });
-            return newProgress;
-          });
+          setUploadProgress(progress);
         },
       });
-
-      setFiles((prev) =>
-        prev.map((f) =>
-          pendingFiles.find((pf) => pf.id === f.id)
-            ? { ...f, status: "completed" }
-            : f
-        )
-      );
-
-      console.log("Files uploaded successfully:", response.data);
+      setFile((prev) => ({ ...prev, status: "completed" }));
+      console.log("File uploaded successfully:", response.data);
     } catch (error) {
-      console.error("Error uploading files:", error);
-
-      setFiles((prev) =>
-        prev.map((f) =>
-          pendingFiles.find((pf) => pf.id === f.id)
-            ? { ...f, status: "error" }
-            : f
-        )
-      );
-
+      console.error("Error uploading file:", error);
+      setFile((prev) => ({ ...prev, status: "error" }));
       if (error.response?.status === 401) {
-        alert("Authentication failed. Please login again.");
+        setError("Authentication failed. Please login again.");
       } else if (error.response?.status === 413) {
-        alert("Some file(s) are too large to upload.");
+        setError("File is too large to upload.");
+      } else if (
+        error.response?.status === 400 &&
+        error.response?.data?.status === "duplicate"
+      ) {
+        const msg = error.response.data.message || "Duplicate file upload.";
+        const existing = error.response.data.existing_filename
+          ? `\nExisting file: ${error.response.data.existing_filename}`
+          : "";
+        const uploadedAt = error.response.data.uploaded_at
+          ? `\nUploaded at: ${new Date(
+              error.response.data.uploaded_at
+            ).toLocaleString()}`
+          : "";
+        setError(`${msg}${existing}${uploadedAt}`);
+      } else if (
+        error.response?.data?.status === "error" &&
+        error.response?.data?.errors
+      ) {
+        const errors = error.response.data.errors;
+        if (Array.isArray(errors)) {
+          setError(errors.join("\n"));
+        } else {
+          setError(errors);
+        }
       } else {
-        alert("Failed to upload files. Please try again.");
+        setError("Failed to upload file. Please try again.");
       }
     } finally {
       setIsUploading(false);
-      setUploadProgress({});
+      setUploadProgress(0);
     }
   };
 
-  // Calculate overall progress for the progress bar
-  const calculateOverallProgress = () => {
-    const uploadingFiles = files.filter((f) => f.status === "uploading");
-    if (uploadingFiles.length === 0) return 0;
-
-    const totalProgress = uploadingFiles.reduce((sum, file) => {
-      return sum + (uploadProgress[file.id] || 0);
-    }, 0);
-
-    return Math.round(totalProgress / uploadingFiles.length);
-  };
-
-  const overallProgress = calculateOverallProgress();
-
   return (
-    <ComponentCard title="Upload your files by clicking or dragging them here">
+    <ComponentCard title="Upload your Excel file by clicking or dragging it here">
       <div className="p-6">
-        {/* File limit indicator */}
         <div className="mb-4 flex items-center justify-between">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            {files.length} of {MAX_FILES} files selected
+            {file ? "1 file selected" : "No file selected"}
           </div>
-          {files.length >= MAX_FILES && (
+          {file && (
             <div className="text-sm text-amber-600 dark:text-amber-400 font-medium">
-              Maximum files reached
+              File selected
             </div>
           )}
         </div>
-
         <UploadFilesArea
           isDragOver={isDragOver}
           handleDrop={handleDrop}
@@ -218,115 +176,68 @@ const FileUpload = () => {
           handleDragLeave={handleDragLeave}
           fileInputRef={fileInputRef}
           handleInputChange={handleInputChange}
-          disabled={files.length >= MAX_FILES}
+          disabled={!!file}
         />
-
-        {/* File List */}
-        {files.length > 0 && (
+        {file && (
           <div className="mt-6">
             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-              Selected Files ({files.length})
+              Selected File
             </h4>
-
             <FilesList
-              files={files}
-              uploadProgress={uploadProgress}
-              removeFile={removeFile}
+              files={[file]}
+              // uploadProgress={{ [file.id]: uploadProgress }}
+              removeFile={() => removeFile()}
             />
-
-            {/* Overall Upload Progress */}
+            <Modal
+              className="max-w-10/12 md:max-w-4/12"
+              isOpen={!!error}
+              onClose={() => setError("")}
+            >
+              <div className="p-6 text-center">
+                <div className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
+                  Error
+                </div>
+                <div className="text-base text-gray-700 dark:text-gray-200 whitespace-pre-line">
+                  {error}
+                </div>
+              </div>
+            </Modal>
             {isUploading && (
               <div className="mt-4">
                 <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  <span>Uploading files...</span>
-                  <span>{overallProgress}%</span>
+                  <span>Uploading file...</span>
+                  <span>{uploadProgress}%</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${overallProgress}%` }}
+                    style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
               </div>
             )}
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mt-4 ">
               <button
-                onClick={() => {
-                  // Clean up preview URLs before clearing
-                  files.forEach((file) => {
-                    if (file.preview) {
-                      URL.revokeObjectURL(file.preview);
-                    }
-                  });
-                  setFiles([]);
-                  setUploadProgress({});
-                }}
+                onClick={removeFile}
                 className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isUploading}
               >
-                Clear All
+                Clear
               </button>
-
-              <div className="flex items-center space-x-3">
-                {/* Upload Summary */}
-                {files.length > 0 && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {files.filter((f) => f.status === "completed").length} of{" "}
-                    {files.length} completed
-                  </div>
-                )}
-
-                <button
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isUploading}
-                  onClick={() => {
-                    // Reset only pending and error files
-                    setFiles((prev) =>
-                      prev.filter((f) => f.status === "completed")
-                    );
-                    setUploadProgress({});
-                  }}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-md transition-colors duration-200 flex items-center"
-                  onClick={uploadFiles}
-                  disabled={
-                    isUploading ||
-                    files.filter(
-                      (f) => f.status === "pending" || f.status === "error"
-                    ).length === 0
-                  }
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload All Files (
-                      {
-                        files.filter(
-                          (f) => f.status === "pending" || f.status === "error"
-                        ).length
-                      }
-                      )
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-md transition-colors duration-200 flex items-center"
+                onClick={uploadFile}
+                disabled={
+                  isUploading ||
+                  !file ||
+                  (file.status !== "pending" && file.status !== "error")
+                }
+              >
+                {isUploading ? "Uploading..." : "Upload File"}
+              </button>
             </div>
           </div>
         )}
-
-        {/* Upload Statistics */}
-        <UploadStatistics files={files} />
       </div>
     </ComponentCard>
   );

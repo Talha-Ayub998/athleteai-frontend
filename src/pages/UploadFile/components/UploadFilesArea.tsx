@@ -26,7 +26,7 @@ const UploadFilesArea = ({
       <input
         ref={fileInputRef}
         type="file"
-        multiple
+        accept=".xlsx"
         onChange={handleInputChange}
         disabled={disabled}
         className={`absolute inset-0 w-full h-full opacity-0 ${
@@ -63,10 +63,10 @@ const UploadFilesArea = ({
           }`}
         >
           {disabled
-            ? "Maximum files selected"
+            ? "File selected"
             : isDragOver
-            ? "Drop files here"
-            : "Choose files or drag & drop"}
+            ? "Drop file here"
+            : "Choose an Excel file or drag & drop"}
         </h4>
 
         <p
@@ -77,8 +77,8 @@ const UploadFilesArea = ({
           }`}
         >
           {disabled
-            ? "Remove files to add more"
-            : "Support for multiple file formats"}
+            ? "Remove file to add another"
+            : "Only .xlsx Excel file is supported"}
         </p>
 
         <button

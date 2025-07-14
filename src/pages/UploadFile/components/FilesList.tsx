@@ -4,7 +4,7 @@ import UploadProgress from "./UploadProgress";
 import RemoveButton from "./RemoveButton";
 import FileIconSection from "./FileIcon";
 
-const FilesList = ({ files, uploadProgress, removeFile }) => {
+const FilesList = ({ files, removeFile }) => {
   return (
     <div className="space-y-2">
       {files.map((file) => (
@@ -19,7 +19,7 @@ const FilesList = ({ files, uploadProgress, removeFile }) => {
           <FileInfo file={file} />
 
           {/* Upload Progress */}
-          <UploadProgress file={file} uploadProgress={uploadProgress} />
+          <UploadProgress file={file} />
 
           {/* Remove Button */}
           <RemoveButton file={file} removeFile={removeFile} />
