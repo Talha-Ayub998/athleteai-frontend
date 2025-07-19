@@ -15,7 +15,6 @@ import ActionButtons from "./components/ActionButtons";
 import Statistics from "./components/Statistics";
 import NoReportFound from "./components/NoReportFound";
 import LoadingReports from "./components/LoadingReports";
-import { formatFileSize } from "../../../utils/files/formatFileSize";
 import axiosInstance from "../../../api/axiosInstance";
 import { getSortedReports } from "../../../utils/reports/getSortedReports";
 import FileIcon from "../../../components/common/FileIcon";
@@ -30,7 +29,7 @@ const ReportsList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [sortConfig, setSortConfig] = useState({
-    key: "original_name",
+    key: "filename",
     direction: "asc",
   });
 
@@ -47,7 +46,17 @@ const ReportsList = () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get("/reports/my-files/");
-      setReports(response.data);
+      // Change all filenames from .xlsx to .pdf
+      const updatedReports = response.data.map((report) => {
+        if (report.filename && report.filename.endsWith(".xlsx")) {
+          return {
+            ...report,
+            filename: report.filename.replace(/\.xlsx$/i, ".pdf"),
+          };
+        }
+        return report;
+      });
+      setReports(updatedReports);
       setSelectedItems(new Set()); // Clear selections when data refreshes
     } catch (error) {
       console.error("Error fetching reports:", error);
@@ -72,7 +81,7 @@ const ReportsList = () => {
     if (selectedItems.size === reports.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(reports.map((report) => report.key)));
+      setSelectedItems(new Set(reports.map((report) => report.id)));
     }
   };
 
@@ -104,14 +113,14 @@ const ReportsList = () => {
 
     try {
       const selectedReports = reports.filter((report) =>
-        selectedItems.has(report.key)
+        selectedItems.has(report.id)
       );
 
       for (const report of selectedReports) {
         // Create a temporary link element to trigger download
         const link = document.createElement("a");
         link.href = report.url;
-        link.download = report.original_name;
+        link.download = report.filename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -127,34 +136,21 @@ const ReportsList = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (selectedItems.size === 0) {
-      alert("Please select files to delete.");
-      return;
-    }
+  // Common delete function
+  const deleteReports = async (ids) => {
+    console.log(ids);
 
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete ${selectedItems.size} selected file(s)? This action cannot be undone.`
-    );
-
-    if (!confirmDelete) return;
-
+    if (!Array.isArray(ids) || ids.length === 0) return;
     setIsDeleting(true);
-
     try {
-      const keys = Array.from(selectedItems); // assuming selectedItems is a Set of file keys
-
       await axios.delete(`${baseUrl}/reports/delete/`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        data: { keys }, // correct format as shown in Postman screenshot
+        data: { ids: ids },
       });
-
-      alert(`Successfully deleted ${selectedItems.size} file(s).`);
-
-      // Refresh the list
+      alert(`Successfully deleted ${ids.length} file(s).`);
       await getReportsList();
     } catch (error) {
       console.error("Error deleting files:", error);
@@ -162,6 +158,18 @@ const ReportsList = () => {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleDelete = async () => {
+    if (selectedItems.size === 0) {
+      alert("Please select files to delete.");
+      return;
+    }
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete ${selectedItems.size} selected file(s)? This action cannot be undone.`
+    );
+    if (!confirmDelete) return;
+    await deleteReports(Array.from(selectedItems));
   };
 
   if (!authToken) {
@@ -235,11 +243,11 @@ const ReportsList = () => {
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   >
                     <button
-                      onClick={() => requestSort("original_name")}
+                      onClick={() => requestSort("filename")}
                       className="flex items-center gap-1"
                     >
                       File
-                      {sortConfig.key === "original_name" ? (
+                      {sortConfig.key === "filename" ? (
                         sortConfig.direction === "asc" ? (
                           <ChevronUp className="w-4 h-4" />
                         ) : (
@@ -258,11 +266,11 @@ const ReportsList = () => {
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   >
                     <button
-                      onClick={() => requestSort("size_bytes")}
+                      onClick={() => requestSort("file_size_mb")}
                       className="flex items-center gap-1"
                     >
                       Size
-                      {sortConfig.key === "size_bytes" ? (
+                      {sortConfig.key === "file_size_mb" ? (
                         sortConfig.direction === "asc" ? (
                           <ChevronUp className="w-4 h-4" />
                         ) : (
@@ -281,11 +289,11 @@ const ReportsList = () => {
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                   >
                     <button
-                      onClick={() => requestSort("last_modified")}
+                      onClick={() => requestSort("uploaded_at")}
                       className="flex items-center gap-1"
                     >
                       Created At
-                      {sortConfig.key === "last_modified" ? (
+                      {sortConfig.key === "uploaded_at" ? (
                         sortConfig.direction === "asc" ? (
                           <ChevronUp className="w-4 h-4" />
                         ) : (
@@ -311,9 +319,9 @@ const ReportsList = () => {
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 {sortedReports.map((report) => (
                   <TableRow
-                    key={report.key}
+                    key={report.id}
                     className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
-                      selectedItems.has(report.key)
+                      selectedItems.has(report.id)
                         ? "bg-blue-50 dark:bg-blue-900/20"
                         : ""
                     }`}
@@ -321,39 +329,37 @@ const ReportsList = () => {
                     <TableCell className="px-6 py-4">
                       <input
                         type="checkbox"
-                        checked={selectedItems.has(report.key)}
+                        checked={selectedItems.has(report.id)}
                         onChange={(e) => {
                           e.stopPropagation();
-                          handleSelectItem(report.key);
+                          handleSelectItem(report.id);
                         }}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                     </TableCell>
 
-                    <TableCell className="px-6 py-4 ">
+                    <TableCell className="px-6 py-4">
                       <Link
-                        to={`/reports/${encodeURIComponent(
-                          report.original_name
-                        )}`}
-                        className="flex items-center hover:text-blue-600 dark:hover:text-blue-400"
+                        to={`/reports/${encodeURIComponent(report.filename)}`}
+                        className="flex items-center"
                       >
                         <div className="flex-shrink-0 mr-3">
-                          <FileIcon fileName={report.original_name} />
+                          <FileIcon fileName={report.filename} />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white hover:underline">
-                            {report.original_name}
+                          <p className="text-sm font-medium text-gray-900 dark:text-white  hover:text-blue-600 dark:hover:text-blue-500 hover:underline">
+                            {report.filename}
                           </p>
                         </div>
                       </Link>
                     </TableCell>
 
                     <TableCell className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                      {formatFileSize(report.size_bytes)}
+                      {report.file_size_mb ? `${report.file_size_mb} MB` : "-"}
                     </TableCell>
 
                     <TableCell className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                      {formatDate(report.last_modified)}
+                      {formatDate(report.uploaded_at)}
                     </TableCell>
 
                     <TableCell className="px-6 py-4">
@@ -363,7 +369,7 @@ const ReportsList = () => {
                             e.stopPropagation();
                             const link = document.createElement("a");
                             link.href = report.url;
-                            link.download = report.original_name;
+                            link.download = report.filename;
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
@@ -378,28 +384,10 @@ const ReportsList = () => {
                           onClick={async (e) => {
                             e.stopPropagation();
                             const confirmDelete = window.confirm(
-                              `Are you sure you want to delete "${report.original_name}"?`
+                              `Are you sure you want to delete "${report.filename}"?`
                             );
                             if (confirmDelete) {
-                              try {
-                                await axios.delete(
-                                  `${baseUrl}/reports/delete/`,
-                                  {
-                                    headers: {
-                                      Authorization: `Bearer ${authToken}`,
-                                      "Content-Type": "application/json",
-                                    },
-                                    data: {
-                                      keys: [report.key], // Send in array format as required by backend
-                                    },
-                                  }
-                                );
-                                alert("File deleted successfully.");
-                                await getReportsList();
-                              } catch (error) {
-                                console.error("Error deleting file:", error);
-                                alert("Failed to delete file.");
-                              }
+                              await deleteReports([report.id]);
                             }
                           }}
                           className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"

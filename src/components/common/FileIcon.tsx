@@ -23,7 +23,7 @@ const FileIcon = ({ fileName }) => {
   if (["pdf", "doc", "docx", "txt"].includes(extension)) {
     return <FileText className="w-5 h-5 text-red-500" />;
   }
-  if (["sheet"].includes(extension)) {
+  if (["sheet", "xlsx"].includes(extension)) {
     return <FileSpreadsheet className="w-5 h-5 text-blue-500" />;
   }
 
