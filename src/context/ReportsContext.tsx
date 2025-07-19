@@ -20,7 +20,7 @@ export const ReportsProvider = ({ children }) => {
       setError(null);
 
       try {
-        const response = await axiosInstance.get("/reports/my-files");
+        const response = await axiosInstance.get("/reports/my-files/");
         const reportsData = response.data;
 
         setReports(reportsData);

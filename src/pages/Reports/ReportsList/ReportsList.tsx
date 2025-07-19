@@ -39,17 +39,8 @@ const ReportsList = () => {
       alert("Authentication token not found. Please log in again.");
       return;
     }
-    fetchReports(true);
+    fetchReports();
   }, []);
-
-  // Clear selections when reports change
-  useEffect(() => {
-    if (selectedItems.size === (reports?.length || 0)) {
-      setSelectedItems(new Set());
-    } else {
-      setSelectedItems(new Set((reports || []).map((report) => report.id)));
-    }
-  }, [reports]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);

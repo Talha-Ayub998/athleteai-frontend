@@ -5,7 +5,7 @@ export const getStatusText = (status) => {
     case "uploading":
       return "Uploading...";
     case "completed":
-      return "Complete";
+      return "Completed";
     case "error":
       return "Error";
     case "processing":
