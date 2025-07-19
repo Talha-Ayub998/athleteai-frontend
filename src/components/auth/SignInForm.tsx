@@ -19,8 +19,6 @@ export default function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const baseUrl = import.meta.env.VITE_API_BASE_URL;
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -34,16 +32,17 @@ export default function SignInForm() {
     setLoading(true);
     setError("");
 
-    const { email, password } = formData;
+    const { email } = formData;
+    const loginData = { ...formData, email: email ? email.toLowerCase() : "" };
 
-    if (!email || !password) {
+    if (!loginData.email || !loginData.password) {
       setError("Please enter both email and password.");
       setLoading(false);
       return;
     }
 
     try {
-      const response = await axiosInstance.post("/users/login/", formData);
+      const response = await axiosInstance.post("/users/login/", loginData);
 
       if (response.status === 200 || response.status === 201) {
         const { access, refresh, user } = response.data;

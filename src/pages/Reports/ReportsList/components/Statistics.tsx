@@ -7,7 +7,7 @@ const Statistics = ({ reports, selectedItems }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="text-center">
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {reports.length}
+            {reports?.length}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Total Files
@@ -21,7 +21,8 @@ const Statistics = ({ reports, selectedItems }) => {
         </div>
         <div className="text-center">
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {reports.reduce((total, report) => total + report.size_bytes, 0) > 0
+            {reports?.reduce((total, report) => total + report.size_bytes, 0) >
+            0
               ? formatFileSize(
                   reports.reduce(
                     (total, report) => total + report.size_bytes,

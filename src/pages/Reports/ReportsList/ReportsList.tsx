@@ -1,5 +1,5 @@
 // import axios from "axios"; // Import axios in your project
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Download, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Table,
@@ -15,16 +15,17 @@ import ActionButtons from "./components/ActionButtons";
 import Statistics from "./components/Statistics";
 import NoReportFound from "./components/NoReportFound";
 import LoadingReports from "./components/LoadingReports";
-import axiosInstance from "../../../api/axiosInstance";
+// import axiosInstance from "../../../api/axiosInstance";
 import { getSortedReports } from "../../../utils/reports/getSortedReports";
 import FileIcon from "../../../components/common/FileIcon";
+import { ReportsContext } from "../../../context/ReportsContext";
 
 const ReportsList = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const authToken = localStorage.getItem("authToken");
 
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // @ts-expect-error: Context is untyped for now
+  const { reports, loading, fetchReports } = useContext(ReportsContext);
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -38,32 +39,17 @@ const ReportsList = () => {
       alert("Authentication token not found. Please log in again.");
       return;
     }
-
-    getReportsList();
+    fetchReports(true);
   }, []);
 
-  const getReportsList = async () => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.get("/reports/my-files/");
-      // Change all filenames from .xlsx to .pdf
-      const updatedReports = response.data.map((report) => {
-        if (report.filename && report.filename.endsWith(".xlsx")) {
-          return {
-            ...report,
-            filename: report.filename.replace(/\.xlsx$/i, ".pdf"),
-          };
-        }
-        return report;
-      });
-      setReports(updatedReports);
-      setSelectedItems(new Set()); // Clear selections when data refreshes
-    } catch (error) {
-      console.error("Error fetching reports:", error);
-    } finally {
-      setLoading(false);
+  // Clear selections when reports change
+  useEffect(() => {
+    if (selectedItems.size === (reports?.length || 0)) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set((reports || []).map((report) => report.id)));
     }
-  };
+  }, [reports]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -78,7 +64,7 @@ const ReportsList = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedItems.size === reports.length) {
+    if (selectedItems.size === (reports?.length || 0)) {
       setSelectedItems(new Set());
     } else {
       setSelectedItems(new Set(reports.map((report) => report.id)));
@@ -138,8 +124,6 @@ const ReportsList = () => {
 
   // Common delete function
   const deleteReports = async (ids) => {
-    console.log(ids);
-
     if (!Array.isArray(ids) || ids.length === 0) return;
     setIsDeleting(true);
     try {
@@ -151,7 +135,7 @@ const ReportsList = () => {
         data: { ids: ids },
       });
       alert(`Successfully deleted ${ids.length} file(s).`);
-      await getReportsList();
+      await fetchReports(true);
     } catch (error) {
       console.error("Error deleting files:", error);
       alert("Failed to delete some files. Please try again.");
@@ -218,7 +202,7 @@ const ReportsList = () => {
         <div className="overflow-x-auto">
           {loading ? (
             <LoadingReports />
-          ) : reports.length === 0 ? (
+          ) : sortedReports?.length === 0 ? (
             <NoReportFound />
           ) : (
             <Table>
@@ -231,8 +215,8 @@ const ReportsList = () => {
                     <input
                       type="checkbox"
                       checked={
-                        selectedItems.size === reports.length &&
-                        reports.length > 0
+                        selectedItems.size === (reports?.length || 0) &&
+                        (reports?.length || 0) > 0
                       }
                       onChange={handleSelectAll}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"

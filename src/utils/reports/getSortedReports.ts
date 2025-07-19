@@ -1,4 +1,5 @@
 export const getSortedReports = (reports, sortConfig) => {
+  if (!Array.isArray(reports)) return [];
   const sortableItems = [...reports];
   if (!sortConfig.key) return sortableItems;
 

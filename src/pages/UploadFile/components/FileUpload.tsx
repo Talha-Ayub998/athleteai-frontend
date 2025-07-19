@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 import ComponentCard from "../../../components/common/ComponentCard";
 import axiosInstance from "../../../api/axiosInstance";
 import UploadFilesArea from "./UploadFilesArea";
 import FilesList from "./FilesList";
 import { Modal } from "../../../components/ui/modal";
+import { getStatusText } from "../../../utils/files/getStatusText";
 
 const FileUpload = () => {
   const [file, setFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0); // Single value
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
 
@@ -205,7 +207,7 @@ const FileUpload = () => {
             {isUploading && (
               <div className="mt-4">
                 <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  <span>Uploading file...</span>
+                  <span>{getStatusText(file.status)}</span>
                   <span>{uploadProgress}%</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -225,7 +227,7 @@ const FileUpload = () => {
                 Clear
               </button>
               <button
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-md transition-colors duration-200 flex items-center"
+                className="px-4 py-2 text-sm  font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-md transition-colors duration-200 flex items-center"
                 onClick={uploadFile}
                 disabled={
                   isUploading ||
@@ -233,7 +235,11 @@ const FileUpload = () => {
                   (file.status !== "pending" && file.status !== "error")
                 }
               >
-                {isUploading ? "Uploading..." : "Upload File"}
+                {isUploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Upload File"
+                )}
               </button>
             </div>
           </div>
