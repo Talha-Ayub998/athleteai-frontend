@@ -23,7 +23,18 @@ export const ReportsProvider = ({ children }) => {
         const response = await axiosInstance.get("/reports/my-files/");
         const reportsData = response.data;
 
-        setReports(reportsData);
+        // Convert all filenames from .xlsx to .pdf
+        const updatedReportsData = reportsData.map((report) => {
+          if (report.filename && report.filename.endsWith(".xlsx")) {
+            return {
+              ...report,
+              filename: report.filename.replace(/\.xlsx$/i, ".pdf"),
+            };
+          }
+          return report;
+        });
+
+        setReports(updatedReportsData);
         return reportsData;
       } catch (err) {
         console.error("Error fetching reports:", err);

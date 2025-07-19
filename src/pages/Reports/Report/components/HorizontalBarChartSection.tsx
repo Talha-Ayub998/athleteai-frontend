@@ -1,14 +1,20 @@
 import HorizontalBarChart from "./HorizontalBarChart";
 
-const OffensiveMoveAnalysisSection = ({ data, takeaway }) => (
+const HorizontalBarChartSection = ({
+  data,
+  takeaway,
+  sectionTitle,
+  chartTitle,
+  valuesTitle,
+}) => (
   <div>
     <h2 className="text-xl font-bold text-brand-500 dark:text-brand-400 mb-2">
-      Offensive Move Analysis
+      {sectionTitle}
     </h2>
     <HorizontalBarChart
       data={data}
-      title="Top Offensive Successes"
-      xLabel="Number of Successful Offense Attempts"
+      title={chartTitle}
+      xLabel={valuesTitle}
       yLabel="Move Name"
     />
     <div className="mt-4">
@@ -20,4 +26,4 @@ const OffensiveMoveAnalysisSection = ({ data, takeaway }) => (
   </div>
 );
 
-export default OffensiveMoveAnalysisSection;
+export default HorizontalBarChartSection;

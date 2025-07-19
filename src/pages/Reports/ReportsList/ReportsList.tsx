@@ -19,6 +19,7 @@ import LoadingReports from "./components/LoadingReports";
 import { getSortedReports } from "../../../utils/reports/getSortedReports";
 import FileIcon from "../../../components/common/FileIcon";
 import { ReportsContext } from "../../../context/ReportsContext";
+import { formatDate } from "../../../utils/reports/formatDate";
 
 const ReportsList = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -39,20 +40,12 @@ const ReportsList = () => {
       alert("Authentication token not found. Please log in again.");
       return;
     }
-    fetchReports();
+    if (reports && reports.length == 0) {
+      fetchReports(true);
+    } else {
+      fetchReports();
+    }
   }, []);
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return (
-      date.toLocaleDateString() +
-      " " +
-      date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    );
-  };
 
   const handleSelectAll = () => {
     if (selectedItems.size === (reports?.length || 0)) {
@@ -315,7 +308,7 @@ const ReportsList = () => {
 
                     <TableCell className="px-6 py-4">
                       <Link
-                        to={`/reports/${encodeURIComponent(report.filename)}`}
+                        to={`/reports/${report.id}`}
                         className="flex items-center"
                       >
                         <div className="flex-shrink-0 mr-3">
