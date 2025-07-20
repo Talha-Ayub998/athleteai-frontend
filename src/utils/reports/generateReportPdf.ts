@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, PDFFont, PDFPage } from "pdf-lib";
 import ApexCharts from "apexcharts";
 
 // Ensure ApexCharts is available globally for exec
@@ -61,6 +61,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
     return result.imgURI;
   }
 
+  // Get all chart images
   const [
     offenseSuccessImg,
     offenseAttemptsImg,
@@ -77,11 +78,23 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
   let page = pdfDoc.addPage([595, 842]); // A4
   let y = 800;
   const left = 50;
+  const right = 545;
   const lineHeight = 20;
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  function addSectionTitle(title: string) {
+  // Helper function to check if new page is needed
+  function checkNewPage(requiredSpace: number = 40): void {
+    if (y < requiredSpace) {
+      page = pdfDoc.addPage([595, 842]);
+      y = 800;
+    }
+  }
+
+  // Add section title with more spacing
+  function addSectionTitle(title: string): void {
+    checkNewPage(80);
+    y -= lineHeight * 0.5; // Add space before section title
     page.drawText(title, {
       x: left,
       y,
@@ -89,64 +102,166 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
       font: boldFont,
       color: rgb(0.2, 0.2, 0.6),
     });
-    y -= lineHeight;
+    y -= lineHeight * 1.5; // More space after title
   }
-  function addBullets(items: string[]) {
+
+  // Add bullet points with proper text wrapping
+  function addBullets(items: string[]): void {
     for (const item of items) {
-      page.drawText(`• ${item}`, { x: left + 10, y, size: 11, font });
-      y -= lineHeight * 0.9;
-      if (y < 80) {
-        y = 800;
-        page = pdfDoc.addPage([595, 842]);
+      const bulletLines = wrapText(`• ${item}`, right - left - 20, 11, font);
+      let isFirstLine = true;
+
+      for (const line of bulletLines) {
+        checkNewPage();
+        const xPos = isFirstLine ? left + 10 : left + 20; // Indent continuation lines
+        page.drawText(line.replace("• ", isFirstLine ? "• " : ""), {
+          x: xPos,
+          y,
+          size: 11,
+          font,
+        });
+        y -= lineHeight * 0.9;
+        isFirstLine = false;
       }
     }
-    y -= lineHeight * 0.5;
+    y -= lineHeight * 1.2; // More spacing after section
   }
-  function addNumbered(items: string[]) {
+
+  // Add numbered list with proper text wrapping
+  function addNumbered(items: string[]): void {
     items.forEach((item, idx) => {
-      page.drawText(`${idx + 1}. ${item}`, { x: left + 10, y, size: 11, font });
-      y -= lineHeight * 0.9;
-      if (y < 80) {
-        y = 800;
-        page = pdfDoc.addPage([595, 842]);
+      const numberedLines = wrapText(
+        `${idx + 1}. ${item}`,
+        right - left - 20,
+        11,
+        font
+      );
+      let isFirstLine = true;
+
+      for (const line of numberedLines) {
+        checkNewPage();
+        const xPos = isFirstLine ? left + 10 : left + 25; // Indent continuation lines more
+        page.drawText(
+          line.replace(`${idx + 1}. `, isFirstLine ? `${idx + 1}. ` : ""),
+          {
+            x: xPos,
+            y,
+            size: 11,
+            font,
+          }
+        );
+        y -= lineHeight * 0.9;
+        isFirstLine = false;
       }
     });
-    y -= lineHeight * 0.5;
+    y -= lineHeight * 1.2; // More spacing after section
   }
-  async function addChartSection(title: string, img: string, caption: string) {
+
+  // Add chart section with image and analysis
+  async function addChartSection(
+    title: string,
+    img: string,
+    analysis: string
+  ): Promise<void> {
     addSectionTitle(title);
-    const imageBytes = dataUriToBytes(img);
-    const pngImage = await pdfDoc.embedPng(imageBytes);
-    const imgDims = pngImage.scale(0.5);
-    page.drawImage(pngImage, {
-      x: left,
-      y: y - imgDims.height,
-      width: imgDims.width,
-      height: imgDims.height,
-    });
-    y -= imgDims.height + 10;
-    page.drawText(caption, {
-      x: left,
-      y,
-      size: 11,
-      font,
-      color: rgb(0.2, 0.2, 0.2),
-    });
-    y -= lineHeight * 1.5;
-    if (y < 80) {
-      y = 800;
-      page = pdfDoc.addPage([595, 842]);
+
+    try {
+      const imageBytes = dataUriToBytes(img);
+      const pngImage = await pdfDoc.embedPng(imageBytes);
+      const imgDims = pngImage.scale(0.45); // Slightly smaller for better fit
+
+      checkNewPage(imgDims.height + 80);
+
+      page.drawImage(pngImage, {
+        x: left,
+        y: y - imgDims.height,
+        width: imgDims.width,
+        height: imgDims.height,
+      });
+
+      y -= imgDims.height + 15;
+
+      // Add "Key Takeaway" subtitle
+      page.drawText("Key Takeaway", {
+        x: left,
+        y,
+        size: 12,
+        font: boldFont,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+      y -= lineHeight;
+
+      // Add analysis text with proper wrapping
+      const analysisLines = wrapText(analysis, right - left, 11, font);
+      for (const line of analysisLines) {
+        checkNewPage();
+        page.drawText(line, {
+          x: left,
+          y,
+          size: 11,
+          font,
+          color: rgb(0.2, 0.2, 0.2),
+        });
+        y -= lineHeight * 0.9;
+      }
+
+      y -= lineHeight * 1.5; // More spacing after chart section
+    } catch (error) {
+      console.error(`Error adding chart ${title}:`, error);
+      // Continue without the chart if there's an error
+      page.drawText(`[Chart could not be loaded: ${title}]`, {
+        x: left,
+        y,
+        size: 11,
+        font,
+        color: rgb(0.8, 0.2, 0.2),
+      });
+      y -= lineHeight * 2;
     }
   }
-  // --- Title & Info ---
-  page.drawText(`Jiu-Jitsu Match Report`, {
+
+  // Text wrapping function
+  function wrapText(
+    text: string,
+    maxWidth: number,
+    size: number,
+    font: PDFFont
+  ): string[] {
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let current = "";
+
+    for (const word of words) {
+      const test = current ? `${current} ${word}` : word;
+      if (font.widthOfTextAtSize(test, size) > maxWidth) {
+        if (current) {
+          lines.push(current);
+          current = word;
+        } else {
+          // Handle very long words
+          lines.push(word);
+          current = "";
+        }
+      } else {
+        current = test;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  }
+
+  // === PDF CONTENT GENERATION ===
+
+  // Title and Header Information
+  page.drawText(`Jiu-Jitsu Athlete Performance Analysis`, {
     x: left,
     y,
-    size: 22,
+    size: 20,
     font: boldFont,
     color: rgb(0.1, 0.1, 0.1),
   });
-  y -= lineHeight * 1.5;
+  y -= lineHeight * 1.8;
+
   page.drawText(`Athlete: ${report.pdf_data.athlete_name}`, {
     x: left,
     y,
@@ -154,99 +269,85 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
     font: boldFont,
   });
   y -= lineHeight;
+
   page.drawText(
-    `Report Date: ${report.pdf_data.report_date || report.uploaded_at}`,
+    `Report Date: ${
+      report.pdf_data.report_date ||
+      new Date(report.uploaded_at).toLocaleDateString()
+    }`,
     { x: left, y, size: 12, font }
   );
-  y -= lineHeight;
-  page.drawText(`Filename: ${report.filename}`, { x: left, y, size: 12, font });
-  y -= lineHeight;
-  page.drawText(`Uploaded by: ${report.uploaded_by}`, {
-    x: left,
-    y,
-    size: 12,
-    font,
-  });
-  y -= lineHeight * 1.5;
-  // --- Submissions ---
+  y -= lineHeight * 1.8;
+
+  // Submissions Section
   addSectionTitle("Submissions");
   addBullets(report.pdf_data.submissions);
-  // --- Match Types ---
+
+  // Match Types Section
   addSectionTitle("Match Types");
   addBullets(report.pdf_data.match_types);
-  // --- Win/Loss Ratio ---
+
+  // Win/Loss Ratio Section
   addSectionTitle("Win/Loss Ratio");
   addBullets(report.pdf_data["win/loss_ratio"]);
-  // --- Points ---
+
+  // Points Section
   addSectionTitle("Points");
-  addNumbered(report.pdf_data.points);
-  // --- Charts Section ---
+  addBullets(report.pdf_data.points); // Changed from addNumbered to addBullets to match sample PDF
+
+  // Charts Sections
   await addChartSection(
     "Offensive Move Analysis",
     offenseSuccessImg,
     report.pdf_data.offensive_analysis.successful
   );
+
   await addChartSection(
     "Offensive Attempts",
     offenseAttemptsImg,
     report.pdf_data.offensive_analysis.attempted
   );
+
   await addChartSection(
     "Defensive Move Analysis",
     defenseSuccessImg,
     report.pdf_data.defensive_analysis.successful
   );
+
   await addChartSection(
     "Defensive Attempts",
     defenseAttemptsImg,
     report.pdf_data.defensive_analysis.attempted
   );
-  // --- Key Takeaways ---
-  addSectionTitle("Key Takeaways");
-  const wrapText = (
-    text: string,
-    maxWidth: number,
-    size: number,
-    font: unknown
-  ) => {
-    const words = text.split(" ");
-    const lines: string[] = [];
-    let current = "";
-    for (const word of words) {
-      const test = current ? `${current} ${word}` : word;
-      // @ts-expect-error: font is a pdf-lib font object
-      if (font.widthOfTextAtSize(test, size) > maxWidth) {
-        lines.push(current);
-        current = word;
-      } else {
-        current = test;
-      }
-    }
-    if (current) lines.push(current);
-    return lines;
-  };
+
+  // Final Analysis & Recommendation Section
+  addSectionTitle("Final Analysis & Recommendation");
+
   const summaryLines = wrapText(
     report.pdf_data.final_summary.text,
-    495,
+    right - left,
     11,
     font
   );
+
   for (const line of summaryLines) {
+    checkNewPage();
     page.drawText(line, { x: left, y, size: 11, font });
     y -= lineHeight * 0.9;
-    if (y < 80) {
-      y = 800;
-      page = pdfDoc.addPage([595, 842]);
-    }
   }
+
+  // Add disclaimer if present
   if (report.pdf_data.final_summary.disclaimer) {
+    y -= lineHeight * 1.0; // More space before disclaimer
     const disclaimerLines = wrapText(
       report.pdf_data.final_summary.disclaimer,
-      495,
+      right - left,
       9,
       font
     );
+
     for (const line of disclaimerLines) {
+      checkNewPage();
       page.drawText(line, {
         x: left,
         y,
@@ -255,19 +356,33 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
         color: rgb(0.7, 0.2, 0.2),
       });
       y -= lineHeight * 0.8;
-      if (y < 80) {
-        y = 800;
-        page = pdfDoc.addPage([595, 842]);
-      }
     }
   }
-  // --- Download PDF ---
-  const pdfBytes = await pdfDoc.save();
-  const blob = new Blob([pdfBytes], { type: "application/pdf" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `${report.pdf_data.athlete_name}_report.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+
+  // Generate and download PDF
+  try {
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.href = url;
+    link.download = `${report.pdf_data.athlete_name.replace(
+      /\s+/g,
+      "_"
+    )}_Jiu_Jitsu_Report.pdf`;
+
+    // Ensure the link is added to DOM for download to work in all browsers
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up the object URL
+    URL.revokeObjectURL(url);
+
+    console.log("PDF generated successfully!");
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    throw new Error("Failed to generate PDF report");
+  }
 }
