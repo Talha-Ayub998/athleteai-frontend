@@ -34,7 +34,6 @@ export default function VerticalBarChart({
       bar: {
         horizontal: false,
         columnWidth: "80%",
-        barHeight: 30,
         borderRadius: 5,
         borderRadiusApplication: "end",
       },
@@ -51,6 +50,10 @@ export default function VerticalBarChart({
       categories: categories,
       title: {
         text: xLabel,
+        style: {
+          fontSize: "16px",
+          fontWeight: 400,
+        },
       },
       axisBorder: {
         show: false,
@@ -68,6 +71,10 @@ export default function VerticalBarChart({
     yaxis: {
       title: {
         text: yLabel,
+        style: {
+          fontSize: "16px",
+          fontWeight: 400,
+        },
       },
     },
     grid: {
@@ -103,7 +110,7 @@ export default function VerticalBarChart({
   ];
   return (
     <div className="max-w-full overflow-x-auto custom-scrollbar">
-      <div id="chartOne" className="min-w-[1000px]">
+      <div id="chartOne" className="min-w-[500px]">
         <Chart options={options} series={series} type="bar" height={400} />
       </div>
     </div>

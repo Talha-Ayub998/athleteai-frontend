@@ -235,17 +235,11 @@ const Report = () => {
           }}
         >
           {pdfLoading ? (
-            <div
-              className="flex items-center gap-2
-            "
-            >
-              <Loader className="w-4 h-4" /> Generating PDF...{" "}
+            <div className="flex items-center gap-2">
+              <Loader className="w-4 h-4" /> Generating PDF...
             </div>
           ) : (
-            <div
-              className="flex items-center gap-2
-            "
-            >
+            <div className="flex items-center gap-2">
               <Download className="w-4 h-4" />
               Download Report
             </div>

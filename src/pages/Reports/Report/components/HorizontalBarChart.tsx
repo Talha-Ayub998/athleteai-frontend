@@ -49,7 +49,7 @@ export default function HorizontalBarChart({
       title: {
         text: xLabel,
         style: {
-          fontSize: "14px",
+          fontSize: "16px",
           fontWeight: 400,
         },
       },
@@ -70,7 +70,7 @@ export default function HorizontalBarChart({
       title: {
         text: yLabel,
         style: {
-          fontSize: "14px",
+          fontSize: "16px",
           fontWeight: 400,
         },
       },
@@ -108,8 +108,8 @@ export default function HorizontalBarChart({
   ];
   return (
     <div className="max-w-full overflow-x-auto custom-scrollbar">
-      <div id="chartOne" className="w-full">
-        <Chart options={options} series={series} type="bar" height={400} />
+      <div id="chartOne" className="min-w-[500px]">
+        <Chart options={options} series={series} type="bar" height={500} />
       </div>
     </div>
   );
