@@ -1,7 +1,6 @@
 import Heading from "./components/Heading";
 import HorizontalBarChartSection from "./components/HorizontalBarChartSection";
 import VerticalBarChartSection from "./components/VerticalBarChartSection";
-import FinalAnalysisSection from "./components/FinalAnalysisSection";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import SectionWrapper from "./components/SectionWrapper";
 import { useParams } from "react-router-dom";
@@ -10,6 +9,7 @@ import { ReportsContext } from "../../../context/ReportsContext";
 import ReportNotFound from "./components/ReportNotFound";
 import ListSection from "./components/ListSection";
 import LoadingReports from "../ReportsList/components/LoadingReports";
+import FinalAnalysisSection from "./components/FinalAnalysisSection";
 
 // Type definitions for component props
 interface HeadingProps {
@@ -194,7 +194,7 @@ const Report = () => {
         ),
         takeaway: report.pdf_data.defensive_analysis.attempted,
         sectionTitle: "Defensive Attempts",
-        chartTitle: "Defensive Attempt",
+        chartTitle: "Def",
         valuesTitle: "Number of Defence Attempts",
       },
     },
