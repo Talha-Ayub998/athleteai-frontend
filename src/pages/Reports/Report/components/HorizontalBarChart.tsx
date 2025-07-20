@@ -6,6 +6,7 @@ interface HorizontalBarChartProps {
   title: string;
   xLabel: string;
   yLabel: string;
+  chartId: string;
 }
 
 export default function HorizontalBarChart({
@@ -13,6 +14,7 @@ export default function HorizontalBarChart({
   title,
   xLabel,
   yLabel,
+  chartId,
 }: HorizontalBarChartProps) {
   const categories = data.map((item) => item.name);
   const seriesData = data.map((item) => item.value);
@@ -20,6 +22,7 @@ export default function HorizontalBarChart({
   const options: ApexOptions = {
     colors: ["#465fff"],
     chart: {
+      id: chartId,
       fontFamily: "Outfit, sans-serif",
       type: "bar",
       toolbar: {

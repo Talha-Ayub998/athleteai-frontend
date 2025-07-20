@@ -6,6 +6,7 @@ interface VerticalBarChartProps {
   title: string;
   xLabel: string;
   yLabel: string;
+  chartId: string;
 }
 
 export default function VerticalBarChart({
@@ -13,6 +14,7 @@ export default function VerticalBarChart({
   title,
   xLabel,
   yLabel,
+  chartId,
 }: VerticalBarChartProps) {
   const categories = data.map((item) => item.name);
   const seriesData = data.map((item) => item.value);
@@ -20,6 +22,7 @@ export default function VerticalBarChart({
   const options: ApexOptions = {
     colors: ["#465fff"],
     chart: {
+      id: chartId,
       fontFamily: "Outfit, sans-serif",
       type: "bar",
       height: 180,

@@ -1,6 +1,6 @@
 // import axios from "axios"; // Import axios in your project
 import React, { useEffect, useState, useContext } from "react";
-import { Download, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { Trash2, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -328,22 +328,6 @@ const ReportsList = () => {
 
                     <TableCell className="px-6 py-4">
                       <div className="flex space-x-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const link = document.createElement("a");
-                            link.href = report.url;
-                            link.download = report.filename;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                          title="Download"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-
                         <button
                           onClick={async (e) => {
                             e.stopPropagation();

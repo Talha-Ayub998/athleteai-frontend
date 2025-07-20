@@ -6,6 +6,7 @@ const VerticalBarChartSection = ({
   sectionTitle,
   chartTitle,
   valuesTitle,
+  chartId,
 }) => (
   <div>
     <h2 className="text-xl font-bold text-brand-500 dark:text-brand-400 mb-2">
@@ -16,6 +17,7 @@ const VerticalBarChartSection = ({
       title={chartTitle}
       xLabel="Move Name"
       yLabel={valuesTitle}
+      chartId={chartId}
     />
     <div className="mt-4">
       <h3 className="font-bold text-brand-500 dark:text-brand-400">

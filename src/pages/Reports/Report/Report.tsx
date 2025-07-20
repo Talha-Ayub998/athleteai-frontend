@@ -4,12 +4,15 @@ import VerticalBarChartSection from "./components/VerticalBarChartSection";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import SectionWrapper from "./components/SectionWrapper";
 import { useParams } from "react-router-dom";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { ReportsContext } from "../../../context/ReportsContext";
 import ReportNotFound from "./components/ReportNotFound";
 import ListSection from "./components/ListSection";
 import LoadingReports from "../ReportsList/components/LoadingReports";
 import FinalAnalysisSection from "./components/FinalAnalysisSection";
+import Button from "../../../components/ui/button/Button";
+import { generateReportPdf } from "../../../utils/reports/generateReportPdf";
+import { Download, Loader } from "lucide-react";
 
 // Type definitions for component props
 interface HeadingProps {
@@ -40,6 +43,7 @@ interface ChartSectionProps {
   sectionTitle: string;
   chartTitle: string;
   valuesTitle: string;
+  chartId: string;
 }
 
 // Union type for all possible props
@@ -60,8 +64,6 @@ const Report = () => {
 
   const reportId = param.reportId;
 
-  console.log("reportId", reportId);
-
   // @ts-expect-error: Context is untyped for now
   const { reports, fetchReports, loading } = useContext(ReportsContext);
 
@@ -78,6 +80,8 @@ const Report = () => {
     : null;
 
   console.log("report", report);
+
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   // Show loading while fetching reports
   if (loading) {
@@ -151,6 +155,7 @@ const Report = () => {
         sectionTitle: "Offensive Move Analysis",
         chartTitle: "Offensive Move",
         valuesTitle: "Number of Successful Offense Attempts",
+        chartId: "offense-successes-chart",
       },
     },
     {
@@ -166,6 +171,7 @@ const Report = () => {
         sectionTitle: "Offensive Attempts",
         chartTitle: "Offensive Attempt",
         valuesTitle: "Number of Offense Attempts",
+        chartId: "offense-attempts-chart",
       },
     },
     {
@@ -181,6 +187,7 @@ const Report = () => {
         sectionTitle: "Defensive Move Analysis",
         chartTitle: "Defensive Move",
         valuesTitle: "Number of Successful Defence Attempts",
+        chartId: "defense-successes-chart",
       },
     },
     {
@@ -196,6 +203,7 @@ const Report = () => {
         sectionTitle: "Defensive Attempts",
         chartTitle: "Def",
         valuesTitle: "Number of Defence Attempts",
+        chartId: "defense-attempts-chart",
       },
     },
     {
@@ -213,7 +221,37 @@ const Report = () => {
         pageTitle="Athlete's Report"
         path={["Reports", report.pdf_data.athlete_name]}
       />
-
+      <div className="justify-self-end">
+        <Button
+          disabled={pdfLoading}
+          size="sm"
+          onClick={async () => {
+            setPdfLoading(true);
+            try {
+              await generateReportPdf(report);
+            } finally {
+              setPdfLoading(false);
+            }
+          }}
+        >
+          {pdfLoading ? (
+            <div
+              className="flex items-center gap-2
+            "
+            >
+              <Loader className="w-4 h-4" /> Generating PDF...{" "}
+            </div>
+          ) : (
+            <div
+              className="flex items-center gap-2
+            "
+            >
+              <Download className="w-4 h-4" />
+              Download Report
+            </div>
+          )}
+        </Button>
+      </div>
       {sections.map(({ Component, props }, idx) => (
         <SectionWrapper key={idx}>
           <Component {...props} />
