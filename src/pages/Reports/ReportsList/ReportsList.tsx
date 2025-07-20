@@ -40,11 +40,7 @@ const ReportsList = () => {
       alert("Authentication token not found. Please log in again.");
       return;
     }
-    if (reports && reports.length == 0) {
-      fetchReports(true);
-    } else {
-      fetchReports();
-    }
+    fetchReports(true);
   }, []);
 
   const handleSelectAll = () => {
