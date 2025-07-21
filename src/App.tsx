@@ -115,19 +115,6 @@ export default function App() {
               <Route path="reports" element={<ReportsList />} />
               <Route path="reports/:reportId" element={<Report />} />
               <Route path="upload-file" element={<UploadFile />} />
-              <Route path="profile" element={<UserProfiles />} />
-              <Route path="calendar" element={<Calendar />} />
-              <Route path="blank" element={<Blank />} />
-              <Route path="form-elements" element={<FormElements />} />
-              <Route path="basic-tables" element={<BasicTables />} />
-              <Route path="alerts" element={<Alerts />} />
-              <Route path="avatars" element={<Avatars />} />
-              <Route path="badge" element={<Badges />} />
-              <Route path="buttons" element={<Buttons />} />
-              <Route path="images" element={<Images />} />
-              <Route path="videos" element={<Videos />} />
-              <Route path="line-chart" element={<LineChart />} />
-              <Route path="bar-chart" element={<BarChart />} />
             </>
           )}
           {isAthlete && (
@@ -138,6 +125,21 @@ export default function App() {
             </>
           )}
         </Route>
+
+        {/* UI routes */}
+        <Route path="profile" element={<UserProfiles />} />
+        <Route path="calendar" element={<Calendar />} />
+        <Route path="blank" element={<Blank />} />
+        <Route path="form-elements" element={<FormElements />} />
+        <Route path="basic-tables" element={<BasicTables />} />
+        <Route path="alerts" element={<Alerts />} />
+        <Route path="avatars" element={<Avatars />} />
+        <Route path="badge" element={<Badges />} />
+        <Route path="buttons" element={<Buttons />} />
+        <Route path="images" element={<Images />} />
+        <Route path="videos" element={<Videos />} />
+        <Route path="line-chart" element={<LineChart />} />
+        <Route path="bar-chart" element={<BarChart />} />
 
         {/* Fallback for any unmatched routes */}
         <Route path="*" element={<NotFound />} />

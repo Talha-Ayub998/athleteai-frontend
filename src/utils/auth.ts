@@ -6,8 +6,7 @@
  */
 export const isAuthenticated = () => {
   const authToken = localStorage.getItem("authToken");
-  const userData = localStorage.getItem("userData");
 
   // A user is considered authenticated if both an auth token and user data exist.
-  return !!authToken && !!userData;
+  return !!authToken;
 };
