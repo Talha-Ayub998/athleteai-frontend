@@ -47,7 +47,7 @@ export default function SignInForm() {
       if (response.status === 200 || response.status === 201) {
         const { access, refresh, user } = response.data;
 
-        console.log("refresh on login", refresh);
+        // console.log("refresh on login", refresh);
 
         if (access) {
           localStorage.setItem("authToken", access);
@@ -55,10 +55,6 @@ export default function SignInForm() {
 
         if (refresh) {
           localStorage.setItem("refreshToken", JSON.stringify(refresh));
-        }
-
-        if (user) {
-          localStorage.setItem("userData", JSON.stringify(user));
         }
 
         navigate("/");

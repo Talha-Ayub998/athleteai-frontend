@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { Loader2 } from "lucide-react";
 import ComponentCard from "../../../components/common/ComponentCard";
 import axiosInstance from "../../../api/axiosInstance";
@@ -6,6 +6,7 @@ import UploadFilesArea from "./UploadFilesArea";
 import FilesList from "./FilesList";
 import { Modal } from "../../../components/ui/modal";
 import { getStatusText } from "../../../utils/files/getStatusText";
+import { ReportsContext } from "../../../context/ReportsContext";
 
 const FileUpload = () => {
   const [file, setFile] = useState(null);
@@ -14,6 +15,8 @@ const FileUpload = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
+
+  const { fetchReports } = useContext(ReportsContext);
 
   useEffect(() => {
     if (
@@ -117,6 +120,7 @@ const FileUpload = () => {
         },
       });
       setFile((prev) => ({ ...prev, status: "completed" }));
+      await fetchReports(true);
       console.log("File uploaded successfully:", response.data);
     } catch (error) {
       console.error("Error uploading file:", error);

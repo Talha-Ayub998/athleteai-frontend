@@ -1,7 +1,18 @@
 import { createContext, useCallback, useState } from "react";
 import axiosInstance from "../api/axiosInstance";
 
-export const ReportsContext = createContext({});
+export interface ReportsContextType {
+  reports: any; // or your actual type
+  loading: boolean;
+  error: string;
+  fetchReports: (forceRefresh?: boolean) => Promise<void>;
+  clearReports: () => void;
+  hasData: boolean;
+}
+
+export const ReportsContext = createContext<ReportsContextType | undefined>(
+  undefined
+);
 
 // Reports Provider Component
 export const ReportsProvider = ({ children }) => {

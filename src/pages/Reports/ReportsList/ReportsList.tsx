@@ -24,9 +24,8 @@ import { formatDate } from "../../../utils/reports/formatDate";
 const ReportsList = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const authToken = localStorage.getItem("authToken");
-
-  // @ts-expect-error: Context is untyped for now
   const { reports, loading, fetchReports } = useContext(ReportsContext);
+
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -40,7 +39,11 @@ const ReportsList = () => {
       alert("Authentication token not found. Please log in again.");
       return;
     }
-    fetchReports(true);
+    if (reports && reports.length == 0) {
+      fetchReports(true);
+    } else {
+      fetchReports();
+    }
   }, []);
 
   const handleSelectAll = () => {

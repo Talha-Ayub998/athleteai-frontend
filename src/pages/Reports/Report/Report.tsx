@@ -64,7 +64,6 @@ const Report = () => {
 
   const reportId = param.reportId;
 
-  // @ts-expect-error: Context is untyped for now
   const { reports, fetchReports, loading } = useContext(ReportsContext);
 
   // Fetch reports if not already loaded
