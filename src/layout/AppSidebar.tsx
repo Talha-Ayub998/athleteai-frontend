@@ -6,15 +6,19 @@ import {
   BoxCubeIcon,
   ChevronDownIcon,
   FileIcon,
+  GridIcon,
   HorizontaLDots,
   ListIcon,
+  PageIcon,
   PieChartIcon,
   PlugInIcon,
+  TableIcon,
   // CalenderIcon,
   // PageIcon,
   // TableIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
+import { useUserContext } from "../context/UserContext";
 // import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
@@ -24,12 +28,7 @@ type NavItem = {
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
-const navItems: NavItem[] = [
-  // {
-  //   icon: <GridIcon />,
-  //   name: "Dashboard",
-  //   subItems: [{ name: "Reports", path: "/home", pro: false }],
-  // },
+const athleteNavItems: NavItem[] = [
   {
     icon: <ListIcon />,
     name: "Reports",
@@ -40,24 +39,24 @@ const navItems: NavItem[] = [
     name: "Upload File",
     path: "/upload-file",
   },
-  // {
-  //   name: "Forms",
-  //   icon: <ListIcon />,
-  //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  // },
-  // {
-  //   name: "Tables",
-  //   icon: <TableIcon />,
-  //   subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  // },
-  // {
-  //   name: "Pages",
-  //   icon: <PageIcon />,
-  //   subItems: [
-  //     { name: "Blank Page", path: "/blank", pro: false },
-  //     { name: "404 Error", path: "/error-404", pro: false },
-  //   ],
-  // },
+];
+
+const adminNavItems: NavItem[] = [
+  {
+    icon: <ListIcon />,
+    name: "Reports",
+    path: "/reports",
+  },
+  {
+    icon: <FileIcon />,
+    name: "Upload File",
+    path: "/upload-file",
+  },
+  {
+    icon: <ListIcon />,
+    name: "Users List",
+    path: "/users-list",
+  },
 ];
 
 const othersItems: NavItem[] = [
@@ -89,11 +88,40 @@ const othersItems: NavItem[] = [
       { name: "Sign Up", path: "/signup", pro: false },
     ],
   },
+  {
+    icon: <GridIcon />,
+    name: "Dashboard",
+    subItems: [{ name: "Reports", path: "/home", pro: false }],
+  },
+  {
+    name: "Forms",
+    icon: <ListIcon />,
+    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
+  },
+  {
+    name: "Tables",
+    icon: <TableIcon />,
+    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
+  },
+  {
+    name: "Pages",
+    icon: <PageIcon />,
+    subItems: [
+      { name: "Blank Page", path: "/blank", pro: false },
+      { name: "404 Error", path: "/error-404", pro: false },
+    ],
+  },
 ];
 
 const AppSidebar: React.FC = () => {
+  const { user } = useUserContext();
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
+
+  // Determine main nav items based on user role
+  let navItems: NavItem[] = [];
+  if (user?.role === "admin") navItems = adminNavItems;
+  else if (user?.role === "athlete") navItems = athleteNavItems;
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";

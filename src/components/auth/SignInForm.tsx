@@ -7,6 +7,7 @@ import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
 import axiosInstance from "../../api/axiosInstance";
+import { useUserContext } from "../../context/UserContext";
 
 export default function SignInForm() {
   const navigate = useNavigate();
@@ -18,6 +19,8 @@ export default function SignInForm() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const { loadUser } = useUserContext();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,7 +48,7 @@ export default function SignInForm() {
       const response = await axiosInstance.post("/users/login/", loginData);
 
       if (response.status === 200 || response.status === 201) {
-        const { access, refresh, user } = response.data;
+        const { access, refresh } = response.data;
 
         // console.log("refresh on login", refresh);
 
@@ -56,6 +59,8 @@ export default function SignInForm() {
         if (refresh) {
           localStorage.setItem("refreshToken", JSON.stringify(refresh));
         }
+
+        await loadUser();
 
         navigate("/");
       }
