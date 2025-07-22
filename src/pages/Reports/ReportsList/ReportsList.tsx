@@ -174,7 +174,7 @@ const ReportsList = () => {
         }
         path={
           userId
-            ? ["Users List", "Reports", `${userDetails && userDetails?.id}`]
+            ? ["Users List", `${userDetails && userDetails?.id}`, "Reports"]
             : "Reports"
         }
       />
@@ -332,10 +332,7 @@ const ReportsList = () => {
                     </TableCell>
 
                     <TableCell className="px-6 py-4">
-                      <Link
-                        to={`/reports/${report.id}`}
-                        className="flex items-center"
-                      >
+                      <Link to={`${report.id}`} className="flex items-center">
                         <div className="flex-shrink-0 mr-3">
                           <FileIcon fileName={report.filename} />
                         </div>

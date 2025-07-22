@@ -13,6 +13,7 @@ import FinalAnalysisSection from "./components/FinalAnalysisSection";
 import Button from "../../../components/ui/button/Button";
 import { generateReportPdf } from "../../../utils/reports/generateReportPdf";
 import { Download, Loader } from "lucide-react";
+import { UserContext } from "../../../context/UserContext";
 
 // Type definitions for component props
 interface HeadingProps {
@@ -60,9 +61,11 @@ interface Section {
 }
 
 const Report = () => {
-  const param = useParams();
+  const { userId, reportId } = useParams();
 
-  const reportId = param.reportId;
+  const { users } = useContext(UserContext);
+
+  const userDetails = users?.find((user) => user.id === parseInt(userId));
 
   const { reports, fetchReports, loading } = useContext(ReportsContext);
 
@@ -218,7 +221,16 @@ const Report = () => {
     <div className="space-y-6">
       <PageBreadcrumb
         pageTitle="Athlete's Report"
-        path={["Reports", report.pdf_data.athlete_name]}
+        path={
+          userId
+            ? [
+                "Users List",
+                `${userDetails && userDetails?.id}`,
+                "Reports",
+                report.pdf_data.athlete_name,
+              ]
+            : ["Reports", report.pdf_data.athlete_name]
+        }
       />
       <div className="justify-self-end">
         <Button
