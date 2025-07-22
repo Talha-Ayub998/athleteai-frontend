@@ -298,12 +298,14 @@ const ReportsList = () => {
                       )}
                     </button>
                   </TableCell>
-                  <TableCell
-                    isHeader
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  >
-                    Actions
-                  </TableCell>
+                  {!userId && (
+                    <TableCell
+                      isHeader
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    >
+                      Actions
+                    </TableCell>
+                  )}
                 </TableRow>
               </TableHeader>
 
@@ -353,25 +355,27 @@ const ReportsList = () => {
                       {formatDate(report.uploaded_at)}
                     </TableCell>
 
-                    <TableCell className="px-6 py-4">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            const confirmDelete = window.confirm(
-                              `Are you sure you want to delete "${report.filename}"?`
-                            );
-                            if (confirmDelete) {
-                              await deleteReports([report.id]);
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </TableCell>
+                    {!userId && (
+                      <TableCell className="px-6 py-4">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const confirmDelete = window.confirm(
+                                `Are you sure you want to delete "${report.filename}"?`
+                              );
+                              if (confirmDelete) {
+                                await deleteReports([report.id]);
+                              }
+                            }}
+                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
