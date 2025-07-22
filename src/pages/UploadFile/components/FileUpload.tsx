@@ -8,7 +8,11 @@ import { Modal } from "../../../components/ui/modal";
 import { getStatusText } from "../../../utils/files/getStatusText";
 import { ReportsContext } from "../../../context/ReportsContext";
 
-const FileUpload = () => {
+interface FileUploadProps {
+  userId?: number;
+}
+
+const FileUpload: React.FC<FileUploadProps> = ({ userId }) => {
   const [file, setFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -106,6 +110,9 @@ const FileUpload = () => {
     setFile((prev) => ({ ...prev, status: "uploading" }));
     const formData = new FormData();
     formData.append("file", file.file);
+    if (userId) {
+      formData.append("user_id", String(userId));
+    }
     try {
       const response = await axiosInstance.post("/reports/upload/", formData, {
         headers: {

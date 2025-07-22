@@ -41,8 +41,6 @@ export default function App() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        console.log("loading user");
-
         await loadUser();
       } finally {
         setLoadingUser(false);
@@ -118,7 +116,16 @@ export default function App() {
               <Route path="reports" element={<ReportsList />} />
               <Route path="reports/:reportId" element={<Report />} />
               <Route path="upload-file" element={<UploadFile />} />
-              <Route path="users-list" element={<UsersList />} />
+              <Route path="users" element={<UsersList />} />
+              <Route path="users/:userId/reports" element={<ReportsList />} />
+              <Route
+                path="users/:userId/reports/:reportId"
+                element={<Report />}
+              />
+              <Route
+                path="users/:userId/upload-file"
+                element={<UploadFile />}
+              />
             </>
           )}
           {isAthlete && (

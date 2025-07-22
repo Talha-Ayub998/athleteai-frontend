@@ -55,7 +55,7 @@ const adminNavItems: NavItem[] = [
   {
     icon: <ListIcon />,
     name: "Users List",
-    path: "/users-list",
+    path: "/users",
   },
 ];
 

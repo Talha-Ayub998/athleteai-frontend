@@ -11,6 +11,8 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import NoUsersFound from "./components/NoUsersFound";
+import { Link, Navigate } from "react-router";
+import { useUserContext } from "../../context/UserContext";
 
 type User = {
   id: number;
@@ -25,32 +27,20 @@ type SortKey = "id" | "username" | "date_joined";
 type SortOrder = "asc" | "desc";
 
 const UsersList = () => {
-  const [users, setUsers] = useState<User[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
-  const [loading, setLoading] = useState(false);
+
+  const { users, loadUsersList, usersLoading } = useUserContext();
 
   useEffect(() => {
-    setLoading(true);
-    axiosInstance
-      .get<User[]>("/users/user-list/")
-      .then((res) => {
-        setUsers(res.data.filter((u) => u.role === "athlete"));
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    const fetchUsers = async () => {
+      if (users === null) {
+        await loadUsersList();
+      }
+    };
 
-  const sortedUsers = [...users].sort((a, b) => {
-    let aVal = a[sortKey];
-    let bVal = b[sortKey];
-    if (sortKey === "date_joined") {
-      aVal = new Date(aVal).getTime();
-      bVal = new Date(bVal).getTime();
-    }
-    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
-    return 0;
-  });
+    fetchUsers();
+  }, []);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -77,12 +67,26 @@ const UsersList = () => {
     );
   };
 
+  const sortedUsers = Array.isArray(users)
+    ? [...users].sort((a, b) => {
+        let aVal = a[sortKey];
+        let bVal = b[sortKey];
+        if (sortKey === "date_joined") {
+          aVal = new Date(aVal).getTime();
+          bVal = new Date(bVal).getTime();
+        }
+        if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+        return 0;
+      })
+    : [];
+
   return (
     <div className="space-y-6">
       <PageBreadcrumb pageTitle="Users List" path={["Users List"]} />
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="overflow-x-auto">
-          {loading ? (
+          {usersLoading ? (
             <div className="flex items-center justify-center py-12 flex-col">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <span className="mt-3 text-gray-600 dark:text-gray-400">
@@ -157,17 +161,16 @@ const UsersList = () => {
                     {/* <TableCell className="px-6 py-4 text-sm text-gray-900 dark:text-white text-start">
                       {new Date(user.date_joined).toLocaleDateString()}
                     </TableCell> */}
-                    <TableCell className="px-6 py-4 text-start">
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            /* View Reports handler */
-                          }}
-                        >
+                    <TableCell className="px-6 py-4 text-start flex gap-2">
+                      <Link to={`${user.id}/reports`} className="flex gap-2">
+                        <Button size="sm" variant="outline">
                           <Eye className="w-4 h-4 mr-1" /> View Reports
                         </Button>
+                      </Link>
+                      <Link
+                        to={`${user.id}/upload-file`}
+                        className="flex gap-2"
+                      >
                         <Button
                           size="sm"
                           onClick={() => {
@@ -176,7 +179,7 @@ const UsersList = () => {
                         >
                           <Upload className="w-4 h-4 mr-1" /> Upload File
                         </Button>
-                      </div>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}

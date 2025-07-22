@@ -9,7 +9,7 @@ import {
   TableCell,
 } from "../../../components/ui/table";
 import axios from "axios";
-import { Link } from "react-router";
+import { Link, useParams } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import ActionButtons from "./components/ActionButtons";
 import Statistics from "./components/Statistics";
@@ -20,11 +20,15 @@ import { getSortedReports } from "../../../utils/reports/getSortedReports";
 import FileIcon from "../../../components/common/FileIcon";
 import { ReportsContext } from "../../../context/ReportsContext";
 import { formatDate } from "../../../utils/reports/formatDate";
+import { UserContext, useUserContext } from "../../../context/UserContext";
 
 const ReportsList = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const authToken = localStorage.getItem("authToken");
   const { reports, loading, fetchReports } = useContext(ReportsContext);
+  const { users } = useContext(UserContext);
+  const { user } = useUserContext();
+  const { userId } = useParams();
 
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
@@ -149,11 +153,31 @@ const ReportsList = () => {
     );
   }
 
-  const sortedReports = getSortedReports(reports, sortConfig);
+  let filteredReports = reports;
+  if (userId) {
+    filteredReports = reports?.filter((r) => r.user_id === Number(userId));
+  } else if (user?.id) {
+    filteredReports = reports?.filter((r) => r.user_id === user.id);
+  }
+
+  const userDetails = users?.find((user) => user.id === parseInt(userId));
+
+  const sortedReports = getSortedReports(filteredReports, sortConfig);
 
   return (
     <div className="space-y-6">
-      <PageBreadcrumb pageTitle="Reports" path={"Reports"} />
+      <PageBreadcrumb
+        pageTitle={
+          userId
+            ? `Reports - ${userDetails && userDetails?.username}`
+            : "Reports"
+        }
+        path={
+          userId
+            ? ["Users List", "Reports", `${userDetails && userDetails?.id}`]
+            : "Reports"
+        }
+      />
       {/* Header Card */}
 
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">

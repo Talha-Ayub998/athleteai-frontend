@@ -21,6 +21,9 @@ export interface UserContextType {
   setUserContext: (user: UserType) => void;
   clearUserContext: () => void;
   loadUser: () => Promise<void>;
+  users: UserType[];
+  usersLoading: boolean;
+  loadUsersList: () => Promise<void>;
 }
 
 export const UserContext = createContext<UserContextType | undefined>(
@@ -29,6 +32,8 @@ export const UserContext = createContext<UserContextType | undefined>(
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserType | null>(null);
+  const [users, setUsers] = useState<UserType[] | null>(null);
+  const [usersLoading, setUsersLoading] = useState(false);
 
   const setUserContext = (user: UserType) => {
     setUser(user);
@@ -48,9 +53,27 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const loadUsersList = useCallback(async () => {
+    setUsersLoading(true);
+    axiosInstance
+      .get<UserType[]>("/users/user-list/")
+      .then((res) => {
+        setUsers(res.data.filter((u) => u.role === "athlete"));
+      })
+      .finally(() => setUsersLoading(false));
+  }, []);
+
   return (
     <UserContext.Provider
-      value={{ user, setUserContext, clearUserContext, loadUser }}
+      value={{
+        user,
+        setUserContext,
+        clearUserContext,
+        loadUser,
+        users,
+        usersLoading,
+        loadUsersList,
+      }}
     >
       {children}
     </UserContext.Provider>
