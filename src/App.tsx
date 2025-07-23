@@ -36,16 +36,19 @@ import UsersList from "./pages/UsersList/UsersList";
 import { isAuthenticated } from "./utils/auth";
 
 export default function App() {
-  const { user, loadUser, loadingUser } = useUserContext();
+  const { user, loadUser } = useUserContext();
 
   const authenticatedUser = isAuthenticated();
+  const [loadingUser, setLoadingUser] = useState(
+    authenticatedUser ? true : false
+  );
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         await loadUser();
-      } catch {
-        console.log("error loading user");
+      } finally {
+        setLoadingUser(false);
       }
     };
     if (authenticatedUser) fetchUser();

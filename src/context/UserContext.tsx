@@ -21,7 +21,6 @@ export interface UserContextType {
   setUserContext: (user: UserType) => void;
   clearUserContext: () => void;
   loadUser: () => Promise<void>;
-  loadingUser: boolean;
   users: UserType[];
   usersLoading: boolean;
   loadUsersList: () => Promise<void>;
@@ -35,7 +34,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserType | null>(null);
   const [users, setUsers] = useState<UserType[] | null>(null);
   const [usersLoading, setUsersLoading] = useState(false);
-  const [loadingUser, setLoadingUser] = useState(false);
 
   const setUserContext = (user: UserType) => {
     setUser(user);
@@ -46,15 +44,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const loadUser = useCallback(async () => {
-    setLoadingUser(true);
     try {
       const response = await axiosInstance.get("/users/me/");
       setUser(response.data);
     } catch (error) {
       setUser(null);
       throw error;
-    } finally {
-      setLoadingUser(false);
     }
   }, []);
 
@@ -75,7 +70,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setUserContext,
         clearUserContext,
         loadUser,
-        loadingUser,
         users,
         usersLoading,
         loadUsersList,
