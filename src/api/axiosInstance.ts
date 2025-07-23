@@ -55,13 +55,14 @@ axiosInstance.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${token}`;
             delete originalRequest._retry;
             return axiosInstance(originalRequest);
-
           })
           .catch((err) => Promise.reject(err));
       }
 
       isRefreshing = true;
-      const refreshToken = JSON.parse(localStorage.getItem("refreshToken") || '""');
+      const refreshToken = JSON.parse(
+        localStorage.getItem("refreshToken") || '""'
+      );
 
       try {
         const response = await axios.post(
@@ -71,11 +72,12 @@ axiosInstance.interceptors.response.use(
             headers: {
               "Content-Type": "application/json",
               Accept: "application/json",
-            }
+            },
           }
         );
 
-        const { access: newAccessToken, refresh: newRefreshToken } = response.data;
+        const { access: newAccessToken, refresh: newRefreshToken } =
+          response.data;
 
         localStorage.setItem("authToken", newAccessToken);
         if (newRefreshToken) {

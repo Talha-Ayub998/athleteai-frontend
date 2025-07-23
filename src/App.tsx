@@ -33,20 +33,22 @@ import Report from "./pages/Reports/Report/Report";
 import { useEffect, useState } from "react";
 import { useUserContext } from "./context/UserContext";
 import UsersList from "./pages/UsersList/UsersList";
+import { isAuthenticated } from "./utils/auth";
 
 export default function App() {
-  const { user, loadUser } = useUserContext();
-  const [loadingUser, setLoadingUser] = useState(true);
+  const { user, loadUser, loadingUser } = useUserContext();
+
+  const authenticatedUser = isAuthenticated();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         await loadUser();
-      } finally {
-        setLoadingUser(false);
+      } catch {
+        console.log("error loading user");
       }
     };
-    fetchUser();
+    if (authenticatedUser) fetchUser();
   }, [loadUser]);
 
   if (loadingUser) {
