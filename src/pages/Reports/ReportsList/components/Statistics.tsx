@@ -21,6 +21,11 @@ const Statistics = ({ reports, selectedItems }) => {
         </div>
         <div className="text-center">
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+            {reports
+              ?.reduce((total, report) => total + report.file_size_mb, 0)
+              .toFixed(2) + " MB"}
+          </p>
+          {/* <p className="text-2xl font-bold text-green-600 dark:text-green-400">
             {reports?.reduce((total, report) => total + report.size_bytes, 0) >
             0
               ? formatFileSize(
@@ -30,7 +35,7 @@ const Statistics = ({ reports, selectedItems }) => {
                   )
                 )
               : "0 Bytes"}
-          </p>
+          </p> */}
           <p className="text-sm text-gray-600 dark:text-gray-400">Total Size</p>
         </div>
       </div>

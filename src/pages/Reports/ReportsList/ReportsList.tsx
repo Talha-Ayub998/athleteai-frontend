@@ -38,6 +38,17 @@ const ReportsList = () => {
     direction: "asc",
   });
 
+  let filteredReports = reports;
+  if (userId) {
+    filteredReports = reports?.filter((r) => r.user_id === Number(userId));
+  } else if (user?.id) {
+    filteredReports = reports?.filter((r) => r.user_id === user.id);
+  }
+
+  const userDetails = users?.find((user) => user.id === parseInt(userId));
+
+  const sortedReports = getSortedReports(filteredReports, sortConfig);
+
   useEffect(() => {
     if (!authToken) {
       alert("Authentication token not found. Please log in again.");
@@ -51,10 +62,10 @@ const ReportsList = () => {
   }, []);
 
   const handleSelectAll = () => {
-    if (selectedItems.size === (reports?.length || 0)) {
+    if (selectedItems.size === (sortedReports?.length || 0)) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(reports.map((report) => report.id)));
+      setSelectedItems(new Set(sortedReports.map((report) => report.id)));
     }
   };
 
@@ -85,7 +96,7 @@ const ReportsList = () => {
     setIsDownloading(true);
 
     try {
-      const selectedReports = reports.filter((report) =>
+      const selectedReports = sortedReports.filter((report) =>
         selectedItems.has(report.id)
       );
 
@@ -153,17 +164,6 @@ const ReportsList = () => {
     );
   }
 
-  let filteredReports = reports;
-  if (userId) {
-    filteredReports = reports?.filter((r) => r.user_id === Number(userId));
-  } else if (user?.id) {
-    filteredReports = reports?.filter((r) => r.user_id === user.id);
-  }
-
-  const userDetails = users?.find((user) => user.id === parseInt(userId));
-
-  const sortedReports = getSortedReports(filteredReports, sortConfig);
-
   return (
     <div className="space-y-6">
       <PageBreadcrumb
@@ -201,7 +201,7 @@ const ReportsList = () => {
         </div>
 
         {/* Statistics */}
-        <Statistics reports={reports} selectedItems={selectedItems} />
+        <Statistics reports={sortedReports} selectedItems={selectedItems} />
       </div>
 
       {/* Table Card */}
@@ -222,8 +222,8 @@ const ReportsList = () => {
                     <input
                       type="checkbox"
                       checked={
-                        selectedItems.size === (reports?.length || 0) &&
-                        (reports?.length || 0) > 0
+                        selectedItems.size === (sortedReports?.length || 0) &&
+                        (sortedReports?.length || 0) > 0
                       }
                       onChange={handleSelectAll}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
