@@ -210,7 +210,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ userId }) => {
                 <div className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
                   Error
                 </div>
-                <div className="text-base text-gray-700 dark:text-gray-200 whitespace-pre-line">
+                <div className="text-base text-start text-gray-700 dark:text-gray-200 whitespace-pre-line px-2">
                   {error}
                 </div>
               </div>
