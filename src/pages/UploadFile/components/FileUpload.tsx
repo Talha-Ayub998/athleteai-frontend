@@ -206,11 +206,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ userId }) => {
               isOpen={!!error}
               onClose={() => setError("")}
             >
-              <div className="p-6 text-center">
+              <div className="p-6 text-center max-h-[80vh] md:max-h-[70vh] flex flex-col">
                 <div className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
                   Error
                 </div>
-                <div className="text-base text-start text-gray-700 dark:text-gray-200 whitespace-pre-line px-2">
+                <div className="text-base text-start text-gray-700 dark:text-gray-200 whitespace-pre-line px-2 overflow-y-auto flex-1 min-h-0">
                   {error}
                 </div>
               </div>
