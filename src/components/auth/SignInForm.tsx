@@ -75,6 +75,8 @@ export default function SignInForm() {
           msg = data.detail;
         } else if (data.non_field_errors) {
           msg = data.non_field_errors.join(", ");
+        } else if (data.error) {
+          msg = data.error;
         } else {
           msg = Object.entries(data)
             .map(([key, value]) => `${key}: ${(value as string[]).join(", ")}`)
