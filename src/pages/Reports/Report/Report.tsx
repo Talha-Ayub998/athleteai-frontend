@@ -14,6 +14,7 @@ import Button from "../../../components/ui/button/Button";
 import { generateReportPdf } from "../../../utils/reports/generateReportPdf";
 import { Download, Loader } from "lucide-react";
 import { UserContext } from "../../../context/UserContext";
+import AIChatBot from "./components/AIChatBot";
 
 // Type definitions for component props
 interface HeadingProps {
@@ -80,8 +81,6 @@ const Report = () => {
   const report = Array.isArray(reports)
     ? reports.find((r) => String(r.id) === String(reportId))
     : null;
-
-  console.log("report", report);
 
   const [pdfLoading, setPdfLoading] = useState(false);
 
@@ -262,6 +261,8 @@ const Report = () => {
           <Component {...props} />
         </SectionWrapper>
       ))}
+
+      <AIChatBot />
     </div>
   );
 };
