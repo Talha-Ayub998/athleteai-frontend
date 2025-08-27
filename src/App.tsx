@@ -34,6 +34,7 @@ import { useEffect, useState } from "react";
 import { useUserContext } from "./context/UserContext";
 import UsersList from "./pages/UsersList/UsersList";
 import { isAuthenticated } from "./utils/auth";
+import PlansPage from "./pages/plans/PlansPage";
 
 export default function App() {
   const { user, loadUser } = useUserContext();
@@ -138,6 +139,7 @@ export default function App() {
               <Route path="reports" element={<ReportsList />} />
               <Route path="reports/:reportId" element={<Report />} />
               <Route path="upload-file" element={<UploadFile />} />
+              <Route path="plans" element={<PlansPage />} />
             </>
           )}
         </Route>
