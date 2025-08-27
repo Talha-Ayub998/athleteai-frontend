@@ -348,8 +348,8 @@ const PlansPage = () => {
                 {/* Features List */}
                 <ul className="space-y-4">
                   <li className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 text-red-400 bg-red-500/20">
-                      <span className="text-xs font-bold">*</span>
+                    <div className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 text-red-400 ">
+                      <span className="text-xl font-bold ">*</span>
                     </div>
                     <span className="text-sm leading-relaxed text-red-400 font-medium">
                       Minimum 4 Matches Required

@@ -4,7 +4,7 @@ import useLogout from "../../hooks/useLogout";
 import Button from "../ui/button/Button";
 import { UserContext } from "../../context/UserContext";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
-import { Sparkle } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -76,7 +76,7 @@ export default function UserDropdown() {
                 to="/plans"
                 className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
               >
-                <Sparkle />
+                <Sparkles />
                 Upgrade Plan
               </DropdownItem>
             </li>
