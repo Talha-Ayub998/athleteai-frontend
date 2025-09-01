@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import axios from "axios";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
@@ -20,6 +20,22 @@ export default function SignUpForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  // Extract and log URL parameters
+  useEffect(() => {
+    const urlParams = {
+      type: searchParams.get("type"),
+      plan: searchParams.get("plan"),
+      interval: searchParams.get("interval"),
+    };
+
+    console.log("URL Parameters:", urlParams);
+
+    // You can also log individual parameters
+    console.log("Type:", urlParams.type);
+    console.log("Plan:", urlParams.plan);
+    console.log("Interval:", urlParams.interval);
+  }, [searchParams]);
 
   // Helper function to get subscription parameters
   const getSubscriptionParams = () => {
@@ -135,10 +151,16 @@ export default function SignUpForm() {
           password2: "",
         });
 
-        console.log(response);
-
         // Check if response has checkout_url and redirect to it
-        if (response.data?.checkout_url) {
+        if (
+          response.data?.checkout_url &&
+          response.data.checkout_url !== null &&
+          response.data.checkout_url !== undefined
+        ) {
+          console.log(
+            "Redirecting to checkout URL:",
+            response.data.checkout_url
+          );
           window.location.href = response.data.checkout_url;
         } else {
           // Default redirect to home page after success message
@@ -166,7 +188,7 @@ export default function SignUpForm() {
   };
 
   return (
-    <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
+    <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar py-12">
       <div className="w-full max-w-md mx-auto mb-5 sm:pt-10">
         {/* <Link
           to="/"
@@ -203,8 +225,8 @@ export default function SignUpForm() {
             )}
           </div>
 
-          {/* Success Message */}
-          {success && (
+          {/* Success Message - only show for free plan */}
+          {success && getSubscriptionParams().plan === "free" && (
             <div className="mb-5 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
               <p className="text-sm text-green-700 dark:text-green-400">
                 Account created successfully! You can now sign in.
