@@ -35,6 +35,7 @@ import { useUserContext } from "./context/UserContext";
 import UsersList from "./pages/UsersList/UsersList";
 import { isAuthenticated } from "./utils/auth";
 import PlansPage from "./pages/plans/PlansPage";
+import VideoURL from "./pages/VideoURL/VideoURL";
 
 export default function App() {
   const { user, loadUser } = useUserContext();
@@ -139,6 +140,7 @@ export default function App() {
               <Route path="reports" element={<ReportsList />} />
               <Route path="reports/:reportId" element={<Report />} />
               <Route path="upload-file" element={<UploadFile />} />
+              <Route path="video-url" element={<VideoURL />} />
               <Route path="plans" element={<PlansPage />} />
             </>
           )}

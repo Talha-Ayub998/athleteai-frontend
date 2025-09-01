@@ -19,6 +19,7 @@ import {
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import { useUserContext } from "../context/UserContext";
+import { Link2Icon } from "lucide-react";
 // import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
@@ -38,6 +39,11 @@ const athleteNavItems: NavItem[] = [
     icon: <FileIcon />,
     name: "Upload File",
     path: "/upload-file",
+  },
+  {
+    icon: <Link2Icon />,
+    name: "Video URL",
+    path: "/video-url",
   },
 ];
 
