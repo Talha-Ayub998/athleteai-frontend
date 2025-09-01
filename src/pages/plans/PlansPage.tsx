@@ -74,6 +74,7 @@ const PlansPage = () => {
           { name: "Priority Support", included: false },
         ],
       },
+      
       {
         id: "essentials",
         name: "Essentials",

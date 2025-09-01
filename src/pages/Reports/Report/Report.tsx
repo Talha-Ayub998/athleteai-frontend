@@ -218,7 +218,7 @@ const Report = () => {
 
   return (
     <div className="space-y-6">
-      <PageBreadcrumb
+    <PageBreadcrumb
         pageTitle="Athlete's Report"
         path={
           userId
