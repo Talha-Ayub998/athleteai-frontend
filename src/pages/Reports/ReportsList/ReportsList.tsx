@@ -21,6 +21,7 @@ import FileIcon from "../../../components/common/FileIcon";
 import { ReportsContext } from "../../../context/ReportsContext";
 import { formatDate } from "../../../utils/reports/formatDate";
 import { UserContext, useUserContext } from "../../../context/UserContext";
+import SummaryAndKPIs from "./components/SummaryAndKPIs";
 
 const ReportsList = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -185,7 +186,7 @@ const ReportsList = () => {
           <div className="flex justify-between items-center">
             <div>
               <p className="text-base font-medium text-gray-800 dark:text-white/90 my-2">
-                Manage your uploaded files and reports
+                Analytics & Summary
               </p>
             </div>
 
@@ -200,8 +201,10 @@ const ReportsList = () => {
           </div>
         </div>
 
+        <SummaryAndKPIs reports={sortedReports} selectedItems={selectedItems} />
+
         {/* Statistics */}
-        <Statistics reports={sortedReports} selectedItems={selectedItems} />
+        {/* <Statistics reports={sortedReports} selectedItems={selectedItems} /> */}
       </div>
 
       {/* Table Card */}

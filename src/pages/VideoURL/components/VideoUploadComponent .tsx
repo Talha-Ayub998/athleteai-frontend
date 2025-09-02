@@ -9,6 +9,7 @@ import {
   Loader2,
 } from "lucide-react";
 import VideoUploadGuides from "./VideoUploadGuides";
+import axiosInstance from "../../../api/axiosInstance";
 
 const VideoUploadComponent = () => {
   const [videoUrl, setVideoUrl] = useState("");
@@ -35,12 +36,7 @@ const VideoUploadComponent = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!videoUrl.trim()) {
-      setUploadStatus("error");
-      return;
-    }
-
-    if (!validateUrl(videoUrl)) {
+    if (!videoUrl.trim() || !validateUrl(videoUrl)) {
       setUploadStatus("error");
       return;
     }
@@ -49,12 +45,16 @@ const VideoUploadComponent = () => {
     setUploadStatus(null);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // ✅ API call using axiosInstance
+      const response = await axiosInstance.post("/reports/video-url/", {
+        video_url: videoUrl,
+      });
 
-      // Add new video to the list
+      // You can adjust according to API response structure
       const newVideo = {
-        id: `VID-${String(uploadedVideos.length + 1).padStart(3, "0")}`,
+        id:
+          response.data?.id ||
+          `VID-${String(uploadedVideos.length + 1).padStart(3, "0")}`,
         url: videoUrl,
         uploadedAt: new Date().toISOString(),
       };
@@ -63,18 +63,16 @@ const VideoUploadComponent = () => {
       setVideoUrl("");
       setUploadStatus("success");
 
-      // Clear success message after 3 seconds
       setTimeout(() => setUploadStatus(null), 3000);
     } catch (error) {
+      console.error("Video upload failed:", error);
       setUploadStatus("error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const formatDateTime = (dateString) => {
-    return new Date(dateString).toLocaleString();
-  };
+  const formatDateTime = (dateString) => new Date(dateString).toLocaleString();
 
   const getUrlIcon = (url) => {
     const type = getUrlType(url);
@@ -86,16 +84,14 @@ const VideoUploadComponent = () => {
     return <ExternalLink className="w-4 h-4 text-gray-500" />;
   };
 
-  const truncateUrl = (url, maxLength = 50) => {
-    if (url.length <= maxLength) return url;
-    return url.substring(0, maxLength) + "...";
-  };
+  const truncateUrl = (url, maxLength = 50) =>
+    url.length <= maxLength ? url : url.substring(0, maxLength) + "...";
 
   return (
     <div className="space-y-6">
       <VideoUploadGuides />
 
-      {/* Upload Form Card */}
+      {/* Upload Form */}
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
           Upload Video URL
@@ -133,7 +129,7 @@ const VideoUploadComponent = () => {
               <span className="font-medium">
                 {!videoUrl.trim()
                   ? "Please enter a video URL."
-                  : "Invalid URL. Please use YouTube or Google Drive links only."}
+                  : "Upload failed. Please check the URL or try again."}
               </span>
             </div>
           )}
@@ -158,7 +154,7 @@ const VideoUploadComponent = () => {
         </form>
       </div>
 
-      {/* Uploaded Videos Table Card */}
+      {/* Uploaded Videos Table */}
       {uploadedVideos.length > 0 && (
         <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="px-6 py-4 border-b border-gray-100 dark:border-white/[0.05]">
