@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import VideoUploadGuides from "./VideoUploadGuides";
 import axiosInstance from "../../../api/axiosInstance";
+import URLsList from "../../../components/reports/URLsList";
 
 const VideoUploadComponent = () => {
   const [videoUrl, setVideoUrl] = useState("");
@@ -154,8 +155,10 @@ const VideoUploadComponent = () => {
         </form>
       </div>
 
+      <URLsList />
+
       {/* Uploaded Videos Table */}
-      {uploadedVideos.length > 0 && (
+      {/* {uploadedVideos.length > 0 && (
         <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="px-6 py-4 border-b border-gray-100 dark:border-white/[0.05]">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -210,7 +213,7 @@ const VideoUploadComponent = () => {
             </table>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

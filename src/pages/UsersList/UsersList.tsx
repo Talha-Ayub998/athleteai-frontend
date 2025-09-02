@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-import axiosInstance from "../../api/axiosInstance";
 import Button from "../../components/ui/button/Button";
 import { Eye, Upload, ChevronUp, ChevronDown } from "lucide-react";
 import {
@@ -11,17 +10,11 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import NoUsersFound from "./components/NoUsersFound";
-import { Link, Navigate } from "react-router";
+import { Link } from "react-router";
 import { useUserContext } from "../../context/UserContext";
-
-type User = {
-  id: number;
-  username: string;
-  email: string;
-  role: string;
-  last_login: string;
-  date_joined: string;
-};
+import { useModal } from "../../hooks/useModal";
+import { Modal } from "../../components/ui/modal";
+import URLsList from "../../components/reports/URLsList";
 
 type SortKey = "id" | "username" | "date_joined";
 type SortOrder = "asc" | "desc";
@@ -29,6 +22,8 @@ type SortOrder = "asc" | "desc";
 const UsersList = () => {
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+  const [URLSelectedUser, setURLSelectedUser] = useState<any>();
+  const { isOpen, openModal, closeModal } = useModal();
 
   const { users, loadUsersList, usersLoading } = useUserContext();
 
@@ -101,7 +96,7 @@ const UsersList = () => {
                 <TableRow>
                   <TableCell
                     isHeader
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    className="px-6  w-8 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                   >
                     <button
                       onClick={() => handleSort("id")}
@@ -164,9 +159,19 @@ const UsersList = () => {
                     <TableCell className="px-6 py-4 text-start flex gap-2">
                       <Link to={`${user.id}/reports`} className="flex gap-2">
                         <Button size="sm" variant="outline">
-                          <Eye className="w-4 h-4 mr-1" /> View Reports
+                          <Eye className="w-4 h-4 mr-1" /> Reports
                         </Button>
                       </Link>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setURLSelectedUser(user);
+                          openModal();
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-1" /> Video URLs
+                      </Button>
                       <Link
                         to={`${user.id}/upload-file`}
                         className="flex gap-2"
@@ -186,6 +191,21 @@ const UsersList = () => {
               </TableBody>
             </Table>
           )}
+        </div>
+        <div>
+          <Modal
+            className="max-w-10/12 md:max-w-6/12 p-8 max-h-[90vh] overflow-y-auto"
+            isOpen={isOpen}
+            onClose={closeModal}
+          >
+            <URLsList
+              URLSelectedUserId={URLSelectedUser?.id}
+              selectedUserName={
+                sortedUsers.find((user) => user.id === URLSelectedUser?.id)
+                  ?.username
+              }
+            />
+          </Modal>
         </div>
       </div>
     </div>
