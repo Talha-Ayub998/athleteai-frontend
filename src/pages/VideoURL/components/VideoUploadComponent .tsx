@@ -1,16 +1,9 @@
-import { useState } from "react";
-import {
-  Upload,
-  CheckCircle,
-  AlertCircle,
-  ExternalLink,
-  Youtube,
-  HardDrive,
-  Loader2,
-} from "lucide-react";
+import { useContext, useState } from "react";
+import { Upload, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import VideoUploadGuides from "./VideoUploadGuides";
 import axiosInstance from "../../../api/axiosInstance";
 import URLsList from "../../../components/reports/URLsList";
+import { ReportsContext } from "../../../context/ReportsContext";
 
 const VideoUploadComponent = () => {
   const [videoUrl, setVideoUrl] = useState("");
@@ -18,20 +11,13 @@ const VideoUploadComponent = () => {
   const [uploadStatus, setUploadStatus] = useState(null); // null, 'success', 'error'
   const [uploadedVideos, setUploadedVideos] = useState([]);
 
+  const { fetchReports } = useContext(ReportsContext);
+
   const validateUrl = (url) => {
     const youtubeRegex =
       /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)/;
     const driveRegex = /^https:\/\/drive\.google\.com\/(file\/d\/|open\?id=)/;
     return youtubeRegex.test(url) || driveRegex.test(url);
-  };
-
-  const getUrlType = (url) => {
-    if (url.includes("youtube.com") || url.includes("youtu.be")) {
-      return "youtube";
-    } else if (url.includes("drive.google.com")) {
-      return "drive";
-    }
-    return "unknown";
   };
 
   const handleSubmit = async (e) => {
@@ -63,7 +49,7 @@ const VideoUploadComponent = () => {
       setUploadedVideos((prev) => [newVideo, ...prev]);
       setVideoUrl("");
       setUploadStatus("success");
-
+      await fetchReports(true);
       setTimeout(() => setUploadStatus(null), 3000);
     } catch (error) {
       console.error("Video upload failed:", error);
@@ -72,21 +58,6 @@ const VideoUploadComponent = () => {
       setIsLoading(false);
     }
   };
-
-  const formatDateTime = (dateString) => new Date(dateString).toLocaleString();
-
-  const getUrlIcon = (url) => {
-    const type = getUrlType(url);
-    if (type === "youtube") {
-      return <Youtube className="w-4 h-4 text-red-500" />;
-    } else if (type === "drive") {
-      return <HardDrive className="w-4 h-4 text-blue-500" />;
-    }
-    return <ExternalLink className="w-4 h-4 text-gray-500" />;
-  };
-
-  const truncateUrl = (url, maxLength = 50) =>
-    url.length <= maxLength ? url : url.substring(0, maxLength) + "...";
 
   return (
     <div className="space-y-6">
