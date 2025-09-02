@@ -1,5 +1,6 @@
 import React from "react";
 import Chart from "react-apexcharts";
+import { ApexOptions } from "apexcharts";
 import SectionWrapper from "../../Report/components/SectionWrapper";
 
 const SummaryAndKPIs = ({ reports, selectedItems }) => {
@@ -30,12 +31,12 @@ const SummaryAndKPIs = ({ reports, selectedItems }) => {
     return lastFiveMonths;
   };
 
-  // Chart configuration
-  const chartOptions = {
+  // Chart configuration with proper typing
+  const chartOptions: ApexOptions = {
     colors: ["#465fff"],
     chart: {
       fontFamily: "Outfit, sans-serif",
-      type: "bar",
+      type: "bar" as const,
       height: 200,
       toolbar: {
         show: false,

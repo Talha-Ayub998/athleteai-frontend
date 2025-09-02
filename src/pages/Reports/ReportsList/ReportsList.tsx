@@ -12,7 +12,7 @@ import axios from "axios";
 import { Link, useParams } from "react-router";
 import PageBreadcrumb from "../../../components/common/PageBreadCrumb";
 import ActionButtons from "./components/ActionButtons";
-import Statistics from "./components/Statistics";
+// import Statistics from "./components/Statistics";
 import NoReportFound from "./components/NoReportFound";
 import LoadingReports from "./components/LoadingReports";
 // import axiosInstance from "../../../api/axiosInstance";
