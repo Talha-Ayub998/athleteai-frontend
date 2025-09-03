@@ -160,7 +160,7 @@ const SummaryAndKPIs = ({ reports, selectedItems }) => {
                   <p className={`text-3xl font-bold ${kpi.color}`}>
                     {kpi.value}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-lg text-gray-600 dark:text-gray-400 mt-1">
                     {kpi.title}
                   </p>
                 </div>
