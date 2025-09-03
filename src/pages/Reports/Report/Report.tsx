@@ -13,7 +13,7 @@ import FinalAnalysisSection from "./components/FinalAnalysisSection";
 import Button from "../../../components/ui/button/Button";
 import { generateReportPdf } from "../../../utils/reports/generateReportPdf";
 import { Download, Loader } from "lucide-react";
-import { UserContext } from "../../../context/UserContext";
+import { UserContext, useUserContext } from "../../../context/UserContext";
 import AIChatBot from "./components/AIChatBot";
 
 // Type definitions for component props
@@ -65,6 +65,7 @@ const Report = () => {
   const { userId, reportId } = useParams();
 
   const { users } = useContext(UserContext);
+  const { user } = useUserContext();
 
   const userDetails = users?.find((user) => user.id === parseInt(userId));
 
@@ -77,9 +78,18 @@ const Report = () => {
     }
   }, [reports, fetchReports]);
 
+  let filteredReports = reports;
+
+  if (userId) {
+    filteredReports = reports?.filter((r) => r.user_id === Number(userId));
+  } else if (user?.id) {
+    filteredReports = reports?.filter((r) => r.user_id === user.id);
+  }
+
   // Find the report by reportId
-  const report = Array.isArray(reports)
-    ? reports.find((r) => String(r.id) === String(reportId))
+  const useableReports = filteredReports[0].reports;
+  const report = Array.isArray(useableReports)
+    ? useableReports.find((r) => String(r.id) === String(reportId))
     : null;
 
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -218,7 +228,7 @@ const Report = () => {
 
   return (
     <div className="space-y-6">
-    <PageBreadcrumb
+      <PageBreadcrumb
         pageTitle="Athlete's Report"
         path={
           userId

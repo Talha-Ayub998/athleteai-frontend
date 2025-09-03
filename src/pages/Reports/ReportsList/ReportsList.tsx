@@ -40,6 +40,7 @@ const ReportsList = () => {
   });
 
   let filteredReports = reports;
+
   if (userId) {
     filteredReports = reports?.filter((r) => r.user_id === Number(userId));
   } else if (user?.id) {
@@ -48,7 +49,9 @@ const ReportsList = () => {
 
   const userDetails = users?.find((user) => user.id === parseInt(userId));
 
-  const sortedReports = getSortedReports(filteredReports, sortConfig);
+  const sortedReports = filteredReports
+    ? getSortedReports(filteredReports[0].reports, sortConfig)
+    : [];
 
   useEffect(() => {
     if (!authToken) {
