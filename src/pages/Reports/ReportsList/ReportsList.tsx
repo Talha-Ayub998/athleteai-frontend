@@ -20,15 +20,14 @@ import { getSortedReports } from "../../../utils/reports/getSortedReports";
 import FileIcon from "../../../components/common/FileIcon";
 import { ReportsContext } from "../../../context/ReportsContext";
 import { formatDate } from "../../../utils/reports/formatDate";
-import { UserContext, useUserContext } from "../../../context/UserContext";
+import { useUserContext } from "../../../context/UserContext";
 import SummaryAndKPIs from "./components/SummaryAndKPIs";
 
 const ReportsList = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const authToken = localStorage.getItem("authToken");
   const { reports, loading, fetchReports } = useContext(ReportsContext);
-  const { users } = useContext(UserContext);
-  const { user } = useUserContext();
+  const { user, loadUsersList, users } = useUserContext();
   const { userId } = useParams();
 
   const [selectedItems, setSelectedItems] = useState(new Set());
@@ -50,7 +49,7 @@ const ReportsList = () => {
   const userDetails = users?.find((user) => user.id === parseInt(userId));
 
   const sortedReports = filteredReports
-    ? getSortedReports(filteredReports[0].reports, sortConfig)
+    ? getSortedReports(filteredReports[0]?.reports, sortConfig)
     : [];
 
   useEffect(() => {
@@ -63,6 +62,16 @@ const ReportsList = () => {
     } else {
       fetchReports();
     }
+  }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!users) {
+        await loadUsersList();
+      }
+    };
+
+    fetchUsers();
   }, []);
 
   const handleSelectAll = () => {

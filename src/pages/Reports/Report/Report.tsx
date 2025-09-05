@@ -13,7 +13,7 @@ import FinalAnalysisSection from "./components/FinalAnalysisSection";
 import Button from "../../../components/ui/button/Button";
 import { generateReportPdf } from "../../../utils/reports/generateReportPdf";
 import { Download, Loader } from "lucide-react";
-import { UserContext, useUserContext } from "../../../context/UserContext";
+import { useUserContext } from "../../../context/UserContext";
 import AIChatBot from "./components/AIChatBot";
 
 // Type definitions for component props
@@ -64,10 +64,19 @@ interface Section {
 const Report = () => {
   const { userId, reportId } = useParams();
 
-  const { users } = useContext(UserContext);
-  const { user } = useUserContext();
+  const { user, loadUsersList, users } = useUserContext();
 
   const userDetails = users?.find((user) => user.id === parseInt(userId));
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!users) {
+        await loadUsersList();
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const { reports, fetchReports, loading } = useContext(ReportsContext);
 
@@ -87,7 +96,7 @@ const Report = () => {
   }
 
   // Find the report by reportId
-  const useableReports = filteredReports[0].reports;
+  const useableReports = filteredReports ? filteredReports[0]?.reports : [];
   const report = Array.isArray(useableReports)
     ? useableReports.find((r) => String(r.id) === String(reportId))
     : null;
