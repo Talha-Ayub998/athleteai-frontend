@@ -48,6 +48,8 @@ const ReportsList = () => {
 
   const userDetails = users?.find((user) => user.id === parseInt(userId));
 
+  const reportUserId = userDetails ? userDetails.id : user.id;
+
   const sortedReports = filteredReports
     ? getSortedReports(filteredReports[0]?.reports, sortConfig)
     : [];
@@ -216,7 +218,7 @@ const ReportsList = () => {
           </div>
         </div>
 
-        <SummaryAndKPIs reports={sortedReports} selectedItems={selectedItems} />
+        <SummaryAndKPIs userId={reportUserId} />
 
         {/* Statistics */}
         {/* <Statistics reports={sortedReports} selectedItems={selectedItems} /> */}
