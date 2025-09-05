@@ -27,7 +27,7 @@ const ReportsList = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const authToken = localStorage.getItem("authToken");
   const { reports, loading, fetchReports } = useContext(ReportsContext);
-  const { user, loadUsersList, users } = useUserContext();
+  const { user, loadUsersList, users, usersLoading } = useUserContext();
   const { userId } = useParams();
 
   const [selectedItems, setSelectedItems] = useState(new Set());
@@ -70,9 +70,12 @@ const ReportsList = () => {
         await loadUsersList();
       }
     };
-
     fetchUsers();
   }, []);
+
+  if (!users || usersLoading) {
+    return <LoadingReports />;
+  }
 
   const handleSelectAll = () => {
     if (selectedItems.size === (sortedReports?.length || 0)) {

@@ -64,7 +64,7 @@ interface Section {
 const Report = () => {
   const { userId, reportId } = useParams();
 
-  const { user, loadUsersList, users } = useUserContext();
+  const { user, loadUsersList, users, userLoading } = useUserContext();
 
   const userDetails = users?.find((user) => user.id === parseInt(userId));
 
@@ -105,6 +105,10 @@ const Report = () => {
 
   // Show loading while fetching reports
   if (loading) {
+    return <LoadingReports />;
+  }
+
+  if (userLoading) {
     return <LoadingReports />;
   }
 
