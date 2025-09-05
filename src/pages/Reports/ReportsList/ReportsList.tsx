@@ -30,6 +30,8 @@ const ReportsList = () => {
   const { user, loadUsersList, users, usersLoading } = useUserContext();
   const { userId } = useParams();
 
+  console.log(user);
+
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -68,16 +70,12 @@ const ReportsList = () => {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      if (!users) {
+      if (!users && user.role === "admin") {
         await loadUsersList();
       }
     };
     fetchUsers();
   }, []);
-
-  if (!users || usersLoading) {
-    return <LoadingReports />;
-  }
 
   const handleSelectAll = () => {
     if (selectedItems.size === (sortedReports?.length || 0)) {
@@ -180,6 +178,10 @@ const ReportsList = () => {
         </p>
       </div>
     );
+  }
+
+  if (!reports || loading) {
+    return <LoadingReports />;
   }
 
   return (

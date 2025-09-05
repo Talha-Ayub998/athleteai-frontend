@@ -70,7 +70,7 @@ const Report = () => {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      if (!users) {
+      if (!users && user.role === "admin") {
         await loadUsersList();
       }
     };
