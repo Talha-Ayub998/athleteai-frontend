@@ -10,6 +10,7 @@ interface KPIData {
   matches_total: number;
   wins: number;
   losses: number;
+  detail: string;
   kpis: {
     win_rate_pct: string;
     offensive_submission_success_pct: string;
@@ -61,6 +62,9 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
             user_id: userId,
           },
         });
+
+        console.log("response", response);
+
         setKpiData(response.data);
       } catch (err: any) {
         console.error("Error fetching KPI data:", err);
@@ -74,6 +78,16 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
       fetchKPIData();
     }
   }, [userId]);
+
+  if (kpiData.detail) {
+    return (
+      <div className="p-4 border-t border-gray-100 dark:border-gray-800 sm:p-6">
+        <div className="flex items-center justify-center py-12 flex-col">
+          <p className="text-gray-600 dark:text-gray-400">No data available</p>
+        </div>
+      </div>
+    );
+  }
 
   // Chart configuration with proper typing
   const chartOptions: ApexOptions = {
@@ -103,7 +117,7 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
       colors: ["transparent"],
     },
     xaxis: {
-      categories: kpiData?.chart.points_bar.labels.slice(0, 10) || [], // Show first 10 matches
+      categories: kpiData?.chart?.points_bar?.labels.slice(0, 10) || [], // Show first 10 matches
       axisBorder: {
         show: false,
       },
@@ -144,11 +158,11 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
     ? [
         {
           name: "My Points",
-          data: kpiData.chart.points_bar.my_points.slice(0, 10), // Show first 10 matches
+          data: kpiData?.chart?.points_bar?.my_points.slice(0, 10), // Show first 10 matches
         },
         {
           name: "Opponent Points",
-          data: kpiData.chart.points_bar.opp_points.slice(0, 10), // Show first 10 matches
+          data: kpiData?.chart?.points_bar?.opp_points.slice(0, 10), // Show first 10 matches
         },
       ]
     : [];
@@ -158,22 +172,22 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
     ? [
         {
           title: "Total Matches",
-          value: kpiData.matches_total,
+          value: kpiData?.matches_total,
           color: "text-gray-900 dark:text-white",
         },
         {
           title: "Win Rate",
-          value: kpiData.kpis.win_rate_pct,
+          value: kpiData?.kpis?.win_rate_pct,
           color: "text-green-600 dark:text-green-400",
         },
         {
           title: "Avg Points",
-          value: kpiData.kpis.avg_points_per_match.toFixed(1),
+          value: kpiData?.kpis?.avg_points_per_match?.toFixed(1),
           color: "text-blue-600 dark:text-blue-400",
         },
         {
           title: "Losses",
-          value: kpiData.losses,
+          value: kpiData?.losses,
           color: "text-red-600 dark:text-red-400",
         },
       ]
@@ -197,16 +211,6 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
               {error}
             </p>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!kpiData) {
-    return (
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800 sm:p-6">
-        <div className="flex items-center justify-center py-12 flex-col">
-          <p className="text-gray-600 dark:text-gray-400">No data available</p>
         </div>
       </div>
     );
