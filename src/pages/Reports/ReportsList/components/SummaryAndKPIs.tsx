@@ -63,8 +63,6 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
           },
         });
 
-        console.log("response", response);
-
         setKpiData(response.data);
       } catch (err: any) {
         console.error("Error fetching KPI data:", err);
@@ -79,7 +77,7 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
     }
   }, [userId]);
 
-  if (kpiData.detail) {
+  if (kpiData?.detail) {
     return (
       <div className="p-4 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div className="flex items-center justify-center py-12 flex-col">

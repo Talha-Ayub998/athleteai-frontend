@@ -27,10 +27,8 @@ const ReportsList = () => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const authToken = localStorage.getItem("authToken");
   const { reports, loading, fetchReports } = useContext(ReportsContext);
-  const { user, loadUsersList, users, usersLoading } = useUserContext();
+  const { user, loadUsersList, users } = useUserContext();
   const { userId } = useParams();
-
-  console.log(user);
 
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
