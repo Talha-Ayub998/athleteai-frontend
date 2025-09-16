@@ -146,6 +146,7 @@ const ReportsList = () => {
         },
         data: { ids: ids },
       });
+      setSelectedItems(new Set());
       alert(`Successfully deleted ${ids.length} file(s).`);
       await fetchReports(true);
     } catch (error) {
@@ -197,24 +198,14 @@ const ReportsList = () => {
         }
       />
       {/* Header Card */}
-
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="px-6 py-3">
+        <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-800">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-base font-medium text-gray-800 dark:text-white/90 my-2">
                 Analytics & Summary
               </p>
             </div>
-
-            {/* Action Buttons */}
-            <ActionButtons
-              selectedItems={selectedItems}
-              handleDelete={handleDelete}
-              handleDownload={handleDownload}
-              isDeleting={isDeleting}
-              isDownloading={isDownloading}
-            />
           </div>
         </div>
 
@@ -226,6 +217,23 @@ const ReportsList = () => {
 
       {/* Table Card */}
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-base font-medium text-gray-800 dark:text-white/90 my-2">
+                Reports List
+              </h1>
+            </div>
+            <ActionButtons
+              selectedItems={selectedItems}
+              handleDelete={handleDelete}
+              handleDownload={handleDownload}
+              isDeleting={isDeleting}
+              isDownloading={isDownloading}
+            />
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           {loading ? (
             <LoadingReports />
@@ -235,9 +243,9 @@ const ReportsList = () => {
             <Table>
               <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                 <TableRow>
-                  {/* <TableCell
+                  <TableCell
                     isHeader
-                    className="px-6 py-4 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    className="pl-6 py-4 w-12 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                   >
                     <input
                       type="checkbox"
@@ -248,7 +256,7 @@ const ReportsList = () => {
                       onChange={handleSelectAll}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                  </TableCell> */}
+                  </TableCell>
                   <TableCell
                     isHeader
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -339,7 +347,7 @@ const ReportsList = () => {
                         : ""
                     }`}
                   >
-                    {/* <TableCell className="px-6 py-4">
+                    <TableCell className="px-6 py-4">
                       <input
                         type="checkbox"
                         checked={selectedItems.has(report.id)}
@@ -349,7 +357,7 @@ const ReportsList = () => {
                         }}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                    </TableCell> */}
+                    </TableCell>
 
                     <TableCell className="px-6 py-4">
                       <Link to={`${report.id}`} className="flex items-center">
@@ -400,6 +408,8 @@ const ReportsList = () => {
           )}
         </div>
       </div>
+
+      <div className="py-32" />
     </div>
   );
 };

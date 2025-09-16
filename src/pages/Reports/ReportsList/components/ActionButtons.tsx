@@ -12,7 +12,7 @@ const ActionButtons = ({
     <div>
       {selectedItems.size > 0 && (
         <div className="flex space-x-3">
-          <button
+          {/* <button
             onClick={handleDownload}
             disabled={isDownloading}
             className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-md transition-colors duration-200"
@@ -21,7 +21,7 @@ const ActionButtons = ({
             {isDownloading
               ? "Downloading..."
               : `Download (${selectedItems.size})`}
-          </button>
+          </button> */}
 
           <button
             onClick={handleDelete}

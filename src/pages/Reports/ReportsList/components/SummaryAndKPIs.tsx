@@ -83,7 +83,7 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
 
   if (kpiData?.detail) {
     return (
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800 sm:p-6">
+      <div className="p-4  sm:p-6">
         <div className="flex items-center justify-center py-12 flex-col">
           <p className="text-gray-600 dark:text-gray-400">No data available</p>
         </div>
