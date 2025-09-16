@@ -235,7 +235,7 @@ const ReportsList = () => {
             <Table>
               <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                 <TableRow>
-                  <TableCell
+                  {/* <TableCell
                     isHeader
                     className="px-6 py-4 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                   >
@@ -248,7 +248,7 @@ const ReportsList = () => {
                       onChange={handleSelectAll}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell
                     isHeader
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
@@ -339,7 +339,7 @@ const ReportsList = () => {
                         : ""
                     }`}
                   >
-                    <TableCell className="px-6 py-4">
+                    {/* <TableCell className="px-6 py-4">
                       <input
                         type="checkbox"
                         checked={selectedItems.has(report.id)}
@@ -349,7 +349,7 @@ const ReportsList = () => {
                         }}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                    </TableCell>
+                    </TableCell> */}
 
                     <TableCell className="px-6 py-4">
                       <Link to={`${report.id}`} className="flex items-center">
