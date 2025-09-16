@@ -6,6 +6,8 @@ const VideoURL = () => {
     <div>
       <PageBreadcrumb pageTitle={"Video URL"} path={"Video URL"} />
       <VideoUploadComponent />
+
+      <div className="py-32" />
     </div>
   );
 };

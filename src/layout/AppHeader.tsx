@@ -94,7 +94,10 @@ const AppHeader: React.FC = () => {
               src="./images/logo/logo-dark.svg"
               alt="Logo"
             /> */}
-            <h1 className="text-xl font-bold dark:text-white">Athlete AI</h1>
+            <div className="text-xl font-bold">
+              <span className="text-black dark:text-white">Athlete</span>
+              <span className="text-cyan-500 dark:text-[#33CCDD]">AI</span>
+            </div>
           </Link>
 
           <button

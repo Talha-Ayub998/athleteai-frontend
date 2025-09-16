@@ -25,6 +25,8 @@ const UploadFile = () => {
         }
       />
       <FileUpload userId={Number(userId)} />
+
+      <div className="py-32" />
     </div>
   );
 };

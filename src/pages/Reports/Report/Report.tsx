@@ -286,6 +286,8 @@ const Report = () => {
       ))}
 
       <AIChatBot />
+
+      <div className="py-32" />
     </div>
   );
 };

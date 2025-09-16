@@ -121,7 +121,8 @@ const othersItems: NavItem[] = [
 
 const AppSidebar: React.FC = () => {
   const { user } = useUserContext();
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { isExpanded, isMobileOpen, isMobile, isHovered, setIsHovered } =
+    useSidebar();
   const location = useLocation();
 
   // Determine main nav items based on user role
@@ -338,44 +339,29 @@ const AppSidebar: React.FC = () => {
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div
-        className={`py-8 flex ${
-          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-        }`}
-      >
-        <Link to="/">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              {/* <img
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              /> */}
-              <h1 className="text-xl font-bold dark:text-white">Athlete AI</h1>
-            </>
-          ) : (
-            <>
-              <h1 className="text-xl font-bold dark:text-white">Athlete AI</h1>
-              {/* <img
-                src="/images/logo/logo-icon.svg"
-                alt="Logo"
-                width={32}
-                height={32}
-              /> */}
-            </>
-          )}
-        </Link>
-      </div>
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+      {!isMobile && (
+        <div
+          className={`py-8 flex ${
+            !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+          }`}
+        >
+          <Link to="/">
+            {isExpanded ? (
+              <div className="text-xl font-bold">
+                <span className="text-black dark:text-white">Athlete</span>
+                <span className="text-cyan-600 dark:text-[#33CCDD]">AI</span>
+              </div>
+            ) : (
+              <div className="text-sm font-bold">
+                <span className="text-black dark:text-white">Athlete</span>
+                <span className="text-cyan-600 dark:text-[#33CCDD]">AI</span>
+              </div>
+            )}
+          </Link>
+        </div>
+      )}
+
+      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar mt-6 sm:mt-0">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
             <div>
