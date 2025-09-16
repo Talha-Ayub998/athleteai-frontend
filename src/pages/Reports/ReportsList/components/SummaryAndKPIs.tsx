@@ -199,6 +199,25 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
           return `${counts[seriesIndex]} wins (${val.toFixed(1)}%)`;
         },
       },
+      style: {
+        fontSize: "12px",
+      },
+      custom: function ({ series, seriesIndex }) {
+        const counts = kpiData?.chart?.win_method_distribution?.counts || [];
+        const labels = kpiData?.chart?.win_method_distribution?.labels || [];
+        return (
+          '<div class="bg-gray-900 text-white px-3 py-2 rounded shadow-lg">' +
+          '<span class="font-medium">' +
+          labels[seriesIndex] +
+          "</span><br/>" +
+          "<span>" +
+          counts[seriesIndex] +
+          " wins (" +
+          series[seriesIndex].toFixed(1) +
+          "%)</span>" +
+          "</div>"
+        );
+      },
     },
     responsive: [
       {
@@ -268,9 +287,9 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
   }
 
   return (
-    <div className="p-4 border-t border-gray-100 dark:border-gray-800 sm:p-6">
+    <div className="p-4 border-t border-gray-100 dark:border-gray-800 sm:p-6 gap-5 flex flex-col">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {summaryCards.map((card, index) => (
           <div
             key={index}
@@ -290,7 +309,7 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Left side - Horizontal Bar Chart for Offense Threats */}
         <SectionWrapper>
           <div className="w-full">
@@ -301,73 +320,75 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
               options={horizontalBarOptions}
               series={horizontalBarSeries}
               type="bar"
-              height={250}
+              height={500}
             />
           </div>
         </SectionWrapper>
 
-        {/* Right side - Pie Chart for Win Method Distribution */}
-        <SectionWrapper>
-          <div className="w-full ">
-            <h3 className="text-lg font-semibold mb-4  text-gray-900 dark:text-white">
-              Win Method Distribution
-            </h3>
-            <Chart
-              options={pieChartOptions}
-              series={pieChartSeries}
-              type="pie"
-              height={250}
-            />
-          </div>
-        </SectionWrapper>
-      </div>
+        {/* Right side - Pie Chart and All KPIs */}
+        <div className="space-y-5">
+          <SectionWrapper>
+            <div className="w-full">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                Win Method Distribution
+              </h3>
+              <Chart
+                options={pieChartOptions}
+                series={pieChartSeries}
+                type="pie"
+                height={250}
+              />
+            </div>
+          </SectionWrapper>
 
-      {/* Additional KPI Information */}
-      {kpiData.kpis && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4">
-            <h4 className="font-semibold text-gray-900 dark:text-white">
-              Offensive Success
-            </h4>
-            <span className="text-sm text-gray-900 dark:text-white">
-              (based on submission)
-            </span>
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 pt-2">
-              {kpiData.kpis.offensive_submission_success_pct}
-            </p>
-          </div>
+          {/* All KPI Cards under pie chart */}
+          {kpiData.kpis && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white">
+                  Offensive Success
+                </h4>
+                <span className="text-sm text-gray-900 dark:text-white">
+                  (based on submission)
+                </span>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 pt-2">
+                  {kpiData.kpis.offensive_submission_success_pct}
+                </p>
+              </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4">
-            <h4 className="font-semibold text-gray-900 dark:text-white">
-              Defensive Success
-            </h4>
-            <span className="text-sm text-gray-900 dark:text-white">
-              (based on submission)
-            </span>
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 pt-2">
-              {kpiData.kpis.defensive_submission_success_pct}
-            </p>
-          </div>
+              <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white">
+                  Defensive Success
+                </h4>
+                <span className="text-sm text-gray-900 dark:text-white">
+                  (based on submission)
+                </span>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 pt-2">
+                  {kpiData.kpis.defensive_submission_success_pct}
+                </p>
+              </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4">
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-              Top Offensive Move
-            </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {kpiData.kpis.top_moves.top_offensive_move}
-            </p>
-          </div>
+              <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Top Offensive Move
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {kpiData.kpis.top_moves.top_offensive_move}
+                </p>
+              </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4">
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-              Top Defensive Threat
-            </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {kpiData.kpis.top_moves.top_defensive_threat}
-            </p>
-          </div>
+              <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  Top Defensive Threat
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {kpiData.kpis.top_moves.top_defensive_threat}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Badges Section */}
       {kpiData.badges && kpiData.badges.length > 0 && (
