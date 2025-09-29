@@ -4,6 +4,42 @@ import { ApexOptions } from "apexcharts";
 import SectionWrapper from "../../Report/components/SectionWrapper";
 import axiosInstance from "../../../../api/axiosInstance";
 
+const dummyKpiData = {
+  user_id: 1,
+  user_email: "test@example.com",
+  matches_total: 45,
+  wins: 32,
+  losses: 13,
+  kpis: {
+    win_rate_pct: "71.1%",
+    offensive_submission_success_pct: "68.5%",
+    defensive_submission_success_pct: "82.3%",
+    top_moves: {
+      top_offensive_move: "Rear Naked Choke",
+      top_defensive_threat: "Armbar Defense",
+    },
+  },
+  chart: {
+    offense_threats_bar: {
+      labels: [
+        "Rear Naked Choke",
+        "Armbar",
+        "Triangle",
+        "Kimura",
+        "Guillotine",
+      ],
+      counts: [15, 12, 8, 6, 4],
+      total_threats: 45,
+    },
+    win_method_distribution: {
+      labels: ["Submission", "Points", "Decision"],
+      counts: [18, 8, 6],
+      percents: [56.3, 25.0, 18.7],
+      total_wins: 32,
+    },
+  },
+};
+
 interface KPIData {
   user_id: number;
   user_email: string;
@@ -67,7 +103,7 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
           },
         });
 
-        setKpiData(response.data);
+        setKpiData(dummyKpiData);
       } catch (err) {
         console.error("Error fetching KPI data:", err);
         setError("Failed to load KPI data. Please try again.");
@@ -162,7 +198,7 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
 
   // Pie Chart configuration for win method distribution
   const pieChartOptions: ApexOptions = {
-    colors: ["#FFA500", "#FF6347", "#E91E63"],
+    colors: ["#F9A826", "#EF5350", "#7E57C2"],
     chart: {
       fontFamily: "Outfit, sans-serif",
       type: "pie" as const,
@@ -176,13 +212,23 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
       enabled: true,
       formatter: (val: number) => `${val.toFixed(1)}%`,
       style: {
-        colors: ["#ffffff"],
-        fontSize: "10px",
+        fontSize: "12px",
+        fontWeight: "bold",
+        colors: undefined,
+      },
+      background: {
+        enabled: false,
       },
       dropShadow: {
         enabled: false,
+        top: 1,
+        left: 1,
+        blur: 1,
+        color: "#000",
+        opacity: 0.5,
       },
     },
+
     legend: {
       show: true,
       position: "bottom",
@@ -332,12 +378,14 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
                 Win Method Distribution
               </h3>
-              <Chart
-                options={pieChartOptions}
-                series={pieChartSeries}
-                type="pie"
-                height={250}
-              />
+              <div className="pie-chart-container">
+                <Chart
+                  options={pieChartOptions}
+                  series={pieChartSeries}
+                  type="pie"
+                  height={250}
+                />
+              </div>
             </div>
           </SectionWrapper>
 

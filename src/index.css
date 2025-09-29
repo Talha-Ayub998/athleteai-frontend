@@ -5,6 +5,35 @@ layer(base);
 
 @custom-variant dark (&:is(.dark *));
 
+/* Target ApexCharts data labels specifically */
+.apexcharts-pie-label,
+.apexcharts-datalabel,
+.apexcharts-datalabel-label,
+.apexcharts-datalabel-value {
+  fill: #ffffff !important;
+  font-weight: bold !important;
+  font-size: 12px !important;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+/* Override any theme-based changes */
+[data-theme] .apexcharts-pie-label,
+[data-theme] .apexcharts-datalabel,
+[data-theme] .apexcharts-datalabel-label,
+[data-theme] .apexcharts-datalabel-value {
+  fill: #ffffff !important;
+}
+
+.pie-chart-container {
+  --apexcharts-datalabel-color: #ffffff;
+}
+
+.pie-chart-container .apexcharts-datalabel {
+  fill: var(--apexcharts-datalabel-color) !important;
+  font-weight: bold !important;
+  filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5));
+}
+
 @theme {
   --font-*: initial;
   --font-outfit: Outfit, sans-serif;

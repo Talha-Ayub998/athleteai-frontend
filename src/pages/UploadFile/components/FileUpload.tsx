@@ -184,7 +184,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ userId }) => {
             </div>
           )}
         </div>
-        <UploadFilesArea
+        {/* <UploadFilesArea
           isDragOver={isDragOver}
           handleDrop={handleDrop}
           handleDragOver={handleDragOver}
@@ -192,7 +192,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ userId }) => {
           fileInputRef={fileInputRef}
           handleInputChange={handleInputChange}
           disabled={!!file}
-        />
+        /> */}
         {file && (
           <div className="mt-6">
             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
