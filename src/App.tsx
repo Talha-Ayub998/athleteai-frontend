@@ -38,10 +38,10 @@ import PlansPage from "./pages/plans/PlansPage";
 import VideoURL from "./pages/VideoURL/VideoURL";
 
 export default function App() {
-  const { user, loadUser } = useUserContext();
+  const { user, loadUser, userLoading } = useUserContext();
 
   const authenticatedUser = isAuthenticated();
-  const [loadingUser, setLoadingUser] = useState(
+  const [initialLoading, setInitialLoading] = useState(
     authenticatedUser ? true : false
   );
 
@@ -50,17 +50,18 @@ export default function App() {
       try {
         await loadUser();
       } finally {
-        setLoadingUser(false);
+        setInitialLoading(false);
       }
     };
     if (authenticatedUser) fetchUser();
-  }, [loadUser]);
+  }, [loadUser, authenticatedUser]);
 
-  if (loadingUser) {
+  // Show loader while initially loading user OR while user is being loaded
+  if (initialLoading || (authenticatedUser && userLoading)) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
         <svg
-          className="animate-spin h-8 w-8 text-brand-500"
+          className="animate-spin h-8 w-8 text-blue-600"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"

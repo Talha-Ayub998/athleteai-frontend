@@ -24,6 +24,7 @@ export interface UserContextType {
   loadUser: () => Promise<void>;
   users: UserType[];
   usersLoading: boolean;
+  setUserLoading: (user: boolean) => void;
   loadUsersList: () => Promise<void>;
 }
 
@@ -49,6 +50,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     setUserLoading(true);
     try {
       const response = await axiosInstance.get("/users/me/");
+      // await new Promise((resolve) => setTimeout(resolve, 5000));
       setUser(response.data);
     } catch (error) {
       setUser(null);
@@ -79,6 +81,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         users,
         usersLoading,
         loadUsersList,
+        setUserLoading,
       }}
     >
       {children}
