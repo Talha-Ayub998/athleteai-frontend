@@ -165,7 +165,7 @@ const PlansPage = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6 uppercase">
-            UPGRADE YOUR PLAN
+            MANAGE YOUR PLAN
           </h1>
           <p className="text-gray-600 dark:text-slate-300 text-lg max-w-2xl mx-auto leading-relaxed">
             Individual Grappler Portal - For hobbyists, local competitors, or
