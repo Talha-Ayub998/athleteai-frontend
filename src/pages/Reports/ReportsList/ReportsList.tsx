@@ -146,7 +146,7 @@ const ReportsList = () => {
         },
         data: { ids: ids },
       });
-      setSelectedItems(new Set());si
+      setSelectedItems(new Set());
       alert(`Successfully deleted ${ids.length} file(s).`);
       await fetchReports(true);
     } catch (error) {
