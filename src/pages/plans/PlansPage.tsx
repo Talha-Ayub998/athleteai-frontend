@@ -144,12 +144,21 @@ const PlansPage = () => {
         requestBody
       );
 
-      // Redirect to payment page
-      if (response.data && response.data.checkout_url) {
-        window.location.href = response.data.checkout_url;
-      } else {
-        console.error("No checkout URL received");
-        alert("Payment session could not be created. Please try again.");
+      if (response.data) {
+        if (
+          response.data.action === "new_subscription" &&
+          response.data.checkout_url
+        ) {
+          window.location.href = response.data.checkout_url;
+        } else if (
+          response.data.action === "manage_existing" &&
+          response.data.billing_portal_url
+        ) {
+          window.location.href = response.data.billing_portal_url;
+        } else {
+          console.error("No valid URL received");
+          alert("Payment session could not be created. Please try again.");
+        }
       }
     } catch (error) {
       console.error("Checkout error:", error);
