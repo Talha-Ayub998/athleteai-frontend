@@ -7,13 +7,23 @@ import OneTimeCard from "./components/OneTimeCard";
 
 interface SubscriptionData {
   plan: string;
-  interval: string;
+  interval: string | null;
   status: string;
-  cancel_at_period_end: boolean;
-  current_period_end: string;
-  stripe_customer_id: string;
-  stripe_subscription_id: string;
-  remaining_report_credits: number;
+  cancel_at_period_end?: boolean;
+  current_period_end?: string;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  remaining_report_credits?: number;
+
+  // new fields from API
+  trial_active?: boolean;
+  trial_start?: string;
+  trial_end?: string;
+  period_start?: string;
+  period_end?: string;
+  used?: number;
+  limit?: number;
+  remaining?: number;
 }
 
 const PlansPage = () => {
@@ -28,7 +38,7 @@ const PlansPage = () => {
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
-        const response = await axiosInstance.get("/users/my-subscription/");
+        const response = await axiosInstance.get("/users/limits/");
         setSubscription(response.data);
 
         // Set the current plan and billing cycle based on subscription
@@ -271,6 +281,7 @@ const PlansPage = () => {
                           subscription.status.slice(1)}
                       </span>
                     </div>
+
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-700 dark:text-slate-400">
                         Billing Cycle:
@@ -278,25 +289,41 @@ const PlansPage = () => {
                       <span className="text-gray-900 dark:text-slate-200">
                         {subscription.interval === "year"
                           ? "Annual"
-                          : "Monthly"}
+                          : subscription.interval === "month"
+                          ? "Monthly"
+                          : "—"}
                       </span>
                     </div>
+
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-700 dark:text-slate-400">
                         Renews on:
                       </span>
                       <span className="text-gray-900 dark:text-slate-200">
-                        {formatDate(subscription.current_period_end)}
+                        {subscription.current_period_end
+                          ? formatDate(subscription.current_period_end)
+                          : "—"}
                       </span>
                     </div>
+
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-700 dark:text-slate-400">
-                        Remaining Credits:
+                        Usage:
                       </span>
                       <span className="text-gray-900 dark:text-slate-200 font-semibold">
-                        {subscription.remaining_report_credits} match analyses
+                        {subscription.used}/{subscription.limit} analyses used
                       </span>
                     </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-700 dark:text-slate-400">
+                        Remaining:
+                      </span>
+                      <span className="text-gray-900 dark:text-slate-200 font-semibold">
+                        {subscription.remaining} analyses left
+                      </span>
+                    </div>
+
                     {subscription.cancel_at_period_end && (
                       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
                         <p className="text-yellow-600 dark:text-yellow-400 font-medium flex items-center gap-2">
@@ -307,7 +334,8 @@ const PlansPage = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col gap-2 ">
+
+                <div className="flex flex-col gap-2">
                   <button
                     onClick={() => handlePlanSelect(subscription.plan)}
                     className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition-all duration-200 shadow-lg whitespace-nowrap"
