@@ -1,13 +1,53 @@
 // PlansPage.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import BillingToggle from "./components/BillingToggle";
 import PlanCard from "./components/PlanCard";
 import OneTimeCard from "./components/OneTimeCard";
+
+interface SubscriptionData {
+  plan: string;
+  interval: string;
+  status: string;
+  cancel_at_period_end: boolean;
+  current_period_end: string;
+  stripe_customer_id: string;
+  stripe_subscription_id: string;
+  remaining_report_credits: number;
+}
+
 const PlansPage = () => {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [selectedPlan, setSelectedPlan] = useState("free");
   const [loadingPlan, setLoadingPlan] = useState("");
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(
+    null
+  );
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const response = await axiosInstance.get("/users/my-subscription/");
+        setSubscription(response.data);
+
+        // Set the current plan and billing cycle based on subscription
+        if (response.data.plan) {
+          setSelectedPlan(response.data.plan);
+          setBillingCycle(
+            response.data.interval === "year" ? "annual" : "monthly"
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch subscription:", error);
+        // If no subscription exists, user stays on free plan
+      } finally {
+        setLoadingSubscription(false);
+      }
+    };
+
+    fetchSubscription();
+  }, []);
 
   const plans = {
     monthly: [
@@ -114,11 +154,11 @@ const PlansPage = () => {
 
   const handlePlanSelect = async (planId) => {
     // Don't process free plan
-    if (planId === "free") {
-      setSelectedPlan(planId);
-      console.log(`Selected plan: ${planId} - ${billingCycle}`);
-      return;
-    }
+    // if (planId === "free") {
+    //   setSelectedPlan(planId);
+    //   console.log(`Selected plan: ${planId} - ${billingCycle}`);
+    //   return;
+    // }
 
     setLoadingPlan(planId);
 
@@ -168,6 +208,27 @@ const PlansPage = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  if (loadingSubscription) {
+    return (
+      <div className="min-h-screen px-4 py-16 bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-slate-300">
+            Loading subscription...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen px-4 py-16 bg-white dark:bg-gray-900">
       <div className="max-w-7xl mx-auto">
@@ -181,6 +242,83 @@ const PlansPage = () => {
             anyone wanting detailed match insights
           </p>
         </div>
+
+        {/* Current Subscription Status */}
+        {subscription && subscription.plan !== "free" && (
+          <div className="mx-auto mb-12">
+            <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-300 p-8">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                    Current Subscription:{" "}
+                    {subscription.plan.charAt(0).toUpperCase() +
+                      subscription.plan.slice(1)}{" "}
+                    Plan
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-700 dark:text-slate-400">
+                        Status:
+                      </span>
+                      <span
+                        className={
+                          subscription.status === "active"
+                            ? "text-green-600 dark:text-green-400 font-semibold"
+                            : "text-yellow-600 dark:text-yellow-400 font-semibold"
+                        }
+                      >
+                        {subscription.status.charAt(0).toUpperCase() +
+                          subscription.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-700 dark:text-slate-400">
+                        Billing Cycle:
+                      </span>
+                      <span className="text-gray-900 dark:text-slate-200">
+                        {subscription.interval === "year"
+                          ? "Annual"
+                          : "Monthly"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-700 dark:text-slate-400">
+                        Renews on:
+                      </span>
+                      <span className="text-gray-900 dark:text-slate-200">
+                        {formatDate(subscription.current_period_end)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-700 dark:text-slate-400">
+                        Remaining Credits:
+                      </span>
+                      <span className="text-gray-900 dark:text-slate-200 font-semibold">
+                        {subscription.remaining_report_credits} match analyses
+                      </span>
+                    </div>
+                    {subscription.cancel_at_period_end && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+                        <p className="text-yellow-600 dark:text-yellow-400 font-medium flex items-center gap-2">
+                          <span className="text-lg">⚠️</span>
+                          Subscription will cancel at period end
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 ">
+                  <button
+                    onClick={() => handlePlanSelect(subscription.plan)}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition-all duration-200 shadow-lg whitespace-nowrap"
+                  >
+                    Manage Subscription
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Billing Toggle */}
         <BillingToggle billingCycle={billingCycle} onToggle={setBillingCycle} />

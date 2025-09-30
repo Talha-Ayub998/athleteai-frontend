@@ -134,8 +134,29 @@ const FileUpload: React.FC<FileUploadProps> = ({ userId }) => {
     } catch (error) {
       console.error("Error uploading file:", error);
       setFile((prev) => ({ ...prev, status: "error" }));
+
       if (error.response?.status === 401) {
         setError("Authentication failed. Please login again.");
+      } else if (error.response?.status === 402) {
+        // Insufficient credits error
+        const data = error.response.data;
+        if (data.code === "INSUFFICIENT_CREDITS") {
+          const matchCount = data.match_count || 0;
+          const message =
+            data.message ||
+            `You need ${matchCount} match credits to upload this file, but you don't have enough credits remaining.`;
+          setError(
+            `${message}\n\nPlease upgrade your plan or purchase a one-time report to continue.`
+          );
+          // Optional: You could also show a modal or redirect to plans page
+          // setTimeout(() => {
+          //   window.location.href = '/plans';
+          // }, 3000);
+        } else {
+          setError(
+            data.message || "Insufficient credits to process this upload."
+          );
+        }
       } else if (error.response?.status === 413) {
         setError("File is too large to upload.");
       } else if (
@@ -184,7 +205,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ userId }) => {
             </div>
           )}
         </div>
-        {/* <UploadFilesArea
+        <UploadFilesArea
           isDragOver={isDragOver}
           handleDrop={handleDrop}
           handleDragOver={handleDragOver}
@@ -192,7 +213,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ userId }) => {
           fileInputRef={fileInputRef}
           handleInputChange={handleInputChange}
           disabled={!!file}
-        /> */}
+        />
         {file && (
           <div className="mt-6">
             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
