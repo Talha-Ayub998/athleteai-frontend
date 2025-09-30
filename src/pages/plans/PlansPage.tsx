@@ -6,24 +6,17 @@ import PlanCard from "./components/PlanCard";
 import OneTimeCard from "./components/OneTimeCard";
 
 interface SubscriptionData {
-  plan: string;
-  interval: string | null;
-  status: string;
-  cancel_at_period_end?: boolean;
-  current_period_end?: string;
-  stripe_customer_id?: string;
-  stripe_subscription_id?: string;
-  remaining_report_credits?: number;
-
-  // new fields from API
-  trial_active?: boolean;
-  trial_start?: string;
-  trial_end?: string;
-  period_start?: string;
-  period_end?: string;
-  used?: number;
-  limit?: number;
-  remaining?: number;
+  plan: string; // "free" | "essentials" | "precision"
+  interval: string | null; // "month" | "year" | null
+  status: string; // "trialing" | "active" | "canceled"
+  trial_active: boolean;
+  trial_start: string;
+  trial_end: string;
+  period_start: string;
+  period_end: string;
+  used: number; // used analyses
+  limit: number; // total allowed analyses
+  remaining: number; // remaining analyses
 }
 
 const PlansPage = () => {
@@ -38,7 +31,7 @@ const PlansPage = () => {
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
-        const response = await axiosInstance.get("/users/limits/");
+        const response = await axiosInstance.get("/users/my-subscription/");
         setSubscription(response.data);
 
         // Set the current plan and billing cycle based on subscription
@@ -254,18 +247,19 @@ const PlansPage = () => {
         </div>
 
         {/* Current Subscription Status */}
-        {subscription && subscription.plan !== "free" && (
+        {subscription && (
           <div className="mx-auto mb-12">
             <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/40 hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-300 p-8">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                    Current Subscription:{" "}
+                    Current Plan:{" "}
                     {subscription.plan.charAt(0).toUpperCase() +
-                      subscription.plan.slice(1)}{" "}
-                    Plan
+                      subscription.plan.slice(1)}
                   </h3>
+
                   <div className="space-y-2 text-sm">
+                    {/* Status */}
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-700 dark:text-slate-400">
                         Status:
@@ -282,6 +276,20 @@ const PlansPage = () => {
                       </span>
                     </div>
 
+                    {/* Trial Info */}
+                    {subscription.trial_active && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-700 dark:text-slate-400">
+                          Trial Period:
+                        </span>
+                        <span className="text-gray-900 dark:text-slate-200">
+                          {formatDate(subscription.trial_start)} →{" "}
+                          {formatDate(subscription.trial_end)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Billing Cycle */}
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-700 dark:text-slate-400">
                         Billing Cycle:
@@ -295,17 +303,19 @@ const PlansPage = () => {
                       </span>
                     </div>
 
+                    {/* Renewal Date */}
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-700 dark:text-slate-400">
                         Renews on:
                       </span>
                       <span className="text-gray-900 dark:text-slate-200">
-                        {subscription.current_period_end
-                          ? formatDate(subscription.current_period_end)
+                        {subscription.period_end
+                          ? formatDate(subscription.period_end)
                           : "—"}
                       </span>
                     </div>
 
+                    {/* Usage */}
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-700 dark:text-slate-400">
                         Usage:
@@ -315,6 +325,7 @@ const PlansPage = () => {
                       </span>
                     </div>
 
+                    {/* Remaining */}
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-700 dark:text-slate-400">
                         Remaining:
@@ -323,18 +334,10 @@ const PlansPage = () => {
                         {subscription.remaining} analyses left
                       </span>
                     </div>
-
-                    {subscription.cancel_at_period_end && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
-                        <p className="text-yellow-600 dark:text-yellow-400 font-medium flex items-center gap-2">
-                          <span className="text-lg">⚠️</span>
-                          Subscription will cancel at period end
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </div>
 
+                {/* Manage Button */}
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => handlePlanSelect(subscription.plan)}
