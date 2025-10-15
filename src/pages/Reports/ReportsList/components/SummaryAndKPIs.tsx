@@ -103,7 +103,7 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
           },
         });
 
-        setKpiData(dummyKpiData);
+        setKpiData(response.data);
       } catch (err) {
         console.error("Error fetching KPI data:", err);
         setError("Failed to load KPI data. Please try again.");
