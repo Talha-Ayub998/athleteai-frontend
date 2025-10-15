@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import axios from "axios";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
@@ -22,15 +22,6 @@ export default function SignUpForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const { loadUser } = useUserContext();
-
-  useEffect(() => {
-    const urlParams = {
-      type: searchParams.get("type"),
-      plan: searchParams.get("plan"),
-      interval: searchParams.get("interval"),
-    };
-    console.log("URL Parameters:", urlParams);
-  }, [searchParams]);
 
   const getSubscriptionParams = () => {
     const type = searchParams.get("type");
@@ -118,8 +109,6 @@ export default function SignUpForm() {
         ...formData,
         ...subscriptionParams,
       };
-
-      console.log("Registration data being sent:", registrationData);
 
       const response = await axiosInstance.post(
         "/users/register/",
