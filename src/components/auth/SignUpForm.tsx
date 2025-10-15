@@ -5,6 +5,7 @@ import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import axiosInstance from "../../api/axiosInstance";
+import { useUserContext } from "../../context/UserContext";
 
 export default function SignUpForm() {
   const navigate = useNavigate();
@@ -20,30 +21,22 @@ export default function SignUpForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const { loadUser } = useUserContext();
 
-  // Extract and log URL parameters
   useEffect(() => {
     const urlParams = {
       type: searchParams.get("type"),
       plan: searchParams.get("plan"),
       interval: searchParams.get("interval"),
     };
-
     console.log("URL Parameters:", urlParams);
-
-    // You can also log individual parameters
-    console.log("Type:", urlParams.type);
-    console.log("Plan:", urlParams.plan);
-    console.log("Interval:", urlParams.interval);
   }, [searchParams]);
 
-  // Helper function to get subscription parameters
   const getSubscriptionParams = () => {
     const type = searchParams.get("type");
     const plan = searchParams.get("plan");
     const interval = searchParams.get("interval");
 
-    // If no query params, default to free
     if (!type || !plan) {
       return {
         type: "subscription",
@@ -52,7 +45,6 @@ export default function SignUpForm() {
       };
     }
 
-    // For one_time purchases, don't include interval
     if (type === "one_time") {
       return {
         type,
@@ -60,7 +52,6 @@ export default function SignUpForm() {
       };
     }
 
-    // For subscription plans, include interval (default to month if not specified)
     return {
       type,
       plan,
@@ -68,17 +59,13 @@ export default function SignUpForm() {
     };
   };
 
-  // Helper function to get display name for plans
   const getPlanDisplayName = (plan, type) => {
     if (type === "one_time" && plan === "pdf_report") {
       return "One Time PDF Report";
     }
-
-    // Capitalize first letter for other plans
     return plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : "";
   };
 
-  // Helper function to check if subscription info should be displayed
   const shouldShowSubscriptionInfo = () => {
     const plan = searchParams.get("plan");
     return (
@@ -126,10 +113,7 @@ export default function SignUpForm() {
     }
 
     try {
-      // Get subscription parameters
       const subscriptionParams = getSubscriptionParams();
-
-      // Include subscription parameters in the registration data
       const registrationData = {
         ...formData,
         ...subscriptionParams,
@@ -143,30 +127,18 @@ export default function SignUpForm() {
       );
 
       if (response.status === 200 || response.status === 201) {
-        setSuccess(true);
-        setFormData({
-          username: "",
-          email: "",
-          password: "",
-          password2: "",
-        });
+        const { access, refresh, checkout_url } = response.data;
 
-        // Check if response has checkout_url and redirect to it
-        if (
-          response.data?.checkout_url &&
-          response.data.checkout_url !== null &&
-          response.data.checkout_url !== undefined
-        ) {
-          console.log(
-            "Redirecting to checkout URL:",
-            response.data.checkout_url
-          );
-          window.location.href = response.data.checkout_url;
+        if (access) localStorage.setItem("authToken", access);
+        if (refresh)
+          localStorage.setItem("refreshToken", JSON.stringify(refresh));
+
+        await loadUser();
+
+        if (checkout_url) {
+          window.location.href = checkout_url;
         } else {
-          // Default redirect to home page after success message
-          setTimeout(() => {
-            navigate("/");
-          }, 1500);
+          navigate("/");
         }
       }
     } catch (err) {
@@ -189,15 +161,7 @@ export default function SignUpForm() {
 
   return (
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar py-12">
-      <div className="w-full max-w-md mx-auto mb-5 sm:pt-10">
-        {/* <Link
-          to="/"
-          className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-        >
-          <ChevronLeftIcon className="size-5" />
-          Back to dashboard
-        </Link> */}
-      </div>
+      <div className="w-full max-w-md mx-auto mb-5 sm:pt-10"></div>
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
@@ -208,7 +172,6 @@ export default function SignUpForm() {
               Enter your details to create your account!
             </p>
 
-            {/* Display subscription info only for precision, essentials, and pdf_report */}
             {shouldShowSubscriptionInfo() && (
               <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
                 <p className="text-sm text-blue-700 dark:text-blue-400">
@@ -225,7 +188,6 @@ export default function SignUpForm() {
             )}
           </div>
 
-          {/* Success Message - only show for free plan */}
           {success && getSubscriptionParams().plan === "free" && (
             <div className="mb-5 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
               <p className="text-sm text-green-700 dark:text-green-400">
@@ -234,7 +196,6 @@ export default function SignUpForm() {
             </div>
           )}
 
-          {/* Error Message */}
           {error && (
             <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
               <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
@@ -245,7 +206,6 @@ export default function SignUpForm() {
             <form onSubmit={handleSubmit}>
               <div className="space-y-5">
                 <div className="grid grid-cols-1 gap-5">
-                  {/* Username */}
                   <div className="sm:col-span-1">
                     <Label>
                       Username<span className="text-error-500">*</span>
@@ -260,7 +220,6 @@ export default function SignUpForm() {
                     />
                   </div>
                 </div>
-                {/* Email */}
                 <div>
                   <Label>
                     Email<span className="text-error-500">*</span>
@@ -274,7 +233,14 @@ export default function SignUpForm() {
                     onChange={handleInputChange}
                   />
                 </div>
-                {/* Password */}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  Your password must:
+                  <ul className="list-disc list-inside mt-1 space-y-1">
+                    <li>Be at least 8 characters long</li>
+                    <li>Include letters, numbers, and special characters</li>
+                    <li>Avoid common or numeric-only passwords</li>
+                  </ul>
+                </p>
                 <div>
                   <Label>
                     Password<span className="text-error-500">*</span>
@@ -298,16 +264,7 @@ export default function SignUpForm() {
                       )}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    Your password must:
-                    <ul className="list-disc list-inside mt-1 space-y-1">
-                      <li>Be at least 8 characters long</li>
-                      <li>Include letters, numbers, and special characters</li>
-                      <li>Avoid common or numeric-only passwords</li>
-                    </ul>
-                  </p>
                 </div>
-                {/* Confirm Password */}
                 <div>
                   <Label>
                     Confirm Password<span className="text-error-500">*</span>
@@ -335,7 +292,6 @@ export default function SignUpForm() {
                   </div>
                 </div>
 
-                {/* Submit Button */}
                 <div>
                   <button
                     type="submit"
@@ -376,7 +332,7 @@ export default function SignUpForm() {
 
             <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-                Already have an account? {""}
+                Already have an account?{" "}
                 <Link
                   to="/"
                   className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
