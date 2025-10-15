@@ -3,6 +3,7 @@ import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 import SectionWrapper from "../../Report/components/SectionWrapper";
 import axiosInstance from "../../../../api/axiosInstance";
+import { useTheme } from "../../../../context/ThemeContext";
 
 const dummyKpiData = {
   user_id: 1,
@@ -91,6 +92,8 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { theme } = useTheme();
 
   useEffect(() => {
     const fetchKPIData = async () => {
@@ -213,19 +216,18 @@ const SummaryAndKPIs: React.FC<SummaryAndKPIsProps> = ({ userId }) => {
       formatter: (val: number) => `${val.toFixed(1)}%`,
       style: {
         fontSize: "12px",
-        fontWeight: "bold",
         colors: undefined,
       },
       background: {
         enabled: false,
       },
       dropShadow: {
-        enabled: false,
-        top: 1,
-        left: 1,
-        blur: 1,
-        color: "#000",
-        opacity: 0.5,
+        enabled: true,
+        top: 0,
+        left: 0,
+        blur: 1.5,
+        color: theme === "dark" ? "#36454F" : "#D3D3D3",
+        opacity: 1,
       },
     },
 

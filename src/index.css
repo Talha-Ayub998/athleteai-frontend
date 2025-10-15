@@ -29,8 +29,7 @@ layer(base);
 }
 
 .pie-chart-container .apexcharts-datalabel {
-  fill: var(--apexcharts-datalabel-color) !important;
-  font-weight: bold !important;
+  fill: var(--apexcharts-datalabel-color);
   filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5));
 }
 
