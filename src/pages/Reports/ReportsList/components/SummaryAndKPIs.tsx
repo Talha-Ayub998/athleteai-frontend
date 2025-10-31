@@ -5,42 +5,6 @@ import SectionWrapper from "../../Report/components/SectionWrapper";
 import axiosInstance from "../../../../api/axiosInstance";
 import { useTheme } from "../../../../context/ThemeContext";
 
-const dummyKpiData = {
-  user_id: 1,
-  user_email: "test@example.com",
-  matches_total: 45,
-  wins: 32,
-  losses: 13,
-  kpis: {
-    win_rate_pct: "71.1%",
-    offensive_submission_success_pct: "68.5%",
-    defensive_submission_success_pct: "82.3%",
-    top_moves: {
-      top_offensive_move: "Rear Naked Choke",
-      top_defensive_threat: "Armbar Defense",
-    },
-  },
-  chart: {
-    offense_threats_bar: {
-      labels: [
-        "Rear Naked Choke",
-        "Armbar",
-        "Triangle",
-        "Kimura",
-        "Guillotine",
-      ],
-      counts: [15, 12, 8, 6, 4],
-      total_threats: 45,
-    },
-    win_method_distribution: {
-      labels: ["Submission", "Points", "Decision"],
-      counts: [18, 8, 6],
-      percents: [56.3, 25.0, 18.7],
-      total_wins: 32,
-    },
-  },
-};
-
 interface KPIData {
   user_id: number;
   user_email: string;
