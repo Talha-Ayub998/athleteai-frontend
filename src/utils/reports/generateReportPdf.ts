@@ -161,7 +161,7 @@ function createChartConfig(
         horizontal: horizontal,
         columnWidth: horizontal ? undefined : "55%",
         barHeight: horizontal ? "55%" : undefined,
-        borderRadius: 4,
+        borderTopRadius: 4,
       },
     },
     dataLabels: {
@@ -198,7 +198,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
           report.pdf_data.graph_data.offense_successes.labels,
           report.pdf_data.graph_data.offense_successes.values,
           "Number of Successful Offense Attempts",
-          "#5470FE", // Blue color matching your screenshot
+          "#3D54E6",
           true // horizontal
         )
       ),
@@ -207,7 +207,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
           report.pdf_data.graph_data.offense_attempts.labels,
           report.pdf_data.graph_data.offense_attempts.values,
           "Number of Offense Attempts",
-          "#5470FE", // Blue color matching your screenshot
+          "#3D54E6",
           false // vertical
         )
       ),
@@ -216,7 +216,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
           report.pdf_data.graph_data.defense_successes.labels,
           report.pdf_data.graph_data.defense_successes.values,
           "Number of Successful Defense Attempts",
-          "#5470FE", // Blue color matching your screenshot
+          "#3D54E6",
           true // horizontal
         )
       ),
@@ -225,7 +225,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
           report.pdf_data.graph_data.defense_attempts.labels,
           report.pdf_data.graph_data.defense_attempts.values,
           "Number of Defense Attempts",
-          "#5470FE", // Blue color matching your screenshot
+          "#3D54E6",
           false // vertical
         )
       ),
