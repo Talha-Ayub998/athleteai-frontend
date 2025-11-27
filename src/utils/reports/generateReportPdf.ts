@@ -77,7 +77,7 @@ async function renderChartForPDF(
 
     // Export as data URI
     const result = await chart.dataURI();
-    const dataUri = result.imgURI;
+    const dataUri = "imgURI" in result ? result.imgURI : "";
 
     // Cleanup
     chart.destroy();
@@ -121,14 +121,14 @@ function createChartConfig(
           fontSize: "14px",
           fontWeight: 500,
           fontFamily: "Arial, Helvetica, sans-serif", // X-axis title font
-          color: "#374151",
+          color: "#000",
         },
       },
       labels: {
         style: {
           fontSize: "12px",
           fontFamily: "Arial, Helvetica, sans-serif", // X-axis labels font
-          colors: "#6B7280",
+          colors: "#000",
         },
       },
     },
@@ -140,14 +140,14 @@ function createChartConfig(
           fontSize: "14px",
           fontWeight: 500,
           fontFamily: "Arial, Helvetica, sans-serif", // Y-axis title font
-          color: "#374151",
+          color: "#000",
         },
       },
       labels: {
         style: {
           fontSize: "12px",
           fontFamily: "Arial, Helvetica, sans-serif", // Y-axis labels font
-          colors: "#6B7280",
+          colors: "#000",
         },
       },
     },
@@ -319,7 +319,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
         const pngImage = await pdfDoc.embedPng(imageBytes);
 
         // Fixed width with maintained aspect ratio
-        const fixedWidth = 450;
+        const fixedWidth = 500;
         const originalWidth = pngImage.width;
         const originalHeight = pngImage.height;
         const aspectRatio = originalHeight / originalWidth;
@@ -331,7 +331,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
 
         // Center the chart horizontally
         // const xPosition = left + (right - left - fixedWidth) / 2;
-        const xPosition = left + 10;
+        const xPosition = left;
 
         page.drawImage(pngImage, {
           x: xPosition,
