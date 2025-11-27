@@ -168,18 +168,38 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
       try {
         const imageBytes = dataUriToBytes(img);
         const pngImage = await pdfDoc.embedPng(imageBytes);
-        const imgDims = pngImage.scale(0.45); // Slightly smaller for better fit
 
-        checkNewPage(imgDims.height + 80);
+        // Calculate dimensions to fit exactly within PDF page width
+        const availableWidth = right - left; // Available width on page (595 - 100 = 495)
+        const maxHeight = 300; // Maximum height for charts
+
+        const originalWidth = pngImage.width;
+        const originalHeight = pngImage.height;
+        const aspectRatio = originalHeight / originalWidth;
+
+        // Fit to width first
+        let imgWidth = availableWidth;
+        let imgHeight = availableWidth * aspectRatio;
+
+        // If height exceeds max, scale down to fit height instead
+        if (imgHeight > maxHeight) {
+          imgHeight = maxHeight;
+          imgWidth = maxHeight / aspectRatio;
+        }
+
+        checkNewPage(imgHeight + 80);
+
+        // Center the image if it doesn't fill the full width
+        const xPosition = left + (availableWidth - imgWidth) / 2;
 
         page.drawImage(pngImage, {
-          x: left,
-          y: y - imgDims.height,
-          width: imgDims.width,
-          height: imgDims.height,
+          x: xPosition,
+          y: y - imgHeight,
+          width: imgWidth,
+          height: imgHeight,
         });
 
-        y -= imgDims.height + 15;
+        y -= imgHeight + 15;
 
         // Add "Key Takeaway" subtitle
         page.drawText("Key Takeaway", {
