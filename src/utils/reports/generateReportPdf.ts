@@ -43,54 +43,203 @@ function dataUriToBytes(dataUri: string): Uint8Array {
   return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
 }
 
-export async function generateReportPdf(report: ReportType): Promise<void> {
-  const chartIds = {
-    offenseSuccess: "offense-successes-chart",
-    offenseAttempts: "offense-attempts-chart",
-    defenseSuccess: "defense-successes-chart",
-    defenseAttempts: "defense-attempts-chart",
-  };
-
-  async function getChartDataUri(chartId: string): Promise<string> {
-    const ApexChartsGlobal = (
-      window as Window & { ApexCharts?: typeof ApexCharts }
-    ).ApexCharts;
-    if (!ApexChartsGlobal)
-      throw new Error("ApexCharts is not available on window");
-
-    try {
-      const result = await ApexChartsGlobal.exec(chartId, "dataURI");
-      return result.imgURI;
-    } catch (error) {
-      console.warn(`Failed to get chart data for ${chartId}:`, error);
-      throw new Error(`Chart ${chartId} could not be rendered`);
-    }
-  }
+// Helper to render chart in hidden container at fixed size
+async function renderChartForPDF(
+  chartConfig: any,
+  width: number = 700,
+  height: number = 450
+): Promise<string> {
+  // Create hidden container
+  const container = document.createElement("div");
+  container.style.width = `${width}px`;
+  container.style.height = `${height}px`;
+  container.style.position = "absolute";
+  container.style.left = "-9999px";
+  container.style.top = "-9999px";
+  document.body.appendChild(container);
 
   try {
-    // Get all chart images with error handling
+    // Render chart in hidden container
+    const chart = new ApexCharts(container, {
+      ...chartConfig,
+      chart: {
+        ...chartConfig.chart,
+        width,
+        height,
+        animations: { enabled: false }, // Disable animations for faster rendering
+      },
+    });
+
+    await chart.render();
+
+    // Wait for chart to fully render
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    // Export as data URI
+    const result = await chart.dataURI();
+    const dataUri = result.imgURI;
+
+    // Cleanup
+    chart.destroy();
+    document.body.removeChild(container);
+
+    return dataUri;
+  } catch (error) {
+    // Cleanup on error
+    if (container.parentNode) {
+      document.body.removeChild(container);
+    }
+    throw error;
+  }
+}
+
+// Helper to create chart config from report data
+function createChartConfig(
+  labels: string[],
+  values: number[],
+  title: string,
+  color: string,
+  horizontal: boolean = false
+): any {
+  return {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "Arial, Helvetica, sans-serif", // Change this to your preferred font
+    },
+    series: [
+      {
+        name: title,
+        data: values,
+      },
+    ],
+    xaxis: {
+      categories: labels,
+      title: {
+        text: horizontal ? title : "Move Name",
+        style: {
+          fontSize: "14px",
+          fontWeight: 500,
+          fontFamily: "Arial, Helvetica, sans-serif", // X-axis title font
+          color: "#374151",
+        },
+      },
+      labels: {
+        style: {
+          fontSize: "12px",
+          fontFamily: "Arial, Helvetica, sans-serif", // X-axis labels font
+          colors: "#6B7280",
+        },
+      },
+    },
+    yaxis: {
+      title: {
+        text: horizontal ? "Move Name" : title,
+
+        style: {
+          fontSize: "14px",
+          fontWeight: 500,
+          fontFamily: "Arial, Helvetica, sans-serif", // Y-axis title font
+          color: "#374151",
+        },
+      },
+      labels: {
+        style: {
+          fontSize: "12px",
+          fontFamily: "Arial, Helvetica, sans-serif", // Y-axis labels font
+          colors: "#6B7280",
+        },
+      },
+    },
+    colors: [color],
+    title: {
+      text: "",
+      align: "center",
+    },
+    plotOptions: {
+      bar: {
+        horizontal: horizontal,
+        columnWidth: horizontal ? undefined : "55%",
+        barHeight: horizontal ? "55%" : undefined,
+        borderRadius: 4,
+      },
+    },
+    dataLabels: {
+      enabled: true,
+    },
+    grid: {
+      borderColor: "#E5E7EB",
+      strokeDashArray: 0,
+      xaxis: {
+        lines: {
+          show: horizontal, // Show x-axis lines only in vertical charts
+        },
+      },
+      yaxis: {
+        lines: {
+          show: !horizontal, // Show y-axis lines only in horizontal charts
+        },
+      },
+    },
+  };
+}
+
+export async function generateReportPdf(report: ReportType): Promise<void> {
+  try {
+    // Generate all charts at fixed size for PDF (independent of screen size)
     const [
       offenseSuccessImg,
       offenseAttemptsImg,
       defenseSuccessImg,
       defenseAttemptsImg,
     ] = await Promise.all([
-      getChartDataUri(chartIds.offenseSuccess),
-      getChartDataUri(chartIds.offenseAttempts),
-      getChartDataUri(chartIds.defenseSuccess),
-      getChartDataUri(chartIds.defenseAttempts),
+      renderChartForPDF(
+        createChartConfig(
+          report.pdf_data.graph_data.offense_successes.labels,
+          report.pdf_data.graph_data.offense_successes.values,
+          "Number of Successful Offense Attempts",
+          "#5470FE", // Blue color matching your screenshot
+          true // horizontal
+        )
+      ),
+      renderChartForPDF(
+        createChartConfig(
+          report.pdf_data.graph_data.offense_attempts.labels,
+          report.pdf_data.graph_data.offense_attempts.values,
+          "Number of Offense Attempts",
+          "#5470FE", // Blue color matching your screenshot
+          false // vertical
+        )
+      ),
+      renderChartForPDF(
+        createChartConfig(
+          report.pdf_data.graph_data.defense_successes.labels,
+          report.pdf_data.graph_data.defense_successes.values,
+          "Number of Successful Defense Attempts",
+          "#5470FE", // Blue color matching your screenshot
+          true // horizontal
+        )
+      ),
+      renderChartForPDF(
+        createChartConfig(
+          report.pdf_data.graph_data.defense_attempts.labels,
+          report.pdf_data.graph_data.defense_attempts.values,
+          "Number of Defense Attempts",
+          "#5470FE", // Blue color matching your screenshot
+          false // vertical
+        )
+      ),
     ]);
-
     const pdfDoc = await PDFDocument.create();
     let page = pdfDoc.addPage([595, 842]); // A4
 
     // Page margins and padding
-    const topPadding = 60; // Top padding from page edge
-    const bottomPadding = 60; // Bottom padding from page edge
-    const leftPadding = 50; // Left padding from page edge
-    const rightPadding = 50; // Right padding from page edge
+    const topPadding = 60;
+    const bottomPadding = 60;
+    const leftPadding = 50;
+    const rightPadding = 50;
 
-    let y = 840 - topPadding; // Start from top with padding
+    let y = 840 - topPadding;
     const left = leftPadding;
     const right = 595 - rightPadding;
     const lineHeight = 20;
@@ -101,14 +250,14 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
     function checkNewPage(requiredSpace: number = 40): void {
       if (y < bottomPadding + requiredSpace) {
         page = pdfDoc.addPage([595, 842]);
-        y = 842 - topPadding; // Reset to top with padding
+        y = 842 - topPadding;
       }
     }
 
     // Add section title with more spacing
     function addSectionTitle(title: string): void {
       checkNewPage(80);
-      y -= lineHeight * 0.5; // Add space before section title
+      y -= lineHeight * 0.5;
       page.drawText(title, {
         x: left,
         y,
@@ -116,7 +265,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
         font: boldFont,
         color: rgb(0.2, 0.2, 0.6),
       });
-      y -= lineHeight * 1.5; // More space after title
+      y -= lineHeight * 1.5;
     }
 
     // Add bullet points with proper text wrapping
@@ -139,7 +288,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
 
         for (const line of bulletLines) {
           checkNewPage();
-          const xPos = isFirstLine ? left + 10 : left + 20; // Indent continuation lines
+          const xPos = isFirstLine ? left + 10 : left + 20;
           page.drawText(line.replace("• ", isFirstLine ? "• " : ""), {
             x: xPos,
             y,
@@ -150,7 +299,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
           isFirstLine = false;
         }
       }
-      y -= lineHeight * 1.2; // More spacing after section
+      y -= lineHeight * 1.2;
     }
 
     // Add chart section with image and analysis
@@ -161,7 +310,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
     ): Promise<void> {
       // Start each chart section on a new page with padding
       page = pdfDoc.addPage([595, 842]);
-      y = 842 - topPadding; // Start from top with padding
+      y = 842 - topPadding;
 
       addSectionTitle(title);
 
@@ -169,33 +318,25 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
         const imageBytes = dataUriToBytes(img);
         const pngImage = await pdfDoc.embedPng(imageBytes);
 
-        // Calculate dimensions to fit exactly within PDF page width
-        const availableWidth = right - left; // Available width on page (595 - 100 = 495)
-        const maxHeight = 300; // Maximum height for charts
-
+        // Fixed width with maintained aspect ratio
+        const fixedWidth = 450;
         const originalWidth = pngImage.width;
         const originalHeight = pngImage.height;
         const aspectRatio = originalHeight / originalWidth;
 
-        // Fit to width first
-        let imgWidth = availableWidth;
-        let imgHeight = availableWidth * aspectRatio;
-
-        // If height exceeds max, scale down to fit height instead
-        if (imgHeight > maxHeight) {
-          imgHeight = maxHeight;
-          imgWidth = maxHeight / aspectRatio;
-        }
+        // Calculate height based on aspect ratio to prevent stretching
+        const imgHeight = fixedWidth * aspectRatio;
 
         checkNewPage(imgHeight + 80);
 
-        // Center the image if it doesn't fill the full width
-        const xPosition = left + (availableWidth - imgWidth) / 2;
+        // Center the chart horizontally
+        // const xPosition = left + (right - left - fixedWidth) / 2;
+        const xPosition = left + 10;
 
         page.drawImage(pngImage, {
           x: xPosition,
           y: y - imgHeight,
-          width: imgWidth,
+          width: fixedWidth,
           height: imgHeight,
         });
 
@@ -236,10 +377,9 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
           y -= lineHeight;
         }
 
-        y -= lineHeight * 1.5; // More spacing after chart section
+        y -= lineHeight * 1.5;
       } catch (error) {
         console.error(`Error adding chart ${title}:`, error);
-        // Continue without the chart if there's an error
         page.drawText(`[Chart could not be loaded: ${title}]`, {
           x: left,
           y,
@@ -271,7 +411,6 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
             lines.push(current);
             current = word;
           } else {
-            // Handle very long words
             lines.push(word);
             current = "";
           }
@@ -328,7 +467,7 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
     addSectionTitle("Points");
     addBullets(report.pdf_data.points);
 
-    // Charts Sections - Each on new pages as specified
+    // Charts Sections - Each on new pages
     await addChartSection(
       "Offensive Move Analysis",
       offenseSuccessImg,
@@ -391,9 +530,8 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
       report.pdf_data.final_summary.disclaimer &&
       report.pdf_data.final_summary.disclaimer.trim()
     ) {
-      y -= lineHeight * 1.0; // More space before disclaimer
+      y -= lineHeight * 1.0;
 
-      // Add disclaimer header
       page.drawText("Disclaimer:", {
         x: left,
         y,
@@ -425,7 +563,9 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
 
     // Generate and download PDF
     const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const blob = new Blob([new Uint8Array(pdfBytes)], {
+      type: "application/pdf",
+    });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
 
@@ -435,12 +575,10 @@ export async function generateReportPdf(report: ReportType): Promise<void> {
       "_"
     )}_Jiu_Jitsu_Report.pdf`;
 
-    // Ensure the link is added to DOM for download to work in all browsers
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    // Clean up the object URL
     URL.revokeObjectURL(url);
 
     console.log("PDF generated successfully!");
