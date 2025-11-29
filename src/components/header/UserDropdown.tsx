@@ -67,7 +67,7 @@ export default function UserDropdown() {
           </span>
         </div>
 
-        {user.role === "athlete" && (
+        {user?.role === "athlete" && (
           <ul className="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
             <li>
               <DropdownItem
