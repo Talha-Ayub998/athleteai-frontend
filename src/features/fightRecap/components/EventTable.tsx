@@ -51,7 +51,8 @@ export function EventTable({
     return (
       <div className="bg-card rounded-lg p-8 text-center border border-border">
         <p className="text-muted-foreground">
-          No events recorded yet. Pause the video and click "Add Event" to start annotating.
+          No events recorded yet. Pause the video and click "Add Event" to start
+          annotating.
         </p>
       </div>
     );
@@ -89,16 +90,22 @@ export function EventTable({
                   </button>
                 </td>
                 <td>
-                  <span className={getPlayerBadgeClass(event.player)}>{event.player}</span>
+                  <span className={getPlayerBadgeClass(event.player)}>
+                    {event.player}
+                  </span>
                 </td>
                 <td>
-                  <span className={getTypeBadgeClass(event.type)}>{event.type}</span>
+                  <span className={getTypeBadgeClass(event.type)}>
+                    {event.type}
+                  </span>
                 </td>
-                <td className="font-medium">{event.position}</td>
+                <td className="font-medium text-white">{event.position}</td>
                 <td className="text-muted-foreground max-w-xs">
                   <span className="line-clamp-3">{event.notes || "-"}</span>
                 </td>
-                <td className="text-center font-semibold">{event.points ?? "-"}</td>
+                <td className="text-center font-semibold text-white">
+                  {event.points ?? "-"}
+                </td>
                 <td>
                   <div className="flex items-center justify-center gap-1">
                     <Button
