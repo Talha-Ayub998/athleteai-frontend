@@ -17,7 +17,7 @@ export default function FightRecapLayout() {
   };
 
   return (
-    <section className="fight-recap-theme -mx-4 -my-4 md:-mx-6 md:-my-6">
+    <section className="fight-recap-theme">
       <div className="px-6 py-4 border-b border-border bg-background sticky top-0 z-30">
         <button
           type="button"

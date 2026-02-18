@@ -1,13 +1,23 @@
 import { SidebarProvider, useSidebar } from "../context/SidebarContext";
-import { Outlet } from "react-router";
+import { matchPath, Outlet, useLocation } from "react-router";
 import AppHeader from "./AppHeader";
 import Backdrop from "./Backdrop";
 import AppSidebar from "./AppSidebar";
-import Breadcrumbs from "../components/common/Breadcrumbs";
-import PageBreadcrumb from "../components/common/PageBreadCrumb";
+import BaseLayout from "./BaseLayout";
 
 const LayoutContent: React.FC = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const location = useLocation();
+
+  const baseLayoutRoutes = ["/fight-recap/*"];
+
+  const isBaseLayoutRoute = baseLayoutRoutes.some((route) =>
+    matchPath({ path: route, end: false }, location.pathname),
+  );
+
+  if (isBaseLayoutRoute) {
+    return <BaseLayout />;
+  }
 
   return (
     <div className="min-h-screen xl:flex">

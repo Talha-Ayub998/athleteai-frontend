@@ -43,7 +43,7 @@ export default function App() {
 
   const authenticatedUser = isAuthenticated();
   const [initialLoading, setInitialLoading] = useState(
-    authenticatedUser ? true : false
+    authenticatedUser ? true : false,
   );
 
   useEffect(() => {
@@ -151,7 +151,7 @@ export default function App() {
         </Route>
 
         {/* UI routes */}
-        <Route path="profile" element={<UserProfiles />} />
+        {/* <Route path="profile" element={<UserProfiles />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="blank" element={<Blank />} />
         <Route path="form-elements" element={<FormElements />} />
@@ -163,7 +163,7 @@ export default function App() {
         <Route path="images" element={<Images />} />
         <Route path="videos" element={<Videos />} />
         <Route path="line-chart" element={<LineChart />} />
-        <Route path="bar-chart" element={<BarChart />} />
+        <Route path="bar-chart" element={<BarChart />} /> */}
 
         {/* Fallback for any unmatched routes */}
         <Route path="*" element={<NotFound />} />
