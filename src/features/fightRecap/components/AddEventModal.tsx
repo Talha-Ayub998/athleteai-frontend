@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X } from "lucide-react";
 import { FightEvent, EventType, PlayerType, DEFAULT_PRESETS } from "../types/events";
@@ -24,69 +24,20 @@ export function AddEventModal({
   formatTime,
   editingEvent,
 }: AddEventModalProps) {
-  const [player, setPlayer] = useState<PlayerType>("Me");
-  const [eventType, setEventType] = useState<EventType>("Position");
-  const [position, setPosition] = useState("");
-  const [notes, setNotes] = useState("");
-  const [points, setPoints] = useState("");
+  const [player, setPlayer] = useState<PlayerType>(editingEvent?.player || "Me");
+  const [eventType, setEventType] = useState<EventType>(
+    editingEvent?.type || "Position"
+  );
+  const [position, setPosition] = useState(editingEvent?.position || "");
+  const [notes, setNotes] = useState(editingEvent?.notes || "");
+  const [points, setPoints] = useState<string>(
+    editingEvent?.points?.toString() || ""
+  );
   const [isCustomPosition, setIsCustomPosition] = useState(false);
   const [customPositionValue, setCustomPositionValue] = useState("");
 
   const players: PlayerType[] = ["Me", "Opponent", "AI Coach"];
   const eventTypes: EventType[] = ["Position", "Transition", "Submission", "Note"];
-
-  const presetsForType = useMemo(() => {
-    switch (eventType) {
-      case "Position":
-        return DEFAULT_PRESETS.positions;
-      case "Transition":
-        return DEFAULT_PRESETS.transitions;
-      case "Submission":
-        return DEFAULT_PRESETS.submissions;
-      case "Note":
-        return DEFAULT_PRESETS.notes;
-      default:
-        return [];
-    }
-  }, [eventType]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const event = editingEvent;
-    if (!event) {
-      setPlayer("Me");
-      setEventType("Position");
-      setPosition("");
-      setNotes("");
-      setPoints("");
-      setIsCustomPosition(false);
-      setCustomPositionValue("");
-      return;
-    }
-
-    setPlayer(event.player);
-    setEventType(event.type);
-    setNotes(event.notes || "");
-    setPoints(event.points?.toString() || "");
-
-    const presetLookup = {
-      Position: DEFAULT_PRESETS.positions,
-      Transition: DEFAULT_PRESETS.transitions,
-      Submission: DEFAULT_PRESETS.submissions,
-      Note: DEFAULT_PRESETS.notes,
-    } as const;
-
-    if ((presetLookup[event.type] as readonly string[]).includes(event.position)) {
-      setPosition(event.position);
-      setIsCustomPosition(false);
-      setCustomPositionValue("");
-    } else {
-      setPosition("");
-      setIsCustomPosition(true);
-      setCustomPositionValue(event.position);
-    }
-  }, [editingEvent, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -112,12 +63,41 @@ export function AddEventModal({
     };
   }, [isOpen]);
 
+  const resetForm = () => {
+    setPlayer("Me");
+    setEventType("Position");
+    setPosition("");
+    setNotes("");
+    setPoints("");
+    setIsCustomPosition(false);
+    setCustomPositionValue("");
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  const getPresetsForType = () => {
+    switch (eventType) {
+      case "Position":
+        return DEFAULT_PRESETS.positions;
+      case "Transition":
+        return DEFAULT_PRESETS.transitions;
+      case "Submission":
+        return DEFAULT_PRESETS.submissions;
+      case "Note":
+        return DEFAULT_PRESETS.notes;
+      default:
+        return [];
+    }
+  };
+
   if (!isOpen) return null;
 
   const handleSave = () => {
     const finalPosition = isCustomPosition ? customPositionValue : position;
-    if (!finalPosition) return;
-
+    if (!finalPosition.trim()) return;
     onSave({
       timestamp: editingEvent?.timestamp ?? timestamp,
       player,
@@ -126,37 +106,38 @@ export function AddEventModal({
       notes,
       points: points ? parseInt(points, 10) : undefined,
     });
-
+    resetForm();
     onClose();
   };
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4"
-      onClick={onClose}
+      className="fight-recap-theme fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 p-4"
+      onClick={handleClose}
     >
       <div
-        className="w-full max-w-lg bg-card border border-border rounded-lg p-6"
+        className="relative grid w-full max-w-lg gap-4 border border-border bg-card p-6 shadow-lg sm:rounded-lg"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 mb-5">
-          <h2 className="text-foreground text-xl font-semibold flex items-center gap-3">
-            <span className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+        <button
+          type="button"
+          onClick={handleClose}
+          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div className="flex flex-col space-y-1.5 text-center sm:text-left">
+          <h2 className="text-lg font-semibold leading-none tracking-tight text-foreground flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
               <Plus className="w-5 h-5 text-primary-foreground" />
-            </span>
+            </div>
             {editingEvent ? "Edit Event" : "Add Event"}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
-        <div className="space-y-5 py-2">
+        <div className="space-y-5 py-1">
           <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
             <span className="text-muted-foreground text-sm">Timestamp:</span>
             <span className="timestamp-badge text-base">
@@ -190,8 +171,6 @@ export function AddEventModal({
                   onClick={() => {
                     setEventType(item);
                     setPosition("");
-                    setIsCustomPosition(false);
-                    setCustomPositionValue("");
                   }}
                   className={`preset-btn ${eventType === item ? "active" : ""}`}
                 >
@@ -212,7 +191,7 @@ export function AddEventModal({
                 : "Note Type"}
             </Label>
             <div className="flex gap-2 flex-wrap max-h-32 overflow-y-auto p-1">
-              {presetsForType.map((preset) => (
+              {getPresetsForType().map((preset) => (
                 <button
                   type="button"
                   key={preset}
@@ -225,7 +204,6 @@ export function AddEventModal({
 
                     setIsCustomPosition(false);
                     setPosition(preset);
-                    setCustomPositionValue("");
                   }}
                   className={`preset-btn text-xs ${
                     preset === "Other"
@@ -284,7 +262,7 @@ export function AddEventModal({
           <div className="flex gap-3 pt-2">
             <Button
               variant="outline"
-              onClick={onClose}
+              onClick={handleClose}
               className="flex-1 border-border text-foreground hover:bg-secondary"
             >
               Cancel
