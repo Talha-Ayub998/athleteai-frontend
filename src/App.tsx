@@ -36,6 +36,7 @@ import UsersList from "./pages/UsersList/UsersList";
 import { isAuthenticated } from "./utils/auth";
 import PlansPage from "./pages/plans/PlansPage";
 import VideoURL from "./pages/VideoURL/VideoURL";
+import FightRecapRoutes from "./features/fightRecap/FightRecapRoutes";
 
 export default function App() {
   const { user, loadUser, userLoading } = useUserContext();
@@ -124,6 +125,7 @@ export default function App() {
               <Route path="reports" element={<ReportsList />} />
               <Route path="reports/:reportId" element={<Report />} />
               <Route path="upload-file" element={<UploadFile />} />
+              <Route path="fight-recap/*" element={<FightRecapRoutes />} />
               <Route path="users" element={<UsersList />} />
               <Route path="users/:userId/reports" element={<ReportsList />} />
               <Route
@@ -143,6 +145,7 @@ export default function App() {
               <Route path="upload-file" element={<UploadFile />} />
               <Route path="video-url" element={<VideoURL />} />
               <Route path="plans" element={<PlansPage />} />
+              <Route path="fight-recap/*" element={<FightRecapRoutes />} />
             </>
           )}
         </Route>

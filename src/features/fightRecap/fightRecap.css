@@ -1,0 +1,338 @@
+.fight-recap-theme {
+  --background: 220 20% 10%;
+  --foreground: 210 20% 95%;
+  --card: 220 18% 13%;
+  --primary: 0 72% 51%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 16% 20%;
+  --muted: 220 14% 18%;
+  --muted-foreground: 215 15% 55%;
+  --border: 220 15% 22%;
+  --input: 220 15% 22%;
+  --accent: 200 80% 50%;
+  --accent-foreground: 0 0% 100%;
+  --popover: 220 18% 15%;
+  --popover-foreground: 210 20% 95%;
+
+  --player-bg: 220 18% 8%;
+  --table-row-alt: 220 16% 14%;
+  --table-header: 220 14% 16%;
+  --success: 142 72% 45%;
+  --warning: 45 93% 47%;
+  --info: 200 80% 50%;
+
+  --sidebar-background: 220 18% 10%;
+  --sidebar-foreground: 210 20% 90%;
+  --sidebar-accent: 220 16% 18%;
+  --sidebar-accent-foreground: 210 20% 90%;
+  --sidebar-border: 220 15% 22%;
+
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.fight-recap-theme * {
+  border-color: hsl(var(--border));
+}
+
+.fight-recap-theme .fight-recap-screen {
+  min-height: calc(100vh - 74px);
+}
+
+.fight-recap-theme .bg-background {
+  background-color: hsl(var(--background));
+}
+
+.fight-recap-theme .text-foreground {
+  color: hsl(var(--foreground));
+}
+
+.fight-recap-theme .text-foreground\/80 {
+  color: hsl(var(--foreground) / 0.8);
+}
+
+.fight-recap-theme .bg-card {
+  background-color: hsl(var(--card));
+}
+
+.fight-recap-theme .border-border {
+  border-color: hsl(var(--border));
+}
+
+.fight-recap-theme .text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+.fight-recap-theme .bg-primary {
+  background-color: hsl(var(--primary));
+}
+
+.fight-recap-theme .bg-primary\/20 {
+  background-color: hsl(var(--primary) / 0.2);
+}
+
+.fight-recap-theme .text-primary {
+  color: hsl(var(--primary));
+}
+
+.fight-recap-theme .text-primary-foreground {
+  color: hsl(var(--primary-foreground));
+}
+
+.fight-recap-theme .bg-secondary {
+  background-color: hsl(var(--secondary));
+}
+
+.fight-recap-theme .bg-muted {
+  background-color: hsl(var(--muted));
+}
+
+.fight-recap-theme .border-input {
+  border-color: hsl(var(--input));
+}
+
+.fight-recap-theme .bg-accent {
+  background-color: hsl(var(--accent));
+}
+
+.fight-recap-theme .text-accent-foreground {
+  color: hsl(var(--accent-foreground));
+}
+
+.fight-recap-theme .bg-sidebar {
+  background-color: hsl(var(--sidebar-background));
+}
+
+.fight-recap-theme .border-sidebar-border {
+  border-color: hsl(var(--sidebar-border));
+}
+
+.fight-recap-theme .bg-sidebar-accent {
+  background-color: hsl(var(--sidebar-accent));
+}
+
+.fight-recap-theme .text-sidebar-accent-foreground {
+  color: hsl(var(--sidebar-accent-foreground));
+}
+
+.fight-recap-theme .text-sidebar-foreground {
+  color: hsl(var(--sidebar-foreground));
+}
+
+.fight-recap-theme .hover\:bg-primary\/90:hover {
+  background-color: hsl(var(--primary) / 0.9);
+}
+
+.fight-recap-theme .hover\:bg-primary\/20:hover {
+  background-color: hsl(var(--primary) / 0.2);
+}
+
+.fight-recap-theme .hover\:text-primary:hover {
+  color: hsl(var(--primary));
+}
+
+.fight-recap-theme .hover\:bg-secondary:hover {
+  background-color: hsl(var(--secondary));
+}
+
+.fight-recap-theme .hover\:bg-accent:hover {
+  background-color: hsl(var(--accent));
+}
+
+.fight-recap-theme .hover\:text-accent-foreground:hover {
+  color: hsl(var(--accent-foreground));
+}
+
+.fight-recap-theme .hover\:bg-secondary\/50:hover {
+  background-color: hsl(var(--secondary) / 0.5);
+}
+
+.fight-recap-theme .hover\:bg-secondary\/80:hover {
+  background-color: hsl(var(--secondary) / 0.8);
+}
+
+.fight-recap-theme .hover\:text-foreground:hover {
+  color: hsl(var(--foreground));
+}
+
+.fight-recap-theme .hover\:bg-sidebar-accent:hover {
+  background-color: hsl(var(--sidebar-accent));
+}
+
+.fight-recap-theme .hover\:text-sidebar-accent-foreground:hover {
+  color: hsl(var(--sidebar-accent-foreground));
+}
+
+.fight-recap-theme .video-container {
+  position: relative;
+  width: 100%;
+  background: hsl(var(--player-bg));
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.fight-recap-theme .bg-player {
+  background-color: hsl(var(--player-bg));
+}
+
+.fight-recap-theme .video-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+  padding: 0.75rem 1rem;
+}
+
+.fight-recap-theme .progress-bar {
+  height: 0.25rem;
+  background-color: hsl(var(--muted));
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fight-recap-theme .progress-bar-fill {
+  height: 100%;
+  background-color: hsl(var(--primary));
+  transition: all 0.1s;
+}
+
+.fight-recap-theme .event-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fight-recap-theme .event-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  color: hsl(var(--muted-foreground));
+  background-color: hsl(var(--table-header));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.fight-recap-theme .event-table td {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.fight-recap-theme .event-table tr:nth-child(even) {
+  background-color: hsl(var(--table-row-alt));
+}
+
+.fight-recap-theme .event-table tr:hover {
+  background-color: hsl(var(--secondary) / 0.5);
+}
+
+.fight-recap-theme .timestamp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+.fight-recap-theme .player-badge,
+.fight-recap-theme .type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.fight-recap-theme .player-badge.me,
+.fight-recap-theme .type-badge.submission {
+  background-color: hsl(var(--primary) / 0.2);
+  color: hsl(var(--primary));
+}
+
+.fight-recap-theme .player-badge.opponent {
+  background-color: hsl(var(--accent) / 0.2);
+  color: hsl(var(--accent));
+}
+
+.fight-recap-theme .player-badge.coach {
+  background-color: hsl(var(--success) / 0.2);
+  color: hsl(var(--success));
+}
+
+.fight-recap-theme .type-badge.position {
+  background-color: hsl(var(--info) / 0.2);
+  color: hsl(var(--info));
+}
+
+.fight-recap-theme .type-badge.transition {
+  background-color: hsl(var(--warning) / 0.2);
+  color: hsl(var(--warning));
+}
+
+.fight-recap-theme .type-badge.note {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+.fight-recap-theme .action-btn {
+  padding: 0.375rem;
+  border-radius: 0.375rem;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.fight-recap-theme .action-btn.edit {
+  color: hsl(var(--accent));
+}
+
+.fight-recap-theme .action-btn.delete {
+  color: #ef4444;
+}
+
+.fight-recap-theme .preset-btn {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.fight-recap-theme .preset-btn:hover {
+  background-color: hsl(var(--secondary));
+}
+
+.fight-recap-theme .preset-btn.active {
+  border-color: hsl(var(--primary));
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+.fight-recap-theme .line-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+@keyframes fight-recap-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fight-recap-theme .animate-fade-in {
+  animation: fight-recap-fade-in 0.3s ease-out both;
+}

@@ -45,6 +45,11 @@ const athleteNavItems: NavItem[] = [
     name: "Video URL",
     path: "/video-url",
   },
+  {
+    icon: <PageIcon />,
+    name: "Fight Recap",
+    path: "/fight-recap",
+  },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -62,6 +67,11 @@ const adminNavItems: NavItem[] = [
     icon: <ListIcon />,
     name: "Users List",
     path: "/users",
+  },
+  {
+    icon: <PageIcon />,
+    name: "Fight Recap",
+    path: "/fight-recap",
   },
 ];
 
