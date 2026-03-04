@@ -125,7 +125,6 @@ export default function App() {
               <Route path="reports" element={<ReportsList />} />
               <Route path="reports/:reportId" element={<Report />} />
               <Route path="upload-file" element={<UploadFile />} />
-              <Route path="fight-recap/*" element={<FightRecapRoutes />} />
               <Route path="users" element={<UsersList />} />
               <Route path="users/:userId/reports" element={<ReportsList />} />
               <Route
@@ -136,6 +135,7 @@ export default function App() {
                 path="users/:userId/upload-file"
                 element={<UploadFile />}
               />
+              <Route path="fight-recap/*" element={<FightRecapRoutes />} />
             </>
           )}
           {isAthlete && (
@@ -145,7 +145,6 @@ export default function App() {
               <Route path="upload-file" element={<UploadFile />} />
               <Route path="video-url" element={<VideoURL />} />
               <Route path="plans" element={<PlansPage />} />
-              <Route path="fight-recap/*" element={<FightRecapRoutes />} />
             </>
           )}
         </Route>
