@@ -9,7 +9,7 @@ export default function FightRecapRoutes() {
     <Routes>
       <Route element={<FightRecapLayout />}>
         <Route index element={<FilesList />} />
-        <Route path="annotate" element={<FightRecapPage />} />
+        <Route path="annotate/*" element={<FightRecapPage />} />
         <Route path="*" element={<FightRecapNotFound />} />
       </Route>
     </Routes>

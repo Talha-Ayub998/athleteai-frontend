@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, FileVideo, Loader2, Upload } from "lucide-react";
+import {
+  AlertCircle,
+  FileVideo,
+  Loader2,
+  PencilLine,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
 import { Modal } from "../../../components/ui/modal";
 import { Button } from "../components/ui/Button";
@@ -63,7 +70,14 @@ const FilesList = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState<UploadedVideo | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const fetchVideos = useCallback(async () => {
     setIsLoading(true);
@@ -88,6 +102,7 @@ const FilesList = () => {
   const openUploadModal = () => {
     setUploadError("");
     setSelectedFile(null);
+    setUploadProgress(0);
     setIsUploadModalOpen(true);
   };
 
@@ -95,7 +110,22 @@ const FilesList = () => {
     if (isUploading) return;
     setUploadError("");
     setSelectedFile(null);
+    setUploadProgress(0);
     setIsUploadModalOpen(false);
+  };
+
+  const openDeleteModal = (video: UploadedVideo) => {
+    if (isDeleting) return;
+    setDeleteError("");
+    setVideoToDelete(video);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (isDeleting) return;
+    setDeleteError("");
+    setVideoToDelete(null);
+    setIsDeleteModalOpen(false);
   };
 
   const handleUpload = async () => {
@@ -108,6 +138,7 @@ const FilesList = () => {
     formData.append("file", selectedFile);
 
     setIsUploading(true);
+    setUploadProgress(0);
     setUploadError("");
 
     try {
@@ -116,6 +147,11 @@ const FilesList = () => {
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (progressEvent) => {
+            const total = progressEvent.total || selectedFile.size || 1;
+            const progress = Math.round((progressEvent.loaded * 100) / total);
+            setUploadProgress(Math.min(Math.max(progress, 0), 100));
+          },
         },
       );
 
@@ -127,6 +163,7 @@ const FilesList = () => {
         return [uploadedVideo, ...withoutDuplicate];
       });
 
+      setUploadProgress(100);
       closeUploadModal();
     } catch (error) {
       setUploadError(
@@ -134,6 +171,34 @@ const FilesList = () => {
       );
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDeleteVideo = async () => {
+    if (!videoToDelete) {
+      setDeleteError("No video selected for deletion.");
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      await axiosInstance.delete(`/reports/my-video-urls/${videoToDelete.id}/`);
+
+      setVideos((prev) =>
+        prev.filter((video) => video.id !== videoToDelete.id),
+      );
+
+      setIsDeleteModalOpen(false);
+      setVideoToDelete(null);
+      setDeleteError("");
+    } catch (error) {
+      setDeleteError(
+        getErrorMessage(error, "Failed to delete video. Please try again."),
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -238,12 +303,24 @@ const FilesList = () => {
                     >
                       Play Video
                     </a> */}
-                    <Link
-                      to={"annotate"}
-                      className="text-primary text-sm font-medium hover:underline whitespace-nowrap"
-                    >
-                      Annotate Video
-                    </Link>
+                    <div className="flex items-center gap-4">
+                      <Link
+                        to={`annotate/${video.id}`}
+                        className="inline-flex items-center gap-1.5 text-primary text-sm font-medium hover:underline whitespace-nowrap"
+                      >
+                        <PencilLine className="w-4 h-4" />
+                        Annotate Video
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => openDeleteModal(video)}
+                        className="inline-flex items-center gap-1.5 text-red-500 text-sm font-medium hover:text-red-400 transition-colors whitespace-nowrap"
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Video
+                      </button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
@@ -280,7 +357,7 @@ const FilesList = () => {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
             Upload Video
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+          <p className="text-sm text-gray-600    dark:text-gray-300 mb-4">
             Select a video file to upload.
           </p>
 
@@ -290,7 +367,11 @@ const FilesList = () => {
             onChange={(event) =>
               setSelectedFile(event.target.files?.[0] ?? null)
             }
-            className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+            className={`block w-full rounded-lg border px-3 py-2 text-sm transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-white ${
+              isUploading
+                ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500 file:cursor-not-allowed file:bg-red-400"
+                : "cursor-pointer border-gray-300 bg-white text-gray-700 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 file:cursor-pointer file:bg-red-500 hover:file:bg-red-600"
+            }`}
             disabled={isUploading}
           />
 
@@ -304,6 +385,21 @@ const FilesList = () => {
             <p className="mt-3 text-sm text-red-600 dark:text-red-400">
               {uploadError}
             </p>
+          )}
+
+          {isUploading && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
+                <span>Uploading...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="h-full bg-red-500 transition-all duration-200"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
           )}
 
           <div className="mt-6 flex justify-end gap-3">
@@ -332,6 +428,61 @@ const FilesList = () => {
                 </>
               )}
             </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        className="max-w-xl mx-4"
+        isOpen={isDeleteModalOpen}
+        onClose={closeDeleteModal}
+        showCloseButton={false}
+      >
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Delete Video
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Are you sure you want to delete{" "}
+            <span className="font-medium break-all">
+              {videoToDelete?.file_name || "this video"}
+            </span>
+            ? This action cannot be undone.
+          </p>
+
+          {deleteError && (
+            <p className="mt-3 text-sm text-red-600 dark:text-red-400">
+              {deleteError}
+            </p>
+          )}
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              onClick={closeDeleteModal}
+              variant="outline"
+              disabled={isDeleting}
+              className="text-gray-900 dark:text-white"
+            >
+              Cancel
+            </Button>
+            <button
+              type="button"
+              onClick={handleDeleteVideo}
+              disabled={isDeleting || !videoToDelete}
+              className="inline-flex items-center justify-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50 transition-colors"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  Confirm Delete
+                </>
+              )}
+            </button>
           </div>
         </div>
       </Modal>
