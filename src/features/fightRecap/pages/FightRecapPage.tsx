@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Plus, FileVideo, BarChart3, Loader2 } from "lucide-react";
 import { useParams } from "react-router-dom";
-import axiosInstance from "../../../api/axiosInstance";
 import { VideoPlayer } from "../components/VideoPlayer";
 import { EventTable } from "../components/EventTable";
 import { AddEventModal } from "../components/AddEventModal";
@@ -9,33 +8,7 @@ import { MatchMetadataBar } from "../components/MatchMetadataBar";
 import { ToolSidebar } from "../components/ToolSidebar";
 import { FightEvent, MatchMetadata } from "../types/events";
 import { Button } from "../components/ui/Button";
-
-interface UploadedVideo {
-  id: number;
-  url: string;
-  s3_key: string;
-  file_name: string;
-  content_type: string;
-  file_size_bytes: number;
-  playback_url: string;
-  created_at: string;
-}
-
-interface UploadedVideoListResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: UploadedVideo[];
-}
-
-const getErrorMessage = (error: any, fallback: string) => {
-  return (
-    error?.response?.data?.message ||
-    error?.response?.data?.detail ||
-    error?.message ||
-    fallback
-  );
-};
+import { useFightRecapVideos } from "../context/FightRecapVideosContext";
 
 const FightRecapPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,9 +16,7 @@ const FightRecapPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
-  const [videos, setVideos] = useState<UploadedVideo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState("");
+  const { videos, isLoading, fetchError, fetchVideos } = useFightRecapVideos();
   const [matchMetadata, setMatchMetadata] = useState<MatchMetadata>({
     matchType: "Gi",
     belt: "Blue",
@@ -104,22 +75,6 @@ const FightRecapPage = () => {
     setCurrentTimestamp(time);
   };
 
-  const fetchVideos = useCallback(async () => {
-    setIsLoading(true);
-    setFetchError("");
-
-    try {
-      const response = await axiosInstance.get<UploadedVideoListResponse>(
-        "/reports/my-video-urls/",
-      );
-      setVideos(response.data?.results ?? []);
-    } catch (error) {
-      setFetchError(getErrorMessage(error, "Failed to fetch uploaded videos."));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     void fetchVideos();
   }, [fetchVideos]);
@@ -165,7 +120,7 @@ const FightRecapPage = () => {
                   <p className="font-medium">Could not load video</p>
                   <p className="text-sm mt-1">{fetchError}</p>
                   <Button
-                    onClick={fetchVideos}
+                    onClick={() => void fetchVideos(true)}
                     variant="outline"
                     className="mt-4 text-foreground"
                   >

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertCircle,
   FileVideo,
@@ -11,24 +11,10 @@ import axiosInstance from "../../../api/axiosInstance";
 import { Modal } from "../../../components/ui/modal";
 import { Button } from "../components/ui/Button";
 import { Link } from "react-router";
-
-interface UploadedVideo {
-  id: number;
-  url: string;
-  s3_key: string;
-  file_name: string;
-  content_type: string;
-  file_size_bytes: number;
-  playback_url: string;
-  created_at: string;
-}
-
-interface UploadedVideoListResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: UploadedVideo[];
-}
+import {
+  UploadedVideo,
+  useFightRecapVideos,
+} from "../context/FightRecapVideosContext";
 
 interface UploadVideoResponse extends UploadedVideo {
   status: string;
@@ -64,9 +50,8 @@ const getErrorMessage = (error: any, fallback: string) => {
 };
 
 const FilesList = () => {
-  const [videos, setVideos] = useState<UploadedVideo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState("");
+  const { videos, isLoading, fetchError, fetchVideos, upsertVideo, removeVideo } =
+    useFightRecapVideos();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -78,22 +63,6 @@ const FilesList = () => {
   );
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-
-  const fetchVideos = useCallback(async () => {
-    setIsLoading(true);
-    setFetchError("");
-
-    try {
-      const response = await axiosInstance.get<UploadedVideoListResponse>(
-        "/reports/my-video-urls/",
-      );
-      setVideos(response.data?.results ?? []);
-    } catch (error) {
-      setFetchError(getErrorMessage(error, "Failed to fetch uploaded videos."));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     void fetchVideos();
@@ -146,7 +115,6 @@ const FilesList = () => {
         "/reports/video-upload/",
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
           onUploadProgress: (progressEvent) => {
             const total = progressEvent.total || selectedFile.size || 1;
             const progress = Math.round((progressEvent.loaded * 100) / total);
@@ -156,12 +124,7 @@ const FilesList = () => {
       );
 
       const uploadedVideo = response.data;
-      setVideos((prev) => {
-        const withoutDuplicate = prev.filter(
-          (video) => video.id !== uploadedVideo.id,
-        );
-        return [uploadedVideo, ...withoutDuplicate];
-      });
+      upsertVideo(uploadedVideo);
 
       setUploadProgress(100);
       closeUploadModal();
@@ -186,9 +149,7 @@ const FilesList = () => {
     try {
       await axiosInstance.delete(`/reports/my-video-urls/${videoToDelete.id}/`);
 
-      setVideos((prev) =>
-        prev.filter((video) => video.id !== videoToDelete.id),
-      );
+      removeVideo(videoToDelete.id);
 
       setIsDeleteModalOpen(false);
       setVideoToDelete(null);
@@ -245,7 +206,7 @@ const FilesList = () => {
                   <p className="font-medium">Could not load videos</p>
                   <p className="text-sm mt-1">{fetchError}</p>
                   <Button
-                    onClick={fetchVideos}
+                    onClick={() => void fetchVideos(true)}
                     variant="outline"
                     className="mt-4 text-foreground"
                   >
