@@ -1,5 +1,7 @@
-import { useCallback, useState } from "react";
-import { Plus, FileVideo, BarChart3 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertCircle, Plus, FileVideo, BarChart3, Loader2 } from "lucide-react";
+import { useParams } from "react-router-dom";
+import axiosInstance from "../../../api/axiosInstance";
 import { VideoPlayer } from "../components/VideoPlayer";
 import { EventTable } from "../components/EventTable";
 import { AddEventModal } from "../components/AddEventModal";
@@ -8,16 +10,49 @@ import { ToolSidebar } from "../components/ToolSidebar";
 import { FightEvent, MatchMetadata } from "../types/events";
 import { Button } from "../components/ui/Button";
 
+interface UploadedVideo {
+  id: number;
+  url: string;
+  s3_key: string;
+  file_name: string;
+  content_type: string;
+  file_size_bytes: number;
+  playback_url: string;
+  created_at: string;
+}
+
+interface UploadedVideoListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: UploadedVideo[];
+}
+
+const getErrorMessage = (error: any, fallback: string) => {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.detail ||
+    error?.message ||
+    fallback
+  );
+};
+
 const FightRecapPage = () => {
+  const { id } = useParams<{ id: string }>();
   const [events, setEvents] = useState<FightEvent[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
+  const [videos, setVideos] = useState<UploadedVideo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState("");
   const [matchMetadata, setMatchMetadata] = useState<MatchMetadata>({
     matchType: "Gi",
     belt: "Blue",
     competition: "IBJJF",
   });
+  const videoId = Number(id);
+  const hasValidVideoId = Number.isInteger(videoId) && videoId > 0;
 
   const formatTime = useCallback((seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -37,8 +72,8 @@ const FightRecapPage = () => {
         prev.map((event) =>
           event.id === editingEvent.id
             ? { ...eventData, id: editingEvent.id }
-            : event
-        )
+            : event,
+        ),
       );
     } else {
       const newEvent: FightEvent = {
@@ -69,6 +104,31 @@ const FightRecapPage = () => {
     setCurrentTimestamp(time);
   };
 
+  const fetchVideos = useCallback(async () => {
+    setIsLoading(true);
+    setFetchError("");
+
+    try {
+      const response = await axiosInstance.get<UploadedVideoListResponse>(
+        "/reports/my-video-urls/",
+      );
+      setVideos(response.data?.results ?? []);
+    } catch (error) {
+      setFetchError(getErrorMessage(error, "Failed to fetch uploaded videos."));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchVideos();
+  }, [fetchVideos]);
+
+  const selectedVideo = useMemo(() => {
+    if (!hasValidVideoId) return null;
+    return videos.find((video) => video.id === videoId) || null;
+  }, [videos, videoId, hasValidVideoId]);
+
   return (
     <div className="fight-recap-screen min-h-screen bg-background flex">
       <ToolSidebar onAddEvent={() => handleAddEvent(currentTimestamp)} />
@@ -90,44 +150,93 @@ const FightRecapPage = () => {
             </span>
           </div>
 
-          <MatchMetadataBar
-            metadata={matchMetadata}
-            onMetadataChange={setMatchMetadata}
-          />
-
-          <VideoPlayer onAddEvent={handleAddEvent} onTimeUpdate={handleTimeUpdate} />
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">Event Timeline</h2>
-              <Button
-                onClick={() => handleAddEvent(currentTimestamp)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add Event
-              </Button>
+          {isLoading && (
+            <div className="bg-card rounded-lg border border-border p-8 flex items-center justify-center gap-3 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Loading video...
             </div>
+          )}
 
-            <EventTable
-              events={events}
-              onEditEvent={handleEditEvent}
-              onDeleteEvent={handleDeleteEvent}
-              onSeekToEvent={handleSeekToEvent}
-              formatTime={formatTime}
-            />
-          </div>
+          {!isLoading && fetchError && (
+            <div className="bg-card rounded-lg border border-border p-6">
+              <div className="flex items-start gap-3 text-red-400">
+                <AlertCircle className="w-5 h-5 mt-0.5" />
+                <div>
+                  <p className="font-medium">Could not load video</p>
+                  <p className="text-sm mt-1">{fetchError}</p>
+                  <Button
+                    onClick={fetchVideos}
+                    variant="outline"
+                    className="mt-4 text-foreground"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
-          {events.length > 0 && (
-            <div className="bg-card rounded-lg p-6 border border-border">
-              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
-                <BarChart3 className="w-5 h-5 text-primary" />
-                Insights
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                Match insights and analytics will appear here as you add more events.
+          {!isLoading && !fetchError && !selectedVideo && (
+            <div className="bg-card rounded-lg border border-border p-10 text-center">
+              <FileVideo className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-foreground">
+                Video not found
+              </h2>
+              <p className="text-muted-foreground mt-2">
+                The requested video does not exist or is not available.
               </p>
             </div>
+          )}
+
+          {!isLoading && !fetchError && selectedVideo && (
+            <>
+              <MatchMetadataBar
+                metadata={matchMetadata}
+                onMetadataChange={setMatchMetadata}
+              />
+
+              <VideoPlayer
+                src={selectedVideo.playback_url || selectedVideo.url}
+                onAddEvent={handleAddEvent}
+                onTimeUpdate={handleTimeUpdate}
+              />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Event Timeline
+                  </h2>
+                  <Button
+                    onClick={() => handleAddEvent(currentTimestamp)}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Event
+                  </Button>
+                </div>
+
+                <EventTable
+                  events={events}
+                  onEditEvent={handleEditEvent}
+                  onDeleteEvent={handleDeleteEvent}
+                  onSeekToEvent={handleSeekToEvent}
+                  formatTime={formatTime}
+                />
+              </div>
+
+              {events.length > 0 && (
+                <div className="bg-card rounded-lg p-6 border border-border">
+                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    Insights
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Match insights and analytics will appear here as you add
+                    more events.
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

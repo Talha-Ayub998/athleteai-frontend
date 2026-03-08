@@ -19,7 +19,11 @@ interface VideoPlayerProps {
   onTimeUpdate?: (time: number) => void;
 }
 
-export function VideoPlayer({ src, onAddEvent, onTimeUpdate }: VideoPlayerProps) {
+export function VideoPlayer({
+  src,
+  onAddEvent,
+  onTimeUpdate,
+}: VideoPlayerProps) {
   const {
     videoRef,
     isPlaying,
@@ -84,7 +88,10 @@ export function VideoPlayer({ src, onAddEvent, onTimeUpdate }: VideoPlayerProps)
           className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity"
         >
           <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
-            <Play className="w-8 h-8 text-primary-foreground ml-1" fill="currentColor" />
+            <Play
+              className="w-8 h-8 text-primary-foreground ml-1"
+              fill="currentColor"
+            />
           </div>
         </button>
       )}
@@ -98,7 +105,10 @@ export function VideoPlayer({ src, onAddEvent, onTimeUpdate }: VideoPlayerProps)
           className="progress-bar mb-3 group/progress cursor-pointer h-2 hover:h-3 transition-all"
           onClick={handleProgressClick}
         >
-          <div className="progress-bar-fill relative" style={{ width: `${progress}%` }}>
+          <div
+            className="progress-bar-fill relative"
+            style={{ width: `${progress}%` }}
+          >
             <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-md" />
           </div>
         </div>
