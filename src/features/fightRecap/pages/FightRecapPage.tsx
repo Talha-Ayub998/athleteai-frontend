@@ -151,6 +151,7 @@ const FightRecapPage = () => {
               />
 
               <VideoPlayer
+                key={selectedVideo.id}
                 src={selectedVideo.playback_url || selectedVideo.url}
                 onAddEvent={handleAddEvent}
                 onTimeUpdate={handleTimeUpdate}

@@ -8,6 +8,7 @@ import {
   SkipForward,
   Maximize,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { useVideoPlayer } from "../hooks/useVideoPlayer";
 import { Button } from "./ui/Button";
@@ -27,11 +28,13 @@ export function VideoPlayer({
   const {
     videoRef,
     isPlaying,
+    isBuffering,
     currentTime,
     duration,
     volume,
     isMuted,
     progress,
+    bufferedRanges,
     togglePlay,
     seekByPercent,
     setVolume,
@@ -81,6 +84,14 @@ export function VideoPlayer({
         onClick={togglePlay}
       />
 
+      {isBuffering && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/25 pointer-events-none">
+          <div className="inline-flex items-center gap-2 rounded-full bg-black/65 text-white px-3 py-1.5 text-sm">
+            <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+        </div>
+      )}
+
       {!isPlaying && (
         <button
           type="button"
@@ -102,11 +113,24 @@ export function VideoPlayer({
         }`}
       >
         <div
-          className="progress-bar mb-3 group/progress cursor-pointer h-2 hover:h-3 transition-all"
+          className="progress-bar relative mb-3 group/progress cursor-pointer h-2 hover:h-3 transition-all"
           onClick={handleProgressClick}
         >
+          <div className="absolute inset-0 overflow-hidden rounded-full">
+            {bufferedRanges.map((range, index) => (
+              <div
+                key={`${range.startPercent}-${range.endPercent}-${index}`}
+                className="absolute top-0 h-full bg-secondary/80"
+                style={{
+                  left: `${range.startPercent}%`,
+                  width: `${Math.max(range.endPercent - range.startPercent, 0)}%`,
+                }}
+              />
+            ))}
+          </div>
+
           <div
-            className="progress-bar-fill relative"
+            className="progress-bar-fill relative z-10"
             style={{ width: `${progress}%` }}
           >
             <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-md" />
