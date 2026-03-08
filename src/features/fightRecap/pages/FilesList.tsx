@@ -367,11 +367,7 @@ const FilesList = () => {
             onChange={(event) =>
               setSelectedFile(event.target.files?.[0] ?? null)
             }
-            className={`block w-full rounded-lg border px-3 py-2 text-sm transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-white ${
-              isUploading
-                ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-500 file:cursor-not-allowed file:bg-red-400"
-                : "cursor-pointer border-gray-300 bg-white text-gray-700 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 file:cursor-pointer file:bg-red-500 hover:file:bg-red-600"
-            }`}
+            className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:cursor-pointer file:bg-red-500 file:text-white hover:file:bg-red-600"
             disabled={isUploading}
           />
 
