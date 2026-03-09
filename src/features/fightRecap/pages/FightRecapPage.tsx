@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Plus, FileVideo, BarChart3, Loader2 } from "lucide-react";
 import { useParams } from "react-router-dom";
+import axiosInstance from "../../../api/axiosInstance";
 import { VideoPlayer } from "../components/VideoPlayer";
 import { EventTable } from "../components/EventTable";
 import { AddEventModal } from "../components/AddEventModal";
 import { MatchMetadataBar } from "../components/MatchMetadataBar";
 import { ToolSidebar } from "../components/ToolSidebar";
-import { FightEvent, MatchMetadata } from "../types/events";
+import { EventType, FightEvent, MatchMetadata, PlayerType } from "../types/events";
 import { Button } from "../components/ui/Button";
 import { useFightRecapVideos } from "../context/FightRecapVideosContext";
 
@@ -14,9 +15,60 @@ const getErrorMessage = (error: any, fallback: string) => {
   return (
     error?.response?.data?.message ||
     error?.response?.data?.detail ||
+    error?.response?.data?.error ||
     error?.message ||
     fallback
   );
+};
+
+interface AnnotationSessionEventResponse {
+  id: number;
+  timestamp_seconds: number;
+  player: string;
+  event_type: string;
+  move_name: string;
+  note: string | null;
+  points?: number | null;
+}
+
+interface AnnotationSessionDetailsResponse {
+  session: {
+    id: number;
+    title: string | null;
+  };
+  events: AnnotationSessionEventResponse[];
+  match_results: unknown[];
+}
+
+const mapPlayerToUi = (player: string): PlayerType => {
+  const normalized = player.trim().toLowerCase();
+  if (normalized === "opponent") return "Opponent";
+  if (normalized === "ai coach" || normalized === "ai_coach" || normalized === "coach") {
+    return "AI Coach";
+  }
+  return "Me";
+};
+
+const mapEventTypeToUi = (eventType: string): EventType => {
+  const normalized = eventType.trim().toLowerCase();
+  if (normalized === "transition") return "Transition";
+  if (normalized === "submission") return "Submission";
+  if (normalized === "note") return "Note";
+  return "Position";
+};
+
+const mapApiEventToFightEvent = (
+  apiEvent: AnnotationSessionEventResponse,
+): FightEvent => {
+  return {
+    id: String(apiEvent.id),
+    timestamp: Number(apiEvent.timestamp_seconds) || 0,
+    player: mapPlayerToUi(apiEvent.player || ""),
+    type: mapEventTypeToUi(apiEvent.event_type || ""),
+    position: apiEvent.move_name || "Unknown",
+    notes: apiEvent.note || "",
+    points: apiEvent.points ?? undefined,
+  };
 };
 
 const FightRecapPage = () => {
@@ -28,6 +80,7 @@ const FightRecapPage = () => {
   const { videos, isLoading, fetchError, fetchVideos, createSessionForVideo } =
     useFightRecapVideos();
   const [isSessionPreparing, setIsSessionPreparing] = useState(false);
+  const [isEventsLoading, setIsEventsLoading] = useState(false);
   const [sessionError, setSessionError] = useState("");
   const [matchMetadata, setMatchMetadata] = useState<MatchMetadata>({
     matchType: "Gi",
@@ -136,7 +189,45 @@ const FightRecapPage = () => {
     };
   }, [isLoading, selectedVideo, createSessionForVideo]);
 
-  const isPageLoading = isLoading || isSessionPreparing;
+  useEffect(() => {
+    if (isLoading || isSessionPreparing || !selectedVideo?.session_id) return;
+
+    let isCancelled = false;
+
+    const fetchSessionEvents = async () => {
+      setIsEventsLoading(true);
+      setSessionError("");
+      try {
+        const response = await axiosInstance.get<AnnotationSessionDetailsResponse>(
+          `/reports/annotation-sessions/${selectedVideo.session_id}/`,
+        );
+        if (isCancelled) return;
+
+        const mappedEvents = Array.isArray(response.data?.events)
+          ? response.data.events.map(mapApiEventToFightEvent)
+          : [];
+        setEvents(mappedEvents);
+      } catch (error) {
+        if (isCancelled) return;
+        setEvents([]);
+        setSessionError(
+          getErrorMessage(error, "Failed to fetch session events."),
+        );
+      } finally {
+        if (!isCancelled) {
+          setIsEventsLoading(false);
+        }
+      }
+    };
+
+    void fetchSessionEvents();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLoading, isSessionPreparing, selectedVideo?.id, selectedVideo?.session_id]);
+
+  const isPageLoading = isLoading || isSessionPreparing || isEventsLoading;
 
   return (
     <div className="fight-recap-screen min-h-screen bg-background flex ">

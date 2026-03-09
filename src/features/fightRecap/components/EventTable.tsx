@@ -51,8 +51,8 @@ export function EventTable({
     return (
       <div className="bg-card rounded-lg p-8 text-center border border-border">
         <p className="text-muted-foreground">
-          No events recorded yet. Pause the video and click "Add Event" to start
-          annotating.
+          No events found for this session yet. Pause the video and click
+          "Add Event" to start annotating.
         </p>
       </div>
     );
