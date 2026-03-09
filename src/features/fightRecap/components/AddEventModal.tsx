@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X } from "lucide-react";
-import { FightEvent, EventType, PlayerType, DEFAULT_PRESETS } from "../types/events";
+import {
+  FightEvent,
+  EventType,
+  PlayerType,
+  DEFAULT_PRESETS,
+} from "../types/events";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Label } from "./ui/Label";
@@ -24,20 +29,27 @@ export function AddEventModal({
   formatTime,
   editingEvent,
 }: AddEventModalProps) {
-  const [player, setPlayer] = useState<PlayerType>(editingEvent?.player || "Me");
+  const [player, setPlayer] = useState<PlayerType>(
+    editingEvent?.player || "Me",
+  );
   const [eventType, setEventType] = useState<EventType>(
-    editingEvent?.type || "Position"
+    editingEvent?.type || "Position",
   );
   const [position, setPosition] = useState(editingEvent?.position || "");
   const [notes, setNotes] = useState(editingEvent?.notes || "");
   const [points, setPoints] = useState<string>(
-    editingEvent?.points?.toString() || ""
+    editingEvent?.points?.toString() || "",
   );
   const [isCustomPosition, setIsCustomPosition] = useState(false);
   const [customPositionValue, setCustomPositionValue] = useState("");
 
   const players: PlayerType[] = ["Me", "Opponent", "AI Coach"];
-  const eventTypes: EventType[] = ["Position", "Transition", "Submission", "Note"];
+  const eventTypes: EventType[] = [
+    "Position",
+    "Transition",
+    "Submission",
+    "Note",
+  ];
 
   useEffect(() => {
     if (!isOpen) return;
@@ -112,11 +124,11 @@ export function AddEventModal({
 
   return createPortal(
     <div
-      className="fight-recap-theme fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 p-4"
+      className="fight-recap-theme fixed inset-0 z-[1000]  flex items-center justify-center bg-black/80 p-4"
       onClick={handleClose}
     >
       <div
-        className="relative grid w-full max-w-lg gap-4 border border-border bg-card p-6 shadow-lg sm:rounded-lg"
+        className="relative grid w-full max-w-lg gap-4 max-h-[90vh] overflow-y-auto border border-border bg-card p-6 shadow-lg sm:rounded-lg"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -125,7 +137,7 @@ export function AddEventModal({
           className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
           aria-label="Close"
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4 text-white" />
         </button>
 
         <div className="flex flex-col space-y-1.5 text-center sm:text-left">
@@ -185,10 +197,10 @@ export function AddEventModal({
               {eventType === "Position"
                 ? "Position"
                 : eventType === "Transition"
-                ? "Transition Type"
-                : eventType === "Submission"
-                ? "Submission"
-                : "Note Type"}
+                  ? "Transition Type"
+                  : eventType === "Submission"
+                    ? "Submission"
+                    : "Note Type"}
             </Label>
             <div className="flex gap-2 flex-wrap max-h-32 overflow-y-auto p-1">
               {getPresetsForType().map((preset) => (
@@ -211,8 +223,8 @@ export function AddEventModal({
                         ? "active"
                         : ""
                       : position === preset && !isCustomPosition
-                      ? "active"
-                      : ""
+                        ? "active"
+                        : ""
                   }`}
                 >
                   {preset}
@@ -278,6 +290,6 @@ export function AddEventModal({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
