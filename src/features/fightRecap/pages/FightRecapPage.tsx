@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Plus, FileVideo, BarChart3, Loader2 } from "lucide-react";
 import { useParams } from "react-router-dom";
+import axiosInstance from "../../../api/axiosInstance";
 import { VideoPlayer } from "../components/VideoPlayer";
 import { EventTable } from "../components/EventTable";
 import { AddEventModal } from "../components/AddEventModal";
@@ -10,13 +11,32 @@ import { FightEvent, MatchMetadata } from "../types/events";
 import { Button } from "../components/ui/Button";
 import { useFightRecapVideos } from "../context/FightRecapVideosContext";
 
+interface AnnotationSessionResponse {
+  id: number;
+  video_id: number;
+  status: string | null;
+  updated_at: string | null;
+}
+
+const getErrorMessage = (error: any, fallback: string) => {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.detail ||
+    error?.message ||
+    fallback
+  );
+};
+
 const FightRecapPage = () => {
   const { id } = useParams<{ id: string }>();
   const [events, setEvents] = useState<FightEvent[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
-  const { videos, isLoading, fetchError, fetchVideos } = useFightRecapVideos();
+  const { videos, isLoading, fetchError, fetchVideos, updateVideo } =
+    useFightRecapVideos();
+  const [isSessionPreparing, setIsSessionPreparing] = useState(false);
+  const [sessionError, setSessionError] = useState("");
   const [matchMetadata, setMatchMetadata] = useState<MatchMetadata>({
     matchType: "Gi",
     belt: "Blue",
@@ -84,6 +104,57 @@ const FightRecapPage = () => {
     return videos.find((video) => video.id === videoId) || null;
   }, [videos, videoId, hasValidVideoId]);
 
+  useEffect(() => {
+    if (isLoading || !selectedVideo) return;
+    const hasSession =
+      selectedVideo.session_id !== null &&
+      selectedVideo.session_id !== undefined;
+    if (hasSession) {
+      setSessionError("");
+      return;
+    }
+
+    let isCancelled = false;
+
+    const ensureSession = async () => {
+      setIsSessionPreparing(true);
+      setSessionError("");
+      try {
+        const response = await axiosInstance.post<AnnotationSessionResponse>(
+          "/reports/annotation-sessions/",
+          { video_id: selectedVideo.id },
+        );
+        if (isCancelled) return;
+
+        updateVideo(response.data.video_id, {
+          session_id: response.data.id,
+          session_status: response.data.status,
+          session_updated_at: response.data.updated_at,
+        });
+      } catch (error) {
+        if (isCancelled) return;
+        setSessionError(
+          getErrorMessage(
+            error,
+            "Failed to prepare annotation session. Please try again.",
+          ),
+        );
+      } finally {
+        if (!isCancelled) {
+          setIsSessionPreparing(false);
+        }
+      }
+    };
+
+    void ensureSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLoading, selectedVideo, updateVideo]);
+
+  const isPageLoading = isLoading || isSessionPreparing;
+
   return (
     <div className="fight-recap-screen min-h-screen bg-background flex ">
       <ToolSidebar onAddEvent={() => handleAddEvent(currentTimestamp)} />
@@ -105,14 +176,14 @@ const FightRecapPage = () => {
             </span>
           </div>
 
-          {isLoading && (
+          {isPageLoading && (
             <div className="bg-card rounded-lg border border-border p-8 flex items-center justify-center gap-3 text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin" />
               Loading video...
             </div>
           )}
 
-          {!isLoading && fetchError && (
+          {!isPageLoading && fetchError && (
             <div className="bg-card rounded-lg border border-border p-6">
               <div className="flex items-start gap-3 text-red-400">
                 <AlertCircle className="w-5 h-5 mt-0.5" />
@@ -131,7 +202,29 @@ const FightRecapPage = () => {
             </div>
           )}
 
-          {!isLoading && !fetchError && !selectedVideo && (
+          {!isPageLoading && !fetchError && sessionError && (
+            <div className="bg-card rounded-lg border border-border p-6">
+              <div className="flex items-start gap-3 text-red-400">
+                <AlertCircle className="w-5 h-5 mt-0.5" />
+                <div>
+                  <p className="font-medium">Could not prepare session</p>
+                  <p className="text-sm mt-1">{sessionError}</p>
+                  <Button
+                    onClick={() => {
+                      setSessionError("");
+                      void fetchVideos(true);
+                    }}
+                    variant="outline"
+                    className="mt-4 text-foreground"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!isPageLoading && !fetchError && !sessionError && !selectedVideo && (
             <div className="bg-card rounded-lg border border-border p-10 text-center">
               <FileVideo className="w-12 h-12 text-primary mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-foreground">
@@ -143,7 +236,7 @@ const FightRecapPage = () => {
             </div>
           )}
 
-          {!isLoading && !fetchError && selectedVideo && (
+          {!isPageLoading && !fetchError && !sessionError && selectedVideo && (
             <>
               <MatchMetadataBar
                 metadata={matchMetadata}
