@@ -10,7 +10,7 @@ import {
 import axiosInstance from "../../../api/axiosInstance";
 import { Modal } from "../../../components/ui/modal";
 import { Button } from "../components/ui/Button";
-import { Link } from "react-router";
+import { useNavigate } from "react-router-dom";
 import {
   UploadedVideo,
   useFightRecapVideos,
@@ -19,6 +19,13 @@ import {
 interface UploadVideoResponse extends UploadedVideo {
   status: string;
   message: string;
+}
+
+interface AnnotationSessionResponse {
+  id: number;
+  video_id: number;
+  status: string | null;
+  updated_at: string | null;
 }
 
 const formatFileSize = (bytes: number) => {
@@ -50,8 +57,16 @@ const getErrorMessage = (error: any, fallback: string) => {
 };
 
 const FilesList = () => {
-  const { videos, isLoading, fetchError, fetchVideos, upsertVideo, removeVideo } =
-    useFightRecapVideos();
+  const {
+    videos,
+    isLoading,
+    fetchError,
+    fetchVideos,
+    upsertVideo,
+    updateVideo,
+    removeVideo,
+  } = useFightRecapVideos();
+  const navigate = useNavigate();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -63,6 +78,9 @@ const FilesList = () => {
   );
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [creatingSessionVideoId, setCreatingSessionVideoId] = useState<
+    number | null
+  >(null);
 
   useEffect(() => {
     void fetchVideos();
@@ -160,6 +178,43 @@ const FilesList = () => {
       );
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleAnnotateClick = async (video: UploadedVideo) => {
+    const hasSession =
+      video.session_id !== null && video.session_id !== undefined;
+
+    if (hasSession) {
+      navigate(`annotate/${video.id}`);
+      return;
+    }
+
+    setCreatingSessionVideoId(video.id);
+    try {
+      const response = await axiosInstance.post<AnnotationSessionResponse>(
+        "/reports/annotation-sessions/",
+        {
+          video_id: video.id,
+        },
+      );
+
+      updateVideo(response.data.video_id, {
+        session_id: response.data.id,
+        session_status: response.data.status,
+        session_updated_at: response.data.updated_at,
+      });
+
+      navigate(`annotate/${video.id}`);
+    } catch (error) {
+      alert(
+        getErrorMessage(
+          error,
+          "Failed to start annotation session. Please try again.",
+        ),
+      );
+    } finally {
+      setCreatingSessionVideoId(null);
     }
   };
 
@@ -265,13 +320,24 @@ const FilesList = () => {
                       Play Video
                     </a> */}
                     <div className="flex items-center gap-4">
-                      <Link
-                        to={`annotate/${video.id}`}
+                      <button
+                        type="button"
+                        onClick={() => void handleAnnotateClick(video)}
+                        disabled={creatingSessionVideoId !== null}
                         className="inline-flex items-center gap-1.5 text-primary text-sm font-medium hover:underline whitespace-nowrap"
                       >
                         <PencilLine className="w-4 h-4" />
-                        Annotate Video
-                      </Link>
+                        {creatingSessionVideoId === video.id &&
+                        (video.session_id === null ||
+                          video.session_id === undefined) ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        ) : video.session_id !== null &&
+                          video.session_id !== undefined ? (
+                          "Continue Annotating"
+                        ) : (
+                          "Start Annotation"
+                        )}
+                      </button>
                       <button
                         type="button"
                         onClick={() => openDeleteModal(video)}

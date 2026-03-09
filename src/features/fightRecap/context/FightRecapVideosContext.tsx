@@ -15,6 +15,10 @@ export interface UploadedVideo {
   file_name: string;
   content_type: string;
   file_size_bytes: number;
+  file_hash: string | null;
+  session_id: number | null;
+  session_status: string | null;
+  session_updated_at: string | null;
   playback_url: string;
   created_at: string;
 }
@@ -33,6 +37,7 @@ interface FightRecapVideosContextValue {
   hasFetched: boolean;
   fetchVideos: (force?: boolean) => Promise<void>;
   upsertVideo: (video: UploadedVideo) => void;
+  updateVideo: (videoId: number, updates: Partial<UploadedVideo>) => void;
   removeVideo: (videoId: number) => void;
 }
 
@@ -102,6 +107,18 @@ export function FightRecapVideosProvider({
     setVideos((prev) => prev.filter((item) => item.id !== videoId));
   }, []);
 
+  const updateVideo = useCallback(
+    (videoId: number, updates: Partial<UploadedVideo>) => {
+      setVideos((prev) =>
+        prev.map((item) =>
+          item.id === videoId ? { ...item, ...updates } : item,
+        ),
+      );
+      setHasFetched(true);
+    },
+    [],
+  );
+
   const value = useMemo(
     () => ({
       videos,
@@ -110,9 +127,19 @@ export function FightRecapVideosProvider({
       hasFetched,
       fetchVideos,
       upsertVideo,
+      updateVideo,
       removeVideo,
     }),
-    [videos, isLoading, fetchError, hasFetched, fetchVideos, upsertVideo, removeVideo],
+    [
+      videos,
+      isLoading,
+      fetchError,
+      hasFetched,
+      fetchVideos,
+      upsertVideo,
+      updateVideo,
+      removeVideo,
+    ],
   );
 
   return (
