@@ -15,9 +15,13 @@ interface MatchMetadataBarProps {
   onMetadataChange: (metadata: MatchMetadata) => void;
 }
 
-export function MatchMetadataBar({ metadata, onMetadataChange }: MatchMetadataBarProps) {
+export function MatchMetadataBar({
+  metadata,
+  onMetadataChange,
+}: MatchMetadataBarProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editingMetadata, setEditingMetadata] = useState<MatchMetadata>(metadata);
+  const [editingMetadata, setEditingMetadata] =
+    useState<MatchMetadata>(metadata);
   const [customCompetition, setCustomCompetition] = useState("");
 
   const matchTypes: MatchType[] = ["Gi", "No-Gi"];
@@ -62,7 +66,7 @@ export function MatchMetadataBar({ metadata, onMetadataChange }: MatchMetadataBa
 
   if (!isEditing) {
     return (
-      <div className="bg-card rounded-lg border border-border p-4">
+      <div className="bg-card rounded-lg border border-border p-4 animate-lift-in">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-6 flex-wrap">
             <div className="flex items-center gap-2">
@@ -118,7 +122,9 @@ export function MatchMetadataBar({ metadata, onMetadataChange }: MatchMetadataBa
             <button
               type="button"
               key={type}
-              onClick={() => setEditingMetadata((prev) => ({ ...prev, matchType: type }))}
+              onClick={() =>
+                setEditingMetadata((prev) => ({ ...prev, matchType: type }))
+              }
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 editingMetadata.matchType === type
                   ? type === "Gi"
@@ -154,7 +160,9 @@ export function MatchMetadataBar({ metadata, onMetadataChange }: MatchMetadataBa
       </div>
 
       <div className="space-y-2">
-        <span className="text-sm text-muted-foreground">Event / Competition</span>
+        <span className="text-sm text-muted-foreground">
+          Event / Competition
+        </span>
         <div className="flex gap-2 flex-wrap">
           {competitions.map((competition) => (
             <button
@@ -165,7 +173,7 @@ export function MatchMetadataBar({ metadata, onMetadataChange }: MatchMetadataBa
                 editingMetadata.competition === competition ||
                 (competition === "Other" &&
                   !competitions.includes(
-                    editingMetadata.competition as CompetitionPreset
+                    editingMetadata.competition as CompetitionPreset,
                   ))
                   ? "active"
                   : ""
@@ -177,12 +185,15 @@ export function MatchMetadataBar({ metadata, onMetadataChange }: MatchMetadataBa
         </div>
 
         {(editingMetadata.competition === "Other" ||
-          !competitions.includes(editingMetadata.competition as CompetitionPreset)) && (
+          !competitions.includes(
+            editingMetadata.competition as CompetitionPreset,
+          )) && (
           <Input
             placeholder="Enter custom event name..."
             value={
-              !competitions.includes(editingMetadata.competition as CompetitionPreset) &&
-              editingMetadata.competition !== "Other"
+              !competitions.includes(
+                editingMetadata.competition as CompetitionPreset,
+              ) && editingMetadata.competition !== "Other"
                 ? editingMetadata.competition
                 : customCompetition
             }
@@ -208,7 +219,11 @@ export function MatchMetadataBar({ metadata, onMetadataChange }: MatchMetadataBa
           <X className="w-4 h-4 mr-1" />
           Cancel
         </Button>
-        <Button size="sm" onClick={handleSave} className="bg-primary hover:bg-primary/90">
+        <Button
+          size="sm"
+          onClick={handleSave}
+          className="bg-primary hover:bg-primary/90"
+        >
           <Check className="w-4 h-4 mr-1" />
           Save
         </Button>

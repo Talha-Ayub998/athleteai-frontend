@@ -283,7 +283,9 @@
 .fight-recap-theme .action-btn {
   padding: 0.375rem;
   border-radius: 0.375rem;
-  transition: color 0.2s, background-color 0.2s;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
 }
 
 .fight-recap-theme .action-btn.edit {
@@ -336,4 +338,20 @@
 
 .fight-recap-theme .animate-fade-in {
   animation: fight-recap-fade-in 0.3s ease-out both;
+}
+
+@keyframes fight-recap-lift-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fight-recap-theme .animate-lift-in {
+  animation: fight-recap-lift-in 0.45s ease-out both;
 }

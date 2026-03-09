@@ -73,7 +73,7 @@ export function VideoPlayer({
 
   return (
     <div
-      className="video-container relative aspect-video bg-player rounded-lg overflow-hidden group"
+      className="video-container relative aspect-video bg-player rounded-lg overflow-hidden group animate-lift-in"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >

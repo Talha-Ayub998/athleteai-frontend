@@ -85,10 +85,10 @@ const FightRecapPage = () => {
   }, [videos, videoId, hasValidVideoId]);
 
   return (
-    <div className="fight-recap-screen min-h-screen bg-background flex">
+    <div className="fight-recap-screen min-h-screen bg-background flex ">
       <ToolSidebar onAddEvent={() => handleAddEvent(currentTimestamp)} />
 
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-6 overflow-y-auto animate-lift-in">
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div>

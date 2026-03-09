@@ -223,7 +223,7 @@ const FilesList = () => {
   return (
     <div className="fight-recap-screen min-h-screen bg-background">
       <main className="p-6 overflow-y-auto">
-        <div className="max-w-5xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-6 animate-lift-in">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
@@ -300,7 +300,7 @@ const FilesList = () => {
               {videos.map((video) => (
                 <div
                   key={video.id}
-                  className="rounded-lg border border-border bg-background p-4 space-y-3"
+                  className="rounded-lg border border-border bg-background p-4 space-y-3 animate-lift-in"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
