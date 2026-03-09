@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Plus, FileVideo, BarChart3, Loader2 } from "lucide-react";
 import { useParams } from "react-router-dom";
+import { Toaster, toast } from "react-hot-toast";
 import axiosInstance from "../../../api/axiosInstance";
 import { VideoPlayer } from "../components/VideoPlayer";
 import { EventTable } from "../components/EventTable";
 import { AddEventModal } from "../components/AddEventModal";
 import { MatchMetadataBar } from "../components/MatchMetadataBar";
 import { ToolSidebar } from "../components/ToolSidebar";
-import { EventType, FightEvent, MatchMetadata, PlayerType } from "../types/events";
+import {
+  EventType,
+  FightEvent,
+  MatchMetadata,
+  PlayerType,
+} from "../types/events";
 import { Button } from "../components/ui/Button";
 import { useFightRecapVideos } from "../context/FightRecapVideosContext";
 
@@ -56,7 +62,11 @@ interface CreateSessionEventPayload {
 const mapPlayerToUi = (player: string): PlayerType => {
   const normalized = player.trim().toLowerCase();
   if (normalized === "opponent") return "Opponent";
-  if (normalized === "ai coach" || normalized === "ai_coach" || normalized === "coach") {
+  if (
+    normalized === "ai coach" ||
+    normalized === "ai_coach" ||
+    normalized === "coach"
+  ) {
     return "AI Coach";
   }
   return "Me";
@@ -86,9 +96,7 @@ const mapApiEventToFightEvent = (
   };
 };
 
-const mapPlayerToApi = (
-  player: PlayerType,
-): "me" | "opponent" | "ai_coach" => {
+const mapPlayerToApi = (player: PlayerType): "me" | "opponent" | "ai_coach" => {
   if (player === "Opponent") return "opponent";
   if (player === "AI Coach") return "ai_coach";
   return "me";
@@ -114,7 +122,6 @@ const FightRecapPage = () => {
   const [isSessionPreparing, setIsSessionPreparing] = useState(false);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
   const [sessionError, setSessionError] = useState("");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [matchMetadata, setMatchMetadata] = useState<MatchMetadata>({
     matchType: "Gi",
     belt: "Blue",
@@ -151,7 +158,7 @@ const FightRecapPage = () => {
     }
 
     if (!selectedVideo) {
-      setToastMessage("Add event failed. Video session not ready.");
+      toast.error("Add event failed. Video session not ready.");
       return false;
     }
 
@@ -171,28 +178,24 @@ const FightRecapPage = () => {
       };
 
       const response = await axiosInstance.post<AnnotationSessionEventResponse>(
-        `/reports/annotation-sessions/${sessionId}/events/`,
+        `/reports/annotation-sessions/${sessionId}/events34/`,
         payload,
       );
 
       const newEvent = mapApiEventToFightEvent(response.data);
       setEvents((prev) => {
-        const withoutDuplicate = prev.filter((event) => event.id !== newEvent.id);
+        const withoutDuplicate = prev.filter(
+          (event) => event.id !== newEvent.id,
+        );
         return [...withoutDuplicate, newEvent];
       });
       setEditingEvent(null);
       return true;
     } catch (error) {
-      setToastMessage(getErrorMessage(error, "Add event failed."));
+      toast.error(getErrorMessage(error, "Add event failed."));
       return false;
     }
   };
-
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timeout = window.setTimeout(() => setToastMessage(null), 3000);
-    return () => window.clearTimeout(timeout);
-  }, [toastMessage]);
 
   const handleEditEvent = (event: FightEvent) => {
     setEditingEvent(event);
@@ -270,9 +273,10 @@ const FightRecapPage = () => {
       setIsEventsLoading(true);
       setSessionError("");
       try {
-        const response = await axiosInstance.get<AnnotationSessionDetailsResponse>(
-          `/reports/annotation-sessions/${selectedVideo.session_id}/`,
-        );
+        const response =
+          await axiosInstance.get<AnnotationSessionDetailsResponse>(
+            `/reports/annotation-sessions/${selectedVideo.session_id}/`,
+          );
         if (isCancelled) return;
 
         const mappedEvents = Array.isArray(response.data?.events)
@@ -297,21 +301,45 @@ const FightRecapPage = () => {
     return () => {
       isCancelled = true;
     };
-  }, [isLoading, isSessionPreparing, selectedVideo?.id, selectedVideo?.session_id]);
+  }, [
+    isLoading,
+    isSessionPreparing,
+    selectedVideo?.id,
+    selectedVideo?.session_id,
+  ]);
 
   const isPageLoading = isLoading || isSessionPreparing || isEventsLoading;
 
   return (
     <div className="fight-recap-screen min-h-screen bg-background flex ">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: "hsl(var(--card))",
+            color: "hsl(var(--foreground))",
+            border: "1px solid hsl(var(--border))",
+          },
+          success: {
+            iconTheme: {
+              primary: "hsl(var(--success))",
+              secondary: "hsl(var(--foreground))",
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: "#ef4444",
+              secondary: "hsl(var(--foreground))",
+            },
+          },
+        }}
+        containerStyle={{ top: 16 }}
+      />
       <ToolSidebar onAddEvent={() => handleAddEvent(currentTimestamp)} />
 
       <main className="flex-1 p-6 overflow-y-auto animate-lift-in">
         <div className="max-w-6xl mx-auto space-y-6">
-          {toastMessage && (
-            <div className="fixed top-4 right-4 z-[1100] rounded-md border border-red-500/30 bg-red-500/90 px-4 py-2 text-sm text-white shadow-lg">
-              {toastMessage}
-            </div>
-          )}
           <div className="flex items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
