@@ -23,10 +23,13 @@ const getErrorMessage = (error: any, fallback: string) => {
 
 interface AnnotationSessionEventResponse {
   id: number;
+  session: number;
+  match_number: number;
   timestamp_seconds: number;
   player: string;
   event_type: string;
   move_name: string;
+  outcome: "success" | "failed";
   note: string | null;
   points?: number | null;
 }
@@ -38,6 +41,16 @@ interface AnnotationSessionDetailsResponse {
   };
   events: AnnotationSessionEventResponse[];
   match_results: unknown[];
+}
+
+interface CreateSessionEventPayload {
+  match_number: number;
+  timestamp_seconds: number;
+  player: "me" | "opponent" | "ai_coach";
+  event_type: "position" | "transition" | "submission" | "note";
+  move_name: string;
+  outcome: "success" | "failed";
+  note: string;
 }
 
 const mapPlayerToUi = (player: string): PlayerType => {
@@ -68,7 +81,26 @@ const mapApiEventToFightEvent = (
     position: apiEvent.move_name || "Unknown",
     notes: apiEvent.note || "",
     points: apiEvent.points ?? undefined,
+    matchNumber: apiEvent.match_number || 1,
+    outcome: apiEvent.outcome || "success",
   };
+};
+
+const mapPlayerToApi = (
+  player: PlayerType,
+): "me" | "opponent" | "ai_coach" => {
+  if (player === "Opponent") return "opponent";
+  if (player === "AI Coach") return "ai_coach";
+  return "me";
+};
+
+const mapEventTypeToApi = (
+  eventType: EventType,
+): "position" | "transition" | "submission" | "note" => {
+  if (eventType === "Transition") return "transition";
+  if (eventType === "Submission") return "submission";
+  if (eventType === "Note") return "note";
+  return "position";
 };
 
 const FightRecapPage = () => {
@@ -82,6 +114,7 @@ const FightRecapPage = () => {
   const [isSessionPreparing, setIsSessionPreparing] = useState(false);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
   const [sessionError, setSessionError] = useState("");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [matchMetadata, setMatchMetadata] = useState<MatchMetadata>({
     matchType: "Gi",
     belt: "Blue",
@@ -102,7 +135,9 @@ const FightRecapPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveEvent = (eventData: Omit<FightEvent, "id">) => {
+  const handleSaveEvent = async (
+    eventData: Omit<FightEvent, "id">,
+  ): Promise<boolean> => {
     if (editingEvent) {
       setEvents((prev) =>
         prev.map((event) =>
@@ -111,16 +146,53 @@ const FightRecapPage = () => {
             : event,
         ),
       );
-    } else {
-      const newEvent: FightEvent = {
-        ...eventData,
-        id: `event-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-      };
-      setEvents((prev) => [...prev, newEvent]);
+      setEditingEvent(null);
+      return true;
     }
 
-    setEditingEvent(null);
+    if (!selectedVideo) {
+      setToastMessage("Add event failed. Video session not ready.");
+      return false;
+    }
+
+    try {
+      const sessionId =
+        selectedVideo.session_id ??
+        (await createSessionForVideo(selectedVideo.id));
+
+      const payload: CreateSessionEventPayload = {
+        match_number: eventData.matchNumber || 1,
+        timestamp_seconds: Number(eventData.timestamp.toFixed(2)),
+        player: mapPlayerToApi(eventData.player),
+        event_type: mapEventTypeToApi(eventData.type),
+        move_name: eventData.position,
+        outcome: eventData.outcome || "success",
+        note: eventData.notes || "",
+      };
+
+      const response = await axiosInstance.post<AnnotationSessionEventResponse>(
+        `/reports/annotation-sessions/${sessionId}/events/`,
+        payload,
+      );
+
+      const newEvent = mapApiEventToFightEvent(response.data);
+      setEvents((prev) => {
+        const withoutDuplicate = prev.filter((event) => event.id !== newEvent.id);
+        return [...withoutDuplicate, newEvent];
+      });
+      setEditingEvent(null);
+      return true;
+    } catch (error) {
+      setToastMessage(getErrorMessage(error, "Add event failed."));
+      return false;
+    }
   };
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timeout = window.setTimeout(() => setToastMessage(null), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [toastMessage]);
 
   const handleEditEvent = (event: FightEvent) => {
     setEditingEvent(event);
@@ -235,6 +307,11 @@ const FightRecapPage = () => {
 
       <main className="flex-1 p-6 overflow-y-auto animate-lift-in">
         <div className="max-w-6xl mx-auto space-y-6">
+          {toastMessage && (
+            <div className="fixed top-4 right-4 z-[1100] rounded-md border border-red-500/30 bg-red-500/90 px-4 py-2 text-sm text-white shadow-lg">
+              {toastMessage}
+            </div>
+          )}
           <div className="flex items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">

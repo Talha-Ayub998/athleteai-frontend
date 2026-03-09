@@ -76,6 +76,8 @@ export interface FightEvent {
   position: string;
   notes: string;
   points?: number;
+  matchNumber?: number;
+  outcome?: "success" | "failed";
 }
 
 export interface EventPresets {

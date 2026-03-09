@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Plus, X } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import {
   FightEvent,
   EventType,
@@ -15,7 +15,7 @@ import { Textarea } from "./ui/Textarea";
 interface AddEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (event: Omit<FightEvent, "id">) => void;
+  onSave: (event: Omit<FightEvent, "id">) => Promise<boolean> | boolean;
   timestamp: number;
   formatTime: (seconds: number) => string;
   editingEvent?: FightEvent | null;
@@ -40,8 +40,15 @@ export function AddEventModal({
   const [points, setPoints] = useState<string>(
     editingEvent?.points?.toString() || "",
   );
+  const [matchNumber, setMatchNumber] = useState<number>(
+    editingEvent?.matchNumber || 1,
+  );
+  const [outcome, setOutcome] = useState<"success" | "failed">(
+    editingEvent?.outcome || "success",
+  );
   const [isCustomPosition, setIsCustomPosition] = useState(false);
   const [customPositionValue, setCustomPositionValue] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const players: PlayerType[] = ["Me", "Opponent", "AI Coach"];
   const eventTypes: EventType[] = [
@@ -75,17 +82,36 @@ export function AddEventModal({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setPlayer(editingEvent?.player || "Me");
+    setEventType(editingEvent?.type || "Position");
+    setPosition(editingEvent?.position || "");
+    setNotes(editingEvent?.notes || "");
+    setPoints(editingEvent?.points?.toString() || "");
+    setMatchNumber(editingEvent?.matchNumber || 1);
+    setOutcome(editingEvent?.outcome || "success");
+    setIsCustomPosition(false);
+    setCustomPositionValue("");
+    setIsSaving(false);
+  }, [isOpen, editingEvent]);
+
   const resetForm = () => {
     setPlayer("Me");
     setEventType("Position");
     setPosition("");
     setNotes("");
     setPoints("");
+    setMatchNumber(1);
+    setOutcome("success");
     setIsCustomPosition(false);
     setCustomPositionValue("");
+    setIsSaving(false);
   };
 
   const handleClose = () => {
+    if (isSaving) return;
     resetForm();
     onClose();
   };
@@ -107,28 +133,35 @@ export function AddEventModal({
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const finalPosition = isCustomPosition ? customPositionValue : position;
     if (!finalPosition.trim()) return;
-    onSave({
+    setIsSaving(true);
+    const didSave = await onSave({
       timestamp: editingEvent?.timestamp ?? timestamp,
       player,
       type: eventType,
       position: finalPosition,
       notes,
       points: points ? parseInt(points, 10) : undefined,
+      matchNumber,
+      outcome,
     });
+    setIsSaving(false);
+
+    if (!didSave) return;
+
     resetForm();
     onClose();
   };
 
   return createPortal(
     <div
-      className="fight-recap-theme fixed inset-0 z-[1000]  flex items-center justify-center bg-black/80 p-4"
+      className="fight-recap-theme  fixed inset-0 z-[1000]  flex items-center justify-center bg-black/80 p-4"
       onClick={handleClose}
     >
       <div
-        className="relative grid w-full max-w-lg gap-4 max-h-[90vh] overflow-y-auto border border-border bg-card p-6 shadow-lg sm:rounded-lg"
+        className="relative animate-lift-in grid w-full max-w-lg gap-4 max-h-[90vh] overflow-y-auto border border-border bg-card p-6 shadow-lg sm:rounded-lg"
         onClick={(event) => event.stopPropagation()}
       >
         <button
@@ -165,6 +198,7 @@ export function AddEventModal({
                   type="button"
                   key={item}
                   onClick={() => setPlayer(item)}
+                  disabled={isSaving}
                   className={`preset-btn flex-1 ${player === item ? "active" : ""}`}
                 >
                   {item}
@@ -184,6 +218,7 @@ export function AddEventModal({
                     setEventType(item);
                     setPosition("");
                   }}
+                  disabled={isSaving}
                   className={`preset-btn ${eventType === item ? "active" : ""}`}
                 >
                   {item}
@@ -217,6 +252,7 @@ export function AddEventModal({
                     setIsCustomPosition(false);
                     setPosition(preset);
                   }}
+                  disabled={isSaving}
                   className={`preset-btn text-xs ${
                     preset === "Other"
                       ? isCustomPosition
@@ -238,9 +274,61 @@ export function AddEventModal({
                 value={customPositionValue}
                 onChange={(event) => setCustomPositionValue(event.target.value)}
                 autoFocus
+                disabled={isSaving}
                 className="mt-2 bg-secondary border-border text-foreground"
               />
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-foreground">Match Number</Label>
+            <div className="inline-flex items-center gap-2 bg-muted rounded-lg p-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setMatchNumber((prev) => Math.max(1, prev - 1))}
+                disabled={isSaving || matchNumber <= 1}
+                className="h-8 w-8 p-0"
+              >
+                -
+              </Button>
+              <span className="min-w-10 text-center font-semibold text-foreground">
+                {matchNumber}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setMatchNumber((prev) => prev + 1)}
+                disabled={isSaving}
+                className="h-8 w-8 p-0"
+              >
+                +
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-foreground">Outcome</Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setOutcome("success")}
+                disabled={isSaving}
+                className={`preset-btn flex-1 ${outcome === "success" ? "active" : ""}`}
+              >
+                Success
+              </button>
+              <button
+                type="button"
+                onClick={() => setOutcome("failed")}
+                disabled={isSaving}
+                className={`preset-btn flex-1 ${outcome === "failed" ? "active" : ""}`}
+              >
+                Failed
+              </button>
+            </div>
           </div>
 
           {(eventType === "Transition" ||
@@ -254,6 +342,7 @@ export function AddEventModal({
                 max="10"
                 value={points}
                 onChange={(event) => setPoints(event.target.value)}
+                disabled={isSaving}
                 placeholder="0"
                 className="w-24 bg-secondary border-border text-foreground"
               />
@@ -267,6 +356,7 @@ export function AddEventModal({
               onChange={(event) => setNotes(event.target.value)}
               placeholder="Add any observations or coaching notes..."
               rows={3}
+              disabled={isSaving}
               className="bg-secondary border-border text-foreground resize-none"
             />
           </div>
@@ -275,16 +365,29 @@ export function AddEventModal({
             <Button
               variant="outline"
               onClick={handleClose}
+              disabled={isSaving}
               className="flex-1 border-border text-foreground hover:bg-secondary"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isCustomPosition ? !customPositionValue : !position}
+              disabled={
+                isSaving ||
+                (isCustomPosition ? !customPositionValue : !position)
+              }
               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              {editingEvent ? "Save Changes" : "Add Event"}
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : editingEvent ? (
+                "Save Changes"
+              ) : (
+                "Add Event"
+              )}
             </Button>
           </div>
         </div>
