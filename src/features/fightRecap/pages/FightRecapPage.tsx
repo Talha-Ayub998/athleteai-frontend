@@ -145,18 +145,6 @@ const FightRecapPage = () => {
   const handleSaveEvent = async (
     eventData: Omit<FightEvent, "id">,
   ): Promise<boolean> => {
-    if (editingEvent) {
-      setEvents((prev) =>
-        prev.map((event) =>
-          event.id === editingEvent.id
-            ? { ...eventData, id: editingEvent.id }
-            : event,
-        ),
-      );
-      setEditingEvent(null);
-      return true;
-    }
-
     if (!selectedVideo) {
       toast.error("Add event failed. Video session not ready.");
       return false;
@@ -177,8 +165,30 @@ const FightRecapPage = () => {
         note: eventData.notes || "",
       };
 
+      if (editingEvent) {
+        const editingEventId = Number(editingEvent.id);
+        if (!Number.isFinite(editingEventId)) {
+          toast.error("Add event failed.");
+          return false;
+        }
+
+        const response = await axiosInstance.patch<AnnotationSessionEventResponse>(
+          `/reports/annotation-sessions/${sessionId}/events/${editingEventId}/`,
+          payload,
+        );
+
+        const updatedEvent = mapApiEventToFightEvent(response.data);
+        setEvents((prev) =>
+          prev.map((event) =>
+            event.id === editingEvent.id ? updatedEvent : event,
+          ),
+        );
+        setEditingEvent(null);
+        return true;
+      }
+
       const response = await axiosInstance.post<AnnotationSessionEventResponse>(
-        `/reports/annotation-sessions/${sessionId}/events34/`,
+        `/reports/annotation-sessions/${sessionId}/events/`,
         payload,
       );
 
