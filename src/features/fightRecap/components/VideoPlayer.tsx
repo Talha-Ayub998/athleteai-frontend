@@ -18,12 +18,14 @@ interface VideoPlayerProps {
   src?: string;
   onAddEvent?: (timestamp: number) => void;
   onTimeUpdate?: (time: number) => void;
+  pauseWhenModalOpen?: boolean;
 }
 
 export function VideoPlayer({
   src,
   onAddEvent,
   onTimeUpdate,
+  pauseWhenModalOpen = false,
 }: VideoPlayerProps) {
   const {
     videoRef,
@@ -50,6 +52,13 @@ export function VideoPlayer({
   useEffect(() => {
     onTimeUpdate?.(currentTime);
   }, [currentTime, onTimeUpdate]);
+
+  useEffect(() => {
+    if (!pauseWhenModalOpen) return;
+    const video = videoRef.current;
+    if (!video || video.paused) return;
+    video.pause();
+  }, [pauseWhenModalOpen, videoRef]);
 
   const handleProgressClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();

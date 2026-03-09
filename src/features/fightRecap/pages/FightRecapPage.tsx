@@ -322,6 +322,7 @@ const FightRecapPage = () => {
                 src={selectedVideo.playback_url || selectedVideo.url}
                 onAddEvent={handleAddEvent}
                 onTimeUpdate={handleTimeUpdate}
+                pauseWhenModalOpen={isModalOpen}
               />
 
               <div className="space-y-4">
