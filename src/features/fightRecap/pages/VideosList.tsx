@@ -21,13 +21,6 @@ interface UploadVideoResponse extends UploadedVideo {
   message: string;
 }
 
-interface AnnotationSessionResponse {
-  id: number;
-  video_id: number;
-  status: string | null;
-  updated_at: string | null;
-}
-
 const formatFileSize = (bytes: number) => {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -56,14 +49,14 @@ const getErrorMessage = (error: any, fallback: string) => {
   );
 };
 
-const FilesList = () => {
+const VideosList = () => {
   const {
     videos,
     isLoading,
     fetchError,
     fetchVideos,
     upsertVideo,
-    updateVideo,
+    createSessionForVideo,
     removeVideo,
   } = useFightRecapVideos();
   const navigate = useNavigate();
@@ -192,19 +185,7 @@ const FilesList = () => {
 
     setCreatingSessionVideoId(video.id);
     try {
-      const response = await axiosInstance.post<AnnotationSessionResponse>(
-        "/reports/annotation-sessions/",
-        {
-          video_id: video.id,
-        },
-      );
-
-      updateVideo(response.data.video_id, {
-        session_id: response.data.id,
-        session_status: response.data.status,
-        session_updated_at: response.data.updated_at,
-      });
-
+      await createSessionForVideo(video.id);
       navigate(`annotate/${video.id}`);
     } catch (error) {
       alert(
@@ -513,4 +494,4 @@ const FilesList = () => {
   );
 };
 
-export default FilesList;
+export default VideosList;

@@ -36,6 +36,7 @@ interface FightRecapVideosContextValue {
   fetchError: string;
   hasFetched: boolean;
   fetchVideos: (force?: boolean) => Promise<void>;
+  createSessionForVideo: (videoId: number) => Promise<number>;
   upsertVideo: (video: UploadedVideo) => void;
   updateVideo: (videoId: number, updates: Partial<UploadedVideo>) => void;
   removeVideo: (videoId: number) => void;
@@ -53,6 +54,13 @@ const getErrorMessage = (error: any, fallback: string) => {
   );
 };
 
+interface AnnotationSessionResponse {
+  id: number;
+  video_id: number;
+  status: string | null;
+  updated_at: string | null;
+}
+
 export function FightRecapVideosProvider({
   children,
 }: {
@@ -63,6 +71,9 @@ export function FightRecapVideosProvider({
   const [fetchError, setFetchError] = useState("");
   const [hasFetched, setHasFetched] = useState(false);
   const inFlightRef = useRef<Promise<void> | null>(null);
+  const inFlightSessionRequestsRef = useRef<Map<number, Promise<number>>>(
+    new Map(),
+  );
 
   const fetchVideos = useCallback(
     async (force = false) => {
@@ -119,6 +130,56 @@ export function FightRecapVideosProvider({
     [],
   );
 
+  const createSessionForVideo = useCallback(
+    async (videoId: number) => {
+      const existingVideo = videos.find((video) => video.id === videoId);
+      if (
+        existingVideo?.session_id !== null &&
+        existingVideo?.session_id !== undefined
+      ) {
+        return existingVideo.session_id;
+      }
+
+      const existingRequest = inFlightSessionRequestsRef.current.get(videoId);
+      if (existingRequest) {
+        return existingRequest;
+      }
+
+      const request = (async () => {
+        const response = await axiosInstance.post<AnnotationSessionResponse>(
+          "/reports/annotation-sessions/",
+          { video_id: videoId },
+        );
+
+        const session = response.data;
+        setVideos((prev) =>
+          prev.map((video) =>
+            video.id === session.video_id
+              ? {
+                  ...video,
+                  session_id: session.id,
+                  session_status: session.status,
+                  session_updated_at: session.updated_at,
+                }
+              : video,
+          ),
+        );
+        setHasFetched(true);
+
+        return session.id;
+      })();
+
+      inFlightSessionRequestsRef.current.set(videoId, request);
+
+      try {
+        return await request;
+      } finally {
+        inFlightSessionRequestsRef.current.delete(videoId);
+      }
+    },
+    [videos],
+  );
+
   const value = useMemo(
     () => ({
       videos,
@@ -126,6 +187,7 @@ export function FightRecapVideosProvider({
       fetchError,
       hasFetched,
       fetchVideos,
+      createSessionForVideo,
       upsertVideo,
       updateVideo,
       removeVideo,
@@ -136,6 +198,7 @@ export function FightRecapVideosProvider({
       fetchError,
       hasFetched,
       fetchVideos,
+      createSessionForVideo,
       upsertVideo,
       updateVideo,
       removeVideo,

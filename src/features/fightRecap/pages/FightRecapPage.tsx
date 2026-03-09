@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Plus, FileVideo, BarChart3, Loader2 } from "lucide-react";
 import { useParams } from "react-router-dom";
-import axiosInstance from "../../../api/axiosInstance";
 import { VideoPlayer } from "../components/VideoPlayer";
 import { EventTable } from "../components/EventTable";
 import { AddEventModal } from "../components/AddEventModal";
@@ -10,13 +9,6 @@ import { ToolSidebar } from "../components/ToolSidebar";
 import { FightEvent, MatchMetadata } from "../types/events";
 import { Button } from "../components/ui/Button";
 import { useFightRecapVideos } from "../context/FightRecapVideosContext";
-
-interface AnnotationSessionResponse {
-  id: number;
-  video_id: number;
-  status: string | null;
-  updated_at: string | null;
-}
 
 const getErrorMessage = (error: any, fallback: string) => {
   return (
@@ -33,7 +25,7 @@ const FightRecapPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
-  const { videos, isLoading, fetchError, fetchVideos, updateVideo } =
+  const { videos, isLoading, fetchError, fetchVideos, createSessionForVideo } =
     useFightRecapVideos();
   const [isSessionPreparing, setIsSessionPreparing] = useState(false);
   const [sessionError, setSessionError] = useState("");
@@ -120,17 +112,8 @@ const FightRecapPage = () => {
       setIsSessionPreparing(true);
       setSessionError("");
       try {
-        const response = await axiosInstance.post<AnnotationSessionResponse>(
-          "/reports/annotation-sessions/",
-          { video_id: selectedVideo.id },
-        );
+        await createSessionForVideo(selectedVideo.id);
         if (isCancelled) return;
-
-        updateVideo(response.data.video_id, {
-          session_id: response.data.id,
-          session_status: response.data.status,
-          session_updated_at: response.data.updated_at,
-        });
       } catch (error) {
         if (isCancelled) return;
         setSessionError(
@@ -151,7 +134,7 @@ const FightRecapPage = () => {
     return () => {
       isCancelled = true;
     };
-  }, [isLoading, selectedVideo, updateVideo]);
+  }, [isLoading, selectedVideo, createSessionForVideo]);
 
   const isPageLoading = isLoading || isSessionPreparing;
 
