@@ -1,11 +1,12 @@
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Loader2, Trash2 } from "lucide-react";
 import { FightEvent } from "../types/events";
 import { Button } from "./ui/Button";
 
 interface EventTableProps {
   events: FightEvent[];
   onEditEvent: (event: FightEvent) => void;
-  onDeleteEvent: (eventId: string) => void;
+  onDeleteEvent: (eventId: string) => Promise<void> | void;
+  deletingEventId?: string | null;
   onSeekToEvent: (timestamp: number) => void;
   formatTime: (seconds: number) => string;
 }
@@ -14,6 +15,7 @@ export function EventTable({
   events,
   onEditEvent,
   onDeleteEvent,
+  deletingEventId,
   onSeekToEvent,
   formatTime,
 }: EventTableProps) {
@@ -119,10 +121,15 @@ export function EventTable({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onDeleteEvent(event.id)}
+                      onClick={() => void onDeleteEvent(event.id)}
+                      disabled={deletingEventId === event.id}
                       className="action-btn delete h-8 w-8"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {deletingEventId === event.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </td>

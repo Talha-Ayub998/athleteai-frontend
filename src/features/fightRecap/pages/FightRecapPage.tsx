@@ -3,6 +3,7 @@ import { AlertCircle, Plus, FileVideo, BarChart3, Loader2 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import axiosInstance from "../../../api/axiosInstance";
+import { Modal } from "../../../components/ui/modal";
 import { VideoPlayer } from "../components/VideoPlayer";
 import { EventTable } from "../components/EventTable";
 import { AddEventModal } from "../components/AddEventModal";
@@ -117,6 +118,8 @@ const FightRecapPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<FightEvent | null>(null);
   const { videos, isLoading, fetchError, fetchVideos, createSessionForVideo } =
     useFightRecapVideos();
   const [isSessionPreparing, setIsSessionPreparing] = useState(false);
@@ -214,7 +217,42 @@ const FightRecapPage = () => {
   };
 
   const handleDeleteEvent = (eventId: string) => {
-    setEvents((prev) => prev.filter((event) => event.id !== eventId));
+    const targetEvent = events.find((event) => event.id === eventId);
+    if (!targetEvent) return;
+    setEventToDelete(targetEvent);
+  };
+
+  const closeDeleteModal = () => {
+    if (deletingEventId) return;
+    setEventToDelete(null);
+  };
+
+  const handleConfirmDeleteEvent = async () => {
+    if (!eventToDelete) return;
+    const sessionId = selectedVideo?.session_id;
+    if (sessionId === null || sessionId === undefined) {
+      toast.error("Delete failed. Video session not ready.");
+      return;
+    }
+
+    const parsedEventId = Number(eventToDelete.id);
+    if (!Number.isFinite(parsedEventId)) {
+      toast.error("Delete failed.");
+      return;
+    }
+
+    setDeletingEventId(eventToDelete.id);
+    try {
+      await axiosInstance.delete(
+        `/reports/annotation-sessions/${sessionId}/events/${parsedEventId}/`,
+      );
+      setEvents((prev) => prev.filter((event) => event.id !== eventToDelete.id));
+      setEventToDelete(null);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to delete event."));
+    } finally {
+      setDeletingEventId(null);
+    }
   };
 
   const handleSeekToEvent = (timestamp: number) => {
@@ -458,6 +496,7 @@ const FightRecapPage = () => {
                   events={events}
                   onEditEvent={handleEditEvent}
                   onDeleteEvent={handleDeleteEvent}
+                  deletingEventId={deletingEventId}
                   onSeekToEvent={handleSeekToEvent}
                   formatTime={formatTime}
                 />
@@ -491,6 +530,52 @@ const FightRecapPage = () => {
         formatTime={formatTime}
         editingEvent={editingEvent}
       />
+
+      <Modal
+        className="max-w-xl mx-4"
+        isOpen={Boolean(eventToDelete)}
+        onClose={closeDeleteModal}
+        showCloseButton={false}
+      >
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Delete Event
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Are you sure you want to delete this event at{" "}
+            <span className="font-medium">
+              {eventToDelete ? formatTime(eventToDelete.timestamp) : ""}
+            </span>
+            ? This action cannot be undone.
+          </p>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              onClick={closeDeleteModal}
+              variant="outline"
+              disabled={Boolean(deletingEventId)}
+              className="text-gray-900 dark:text-white"
+            >
+              Cancel
+            </Button>
+            <button
+              type="button"
+              onClick={() => void handleConfirmDeleteEvent()}
+              disabled={!eventToDelete || Boolean(deletingEventId)}
+              className="inline-flex items-center justify-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50 transition-colors"
+            >
+              {deletingEventId ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Confirm Delete"
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
