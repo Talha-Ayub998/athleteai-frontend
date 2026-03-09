@@ -50,7 +50,7 @@ export function AddEventModal({
   const [customPositionValue, setCustomPositionValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  const players: PlayerType[] = ["Me", "Opponent", "AI Coach"];
+  const players: PlayerType[] = ["Me", "Opponent"];
   const eventTypes: EventType[] = [
     "Position",
     "Transition",
@@ -191,7 +191,7 @@ export function AddEventModal({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-foreground">Player</Label>
+            <Label className="text-foreground flex">Player</Label>
             <div className="flex gap-2">
               {players.map((item) => (
                 <button
@@ -208,7 +208,7 @@ export function AddEventModal({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-foreground">Event Type</Label>
+            <Label className="text-foreground flex">Event Type</Label>
             <div className="flex gap-2 flex-wrap">
               {eventTypes.map((item) => (
                 <button
@@ -237,7 +237,7 @@ export function AddEventModal({
                     ? "Submission"
                     : "Note Type"}
             </Label>
-            <div className="flex gap-2 flex-wrap max-h-32 overflow-y-auto p-1">
+            <div className="flex gap-2 flex-wrap  overflow-y-auto p-1">
               {getPresetsForType().map((preset) => (
                 <button
                   type="button"
@@ -280,16 +280,16 @@ export function AddEventModal({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-foreground">Match Number</Label>
-            <div className="inline-flex items-center gap-2 bg-muted rounded-lg p-1">
+          <div className="space-y-2 flex flex-col">
+            <Label className="text-foreground mb-2">Match Number</Label>
+            <div className="inline-flex w-fit items-center gap-2 bg-muted rounded-lg p-1">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setMatchNumber((prev) => Math.max(1, prev - 1))}
                 disabled={isSaving || matchNumber <= 1}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white"
               >
                 -
               </Button>
@@ -302,7 +302,7 @@ export function AddEventModal({
                 size="sm"
                 onClick={() => setMatchNumber((prev) => prev + 1)}
                 disabled={isSaving}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 text-white"
               >
                 +
               </Button>
@@ -310,7 +310,7 @@ export function AddEventModal({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-foreground">Outcome</Label>
+            <Label className="text-foreground flex">Outcome</Label>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -335,7 +335,7 @@ export function AddEventModal({
             eventType === "Submission" ||
             eventType === "Position") && (
             <div className="space-y-2">
-              <Label className="text-foreground">Points (optional)</Label>
+              <Label className="text-foreground flex">Points (optional)</Label>
               <Input
                 type="number"
                 min="0"
@@ -350,7 +350,7 @@ export function AddEventModal({
           )}
 
           <div className="space-y-2">
-            <Label className="text-foreground">Notes</Label>
+            <Label className="text-foreground flex">Notes</Label>
             <Textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
