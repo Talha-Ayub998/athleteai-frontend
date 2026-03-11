@@ -345,6 +345,25 @@
   overflow: hidden;
 }
 
+.fight-recap-theme .match-drawer-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 320ms ease,
+    opacity 220ms ease;
+}
+
+.fight-recap-theme .match-drawer-content.expanded {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.fight-recap-theme .match-drawer-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
 @keyframes fight-recap-fade-in {
   from {
     opacity: 0;

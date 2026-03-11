@@ -6,6 +6,8 @@ import {
   BarChart3,
   Loader2,
   Trophy,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
@@ -183,6 +185,9 @@ const FightRecapPage = () => {
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [modalMatchNumber, setModalMatchNumber] = useState(1);
   const [resultMatchNumber, setResultMatchNumber] = useState(1);
+  const [expandedMatchNumber, setExpandedMatchNumber] = useState<number | null>(
+    null,
+  );
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [eventToDelete, setEventToDelete] = useState<FightEvent | null>(null);
@@ -215,6 +220,12 @@ const FightRecapPage = () => {
   const handleOpenDeclareResultModal = (matchNumber: number) => {
     setResultMatchNumber(normalizeMatchNumber(matchNumber));
     setIsDeclareResultModalOpen(true);
+  };
+
+  const handleToggleMatchSection = (matchNumber: number) => {
+    setExpandedMatchNumber((prev) =>
+      prev === matchNumber ? null : normalizeMatchNumber(matchNumber),
+    );
   };
 
   const handleDeclareResult = async (
@@ -519,6 +530,15 @@ const FightRecapPage = () => {
     };
   }, [events, matchResults]);
 
+  useEffect(() => {
+    setExpandedMatchNumber(currentMatchNumber);
+  }, [currentMatchNumber]);
+
+  const orderedMatchSections = useMemo(
+    () => [...matchSections].sort((a, b) => b.matchNumber - a.matchNumber),
+    [matchSections],
+  );
+
   const isPageLoading = isLoading || isSessionPreparing || isEventsLoading;
 
   return (
@@ -646,66 +666,102 @@ const FightRecapPage = () => {
               />
 
               <div className="space-y-6">
-                {matchSections.map((section) => (
-                  <section
-                    key={section.matchNumber}
-                    className="bg-card rounded-lg border border-border p-4 space-y-4"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <h2 className="text-lg font-semibold text-foreground">
-                          Match {section.matchNumber}
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                          {section.isCurrentMatch
-                            ? "Current match"
-                            : "Completed match"}
-                        </p>
-                      </div>
+                {orderedMatchSections.map((section) => {
+                  const isExpanded = expandedMatchNumber === section.matchNumber;
+                  const canAddEvent = section.isCurrentMatch && !section.result;
 
-                      {section.isCurrentMatch && (
+                  return (
+                    <section
+                      key={section.matchNumber}
+                      className="bg-card rounded-lg border border-border p-4 space-y-4"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <h2 className="text-lg font-semibold text-foreground">
+                            Match {section.matchNumber}
+                          </h2>
+                          <p className="text-sm text-muted-foreground">
+                            {section.isCurrentMatch
+                              ? "Current match"
+                              : "Completed match"}
+                          </p>
+                        </div>
+
                         <div className="flex items-center gap-2">
-                          {section.events.length > 0 && (
-                            <Button
-                              onClick={() =>
-                                handleOpenDeclareResultModal(section.matchNumber)
-                              }
-                              variant="outline"
-                              className="border-border text-foreground hover:bg-secondary gap-2"
-                            >
-                              <Trophy className="w-4 h-4" />
-                              Declare Result
-                            </Button>
+                          {canAddEvent && (
+                            <>
+                              {section.events.length > 0 && (
+                                <Button
+                                  onClick={() =>
+                                    handleOpenDeclareResultModal(section.matchNumber)
+                                  }
+                                  variant="outline"
+                                  className="border-border text-foreground hover:bg-secondary gap-2"
+                                >
+                                  <Trophy className="w-4 h-4" />
+                                  Declare Result
+                                </Button>
+                              )}
+                              <Button
+                                onClick={() =>
+                                  handleAddEvent(currentTimestamp, section.matchNumber)
+                                }
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                              >
+                                <Plus className="w-4 h-4" />
+                                Add Event
+                              </Button>
+                            </>
                           )}
                           <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() =>
-                              handleAddEvent(currentTimestamp, section.matchNumber)
+                              handleToggleMatchSection(section.matchNumber)
                             }
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                            className="text-muted-foreground hover:text-foreground"
+                            aria-expanded={isExpanded}
+                            aria-label={
+                              isExpanded
+                                ? `Collapse match ${section.matchNumber}`
+                                : `Expand match ${section.matchNumber}`
+                            }
                           >
-                            <Plus className="w-4 h-4" />
-                            Add Event
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
                           </Button>
                         </div>
-                      )}
-                    </div>
+                      </div>
 
-                    <EventTable
-                      events={section.events}
-                      onEditEvent={handleEditEvent}
-                      onDeleteEvent={handleDeleteEvent}
-                      deletingEventId={deletingEventId}
-                      onSeekToEvent={handleSeekToEvent}
-                      formatTime={formatTime}
-                      emptyMessage={`No events yet for Match ${section.matchNumber}.`}
-                    />
+                      <div
+                        className={`match-drawer-content ${
+                          isExpanded ? "expanded" : ""
+                        }`}
+                        aria-hidden={!isExpanded}
+                      >
+                        <div className="match-drawer-inner space-y-4">
+                          <EventTable
+                            events={section.events}
+                            onEditEvent={handleEditEvent}
+                            onDeleteEvent={handleDeleteEvent}
+                            deletingEventId={deletingEventId}
+                            onSeekToEvent={handleSeekToEvent}
+                            formatTime={formatTime}
+                            emptyMessage={`No events yet for Match ${section.matchNumber}.`}
+                          />
 
-                    <MatchResultsTable
-                      matchNumber={section.matchNumber}
-                      matchResult={section.result}
-                    />
-                  </section>
-                ))}
+                          <MatchResultsTable
+                            matchNumber={section.matchNumber}
+                            matchResult={section.result}
+                          />
+                        </div>
+                      </div>
+                    </section>
+                  );
+                })}
               </div>
 
               {events.length > 0 && (
