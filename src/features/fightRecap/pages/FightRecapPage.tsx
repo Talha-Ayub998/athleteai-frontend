@@ -6,6 +6,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import { Modal } from "../../../components/ui/modal";
 import { VideoPlayer } from "../components/VideoPlayer";
 import { EventTable } from "../components/EventTable";
+import { MatchResultsTable } from "../components/MatchResultsTable";
 import { AddEventModal } from "../components/AddEventModal";
 import { MatchMetadataBar } from "../components/MatchMetadataBar";
 import { ToolSidebar } from "../components/ToolSidebar";
@@ -13,17 +14,30 @@ import {
   EventType,
   FightEvent,
   MatchMetadata,
+  MatchResult,
   PlayerType,
 } from "../types/events";
 import { Button } from "../components/ui/Button";
 import { useFightRecapVideos } from "../context/FightRecapVideosContext";
 
-const getErrorMessage = (error: any, fallback: string) => {
+interface ErrorWithResponseData {
+  response?: {
+    data?: {
+      message?: string;
+      detail?: string;
+      error?: string;
+    };
+  };
+  message?: string;
+}
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  const normalizedError = error as ErrorWithResponseData;
   return (
-    error?.response?.data?.message ||
-    error?.response?.data?.detail ||
-    error?.response?.data?.error ||
-    error?.message ||
+    normalizedError?.response?.data?.message ||
+    normalizedError?.response?.data?.detail ||
+    normalizedError?.response?.data?.error ||
+    normalizedError?.message ||
     fallback
   );
 };
@@ -47,7 +61,18 @@ interface AnnotationSessionDetailsResponse {
     title: string | null;
   };
   events: AnnotationSessionEventResponse[];
-  match_results: unknown[];
+  match_results: AnnotationSessionMatchResultResponse[];
+}
+
+interface AnnotationSessionMatchResultResponse {
+  id: number;
+  session: number;
+  match_number: number;
+  result: string;
+  match_type: string;
+  referee_decision: boolean;
+  disqualified: boolean;
+  opponent: string;
 }
 
 interface CreateSessionEventPayload {
@@ -97,6 +122,20 @@ const mapApiEventToFightEvent = (
   };
 };
 
+const mapApiMatchResultToMatchResult = (
+  apiMatchResult: AnnotationSessionMatchResultResponse,
+): MatchResult => {
+  return {
+    id: String(apiMatchResult.id),
+    matchNumber: apiMatchResult.match_number || 1,
+    result: apiMatchResult.result || "Unknown",
+    matchType: apiMatchResult.match_type || "",
+    opponent: apiMatchResult.opponent || "",
+    refereeDecision: Boolean(apiMatchResult.referee_decision),
+    disqualified: Boolean(apiMatchResult.disqualified),
+  };
+};
+
 const mapPlayerToApi = (player: PlayerType): "me" | "opponent" | "ai_coach" => {
   if (player === "Opponent") return "opponent";
   if (player === "AI Coach") return "ai_coach";
@@ -115,6 +154,7 @@ const mapEventTypeToApi = (
 const FightRecapPage = () => {
   const { id } = useParams<{ id: string }>();
   const [events, setEvents] = useState<FightEvent[]>([]);
+  const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
@@ -175,10 +215,11 @@ const FightRecapPage = () => {
           return false;
         }
 
-        const response = await axiosInstance.patch<AnnotationSessionEventResponse>(
-          `/reports/annotation-sessions/${sessionId}/events/${editingEventId}/`,
-          payload,
-        );
+        const response =
+          await axiosInstance.patch<AnnotationSessionEventResponse>(
+            `/reports/annotation-sessions/${sessionId}/events/${editingEventId}/`,
+            payload,
+          );
 
         const updatedEvent = mapApiEventToFightEvent(response.data);
         setEvents((prev) =>
@@ -246,7 +287,9 @@ const FightRecapPage = () => {
       await axiosInstance.delete(
         `/reports/annotation-sessions/${sessionId}/events/${parsedEventId}/`,
       );
-      setEvents((prev) => prev.filter((event) => event.id !== eventToDelete.id));
+      setEvents((prev) =>
+        prev.filter((event) => event.id !== eventToDelete.id),
+      );
       setEventToDelete(null);
     } catch (error) {
       toast.error(getErrorMessage(error, "Failed to delete event."));
@@ -330,10 +373,15 @@ const FightRecapPage = () => {
         const mappedEvents = Array.isArray(response.data?.events)
           ? response.data.events.map(mapApiEventToFightEvent)
           : [];
+        const mappedMatchResults = Array.isArray(response.data?.match_results)
+          ? response.data.match_results.map(mapApiMatchResultToMatchResult)
+          : [];
         setEvents(mappedEvents);
+        setMatchResults(mappedMatchResults);
       } catch (error) {
         if (isCancelled) return;
         setEvents([]);
+        setMatchResults([]);
         setSessionError(
           getErrorMessage(error, "Failed to fetch session events."),
         );
@@ -500,6 +548,13 @@ const FightRecapPage = () => {
                   onSeekToEvent={handleSeekToEvent}
                   formatTime={formatTime}
                 />
+
+                <div className="space-y-2">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Match Results
+                  </h2>
+                  <MatchResultsTable matchResults={matchResults} />
+                </div>
               </div>
 
               {events.length > 0 && (

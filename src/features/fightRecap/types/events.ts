@@ -80,6 +80,16 @@ export interface FightEvent {
   outcome?: "success" | "failed";
 }
 
+export interface MatchResult {
+  id: string;
+  matchNumber: number;
+  result: string;
+  matchType: string;
+  opponent: string;
+  refereeDecision: boolean;
+  disqualified: boolean;
+}
+
 export interface EventPresets {
   positions: PositionPreset[];
   transitions: TransitionPreset[];

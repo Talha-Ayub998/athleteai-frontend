@@ -240,7 +240,8 @@
 }
 
 .fight-recap-theme .player-badge,
-.fight-recap-theme .type-badge {
+.fight-recap-theme .type-badge,
+.fight-recap-theme .result-badge {
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.5rem;
@@ -278,6 +279,26 @@
 .fight-recap-theme .type-badge.note {
   background-color: hsl(var(--muted));
   color: hsl(var(--muted-foreground));
+}
+
+.fight-recap-theme .result-badge {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+.fight-recap-theme .result-badge.win {
+  background-color: hsl(var(--success) / 0.2);
+  color: hsl(var(--success));
+}
+
+.fight-recap-theme .result-badge.loss {
+  background-color: rgb(239 68 68 / 0.2);
+  color: rgb(248 113 113);
+}
+
+.fight-recap-theme .result-badge.draw {
+  background-color: hsl(var(--warning) / 0.2);
+  color: hsl(var(--warning));
 }
 
 .fight-recap-theme .action-btn {
