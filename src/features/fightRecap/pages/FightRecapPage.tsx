@@ -84,6 +84,8 @@ interface AnnotationSessionMatchResultResponse {
   referee_decision: boolean;
   disqualified: boolean;
   opponent: string;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 interface CreateSessionEventPayload {
@@ -151,6 +153,8 @@ const mapApiMatchResultToMatchResult = (
     opponent: apiMatchResult.opponent || "",
     refereeDecision: Boolean(apiMatchResult.referee_decision),
     disqualified: Boolean(apiMatchResult.disqualified),
+    createdAt: apiMatchResult.created_at ?? null,
+    updatedAt: apiMatchResult.updated_at ?? null,
   };
 };
 
@@ -661,16 +665,18 @@ const FightRecapPage = () => {
 
                       {section.isCurrentMatch && (
                         <div className="flex items-center gap-2">
-                          <Button
-                            onClick={() =>
-                              handleOpenDeclareResultModal(section.matchNumber)
-                            }
-                            variant="outline"
-                            className="border-border text-foreground hover:bg-secondary gap-2"
-                          >
-                            <Trophy className="w-4 h-4" />
-                            Declare Result
-                          </Button>
+                          {section.events.length > 0 && (
+                            <Button
+                              onClick={() =>
+                                handleOpenDeclareResultModal(section.matchNumber)
+                              }
+                              variant="outline"
+                              className="border-border text-foreground hover:bg-secondary gap-2"
+                            >
+                              <Trophy className="w-4 h-4" />
+                              Declare Result
+                            </Button>
+                          )}
                           <Button
                             onClick={() =>
                               handleAddEvent(currentTimestamp, section.matchNumber)

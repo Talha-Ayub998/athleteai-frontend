@@ -14,6 +14,13 @@ const getResultBadgeClass = (result: string) => {
   return "result-badge";
 };
 
+const formatDeclaredAt = (createdAt?: string | null) => {
+  if (!createdAt) return "-";
+  const parsedDate = new Date(createdAt);
+  if (Number.isNaN(parsedDate.getTime())) return createdAt;
+  return parsedDate.toLocaleString();
+};
+
 export function MatchResultsTable({
   matchNumber,
   matchResult,
@@ -39,6 +46,7 @@ export function MatchResultsTable({
               <th className="w-56">Match Type</th>
               <th className="w-40">Referee Decision</th>
               <th className="w-32">Disqualified</th>
+              <th className="w-56">Declared At</th>
             </tr>
           </thead>
           <tbody>
@@ -57,6 +65,9 @@ export function MatchResultsTable({
               </td>
               <td className="text-muted-foreground">
                 {matchResult.disqualified ? "Yes" : "No"}
+              </td>
+              <td className="text-muted-foreground">
+                {formatDeclaredAt(matchResult.createdAt)}
               </td>
             </tr>
           </tbody>

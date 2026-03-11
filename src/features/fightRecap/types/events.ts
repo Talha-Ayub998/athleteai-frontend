@@ -88,6 +88,8 @@ export interface MatchResult {
   opponent: string;
   refereeDecision: boolean;
   disqualified: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface EventPresets {
