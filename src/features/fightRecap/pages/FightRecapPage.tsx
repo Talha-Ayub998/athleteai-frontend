@@ -85,6 +85,13 @@ interface CreateSessionEventPayload {
   note: string;
 }
 
+const normalizeMatchNumber = (value: number | null | undefined): number => {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 1) {
+    return 1;
+  }
+  return Math.floor(value);
+};
+
 const mapPlayerToUi = (player: string): PlayerType => {
   const normalized = player.trim().toLowerCase();
   if (normalized === "opponent") return "Opponent";
@@ -117,7 +124,7 @@ const mapApiEventToFightEvent = (
     position: apiEvent.move_name || "Unknown",
     notes: apiEvent.note || "",
     points: apiEvent.points ?? undefined,
-    matchNumber: apiEvent.match_number || 1,
+    matchNumber: normalizeMatchNumber(apiEvent.match_number),
     outcome: apiEvent.outcome || "success",
   };
 };
@@ -127,7 +134,7 @@ const mapApiMatchResultToMatchResult = (
 ): MatchResult => {
   return {
     id: String(apiMatchResult.id),
-    matchNumber: apiMatchResult.match_number || 1,
+    matchNumber: normalizeMatchNumber(apiMatchResult.match_number),
     result: apiMatchResult.result || "Unknown",
     matchType: apiMatchResult.match_type || "",
     opponent: apiMatchResult.opponent || "",
@@ -157,6 +164,7 @@ const FightRecapPage = () => {
   const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
+  const [modalMatchNumber, setModalMatchNumber] = useState(1);
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [eventToDelete, setEventToDelete] = useState<FightEvent | null>(null);
@@ -179,8 +187,9 @@ const FightRecapPage = () => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   }, []);
 
-  const handleAddEvent = (timestamp: number) => {
+  const handleAddEvent = (timestamp: number, matchNumber: number) => {
     setCurrentTimestamp(timestamp);
+    setModalMatchNumber(normalizeMatchNumber(matchNumber));
     setEditingEvent(null);
     setIsModalOpen(true);
   };
@@ -199,7 +208,7 @@ const FightRecapPage = () => {
         (await createSessionForVideo(selectedVideo.id));
 
       const payload: CreateSessionEventPayload = {
-        match_number: eventData.matchNumber || 1,
+        match_number: normalizeMatchNumber(eventData.matchNumber),
         timestamp_seconds: Number(eventData.timestamp.toFixed(2)),
         player: mapPlayerToApi(eventData.player),
         event_type: mapEventTypeToApi(eventData.type),
@@ -254,6 +263,7 @@ const FightRecapPage = () => {
   const handleEditEvent = (event: FightEvent) => {
     setEditingEvent(event);
     setCurrentTimestamp(event.timestamp);
+    setModalMatchNumber(normalizeMatchNumber(event.matchNumber));
     setIsModalOpen(true);
   };
 
@@ -404,6 +414,60 @@ const FightRecapPage = () => {
     selectedVideo?.session_id,
   ]);
 
+  const { currentMatchNumber, matchSections } = useMemo(() => {
+    const highestMatchNumberFromEvents = events.reduce((max, event) => {
+      return Math.max(max, normalizeMatchNumber(event.matchNumber));
+    }, 1);
+
+    const highestMatchNumberFromResults = matchResults.reduce((max, result) => {
+      return Math.max(max, normalizeMatchNumber(result.matchNumber));
+    }, 0);
+
+    // Match results represent finished matches, so current match is the next one.
+    const inferredCurrentMatchNumberFromResults = matchResults.length + 1;
+    const derivedCurrentMatchNumber = Math.max(
+      1,
+      inferredCurrentMatchNumberFromResults,
+      highestMatchNumberFromEvents,
+      highestMatchNumberFromResults + 1,
+    );
+
+    const totalMatchSections = Math.max(
+      derivedCurrentMatchNumber,
+      highestMatchNumberFromEvents,
+      highestMatchNumberFromResults,
+      1,
+    );
+
+    const latestResultByMatchNumber = new Map<number, MatchResult>();
+    const sortedResults = [...matchResults].sort(
+      (a, b) => Number(a.id) - Number(b.id),
+    );
+    sortedResults.forEach((result) => {
+      latestResultByMatchNumber.set(
+        normalizeMatchNumber(result.matchNumber),
+        result,
+      );
+    });
+
+    const sections = Array.from(
+      { length: totalMatchSections },
+      (_, index) => index + 1,
+    ).map((matchNumber) => ({
+      matchNumber,
+      events: events.filter(
+        (event) => normalizeMatchNumber(event.matchNumber) === matchNumber,
+      ),
+      result: latestResultByMatchNumber.get(matchNumber) ?? null,
+      isCurrentMatch: matchNumber === derivedCurrentMatchNumber,
+    }));
+
+    return {
+      currentMatchNumber: derivedCurrentMatchNumber,
+      matchSections: sections,
+    };
+  }, [events, matchResults]);
+
   const isPageLoading = isLoading || isSessionPreparing || isEventsLoading;
 
   return (
@@ -432,7 +496,9 @@ const FightRecapPage = () => {
         }}
         containerStyle={{ top: 16 }}
       />
-      <ToolSidebar onAddEvent={() => handleAddEvent(currentTimestamp)} />
+      <ToolSidebar
+        onAddEvent={() => handleAddEvent(currentTimestamp, currentMatchNumber)}
+      />
 
       <main className="flex-1 p-6 overflow-y-auto animate-lift-in">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -521,40 +587,60 @@ const FightRecapPage = () => {
               <VideoPlayer
                 key={selectedVideo.id}
                 src={selectedVideo.playback_url || selectedVideo.url}
-                onAddEvent={handleAddEvent}
+                onAddEvent={(timestamp) =>
+                  handleAddEvent(timestamp, currentMatchNumber)
+                }
                 onTimeUpdate={handleTimeUpdate}
                 pauseWhenModalOpen={isModalOpen}
               />
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Event Timeline
-                  </h2>
-                  <Button
-                    onClick={() => handleAddEvent(currentTimestamp)}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+              <div className="space-y-6">
+                {matchSections.map((section) => (
+                  <section
+                    key={section.matchNumber}
+                    className="bg-card rounded-lg border border-border p-4 space-y-4"
                   >
-                    <Plus className="w-4 h-4" />
-                    Add Event
-                  </Button>
-                </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <h2 className="text-lg font-semibold text-foreground">
+                          Match {section.matchNumber}
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          {section.isCurrentMatch
+                            ? "Current match"
+                            : "Completed match"}
+                        </p>
+                      </div>
 
-                <EventTable
-                  events={events}
-                  onEditEvent={handleEditEvent}
-                  onDeleteEvent={handleDeleteEvent}
-                  deletingEventId={deletingEventId}
-                  onSeekToEvent={handleSeekToEvent}
-                  formatTime={formatTime}
-                />
+                      {section.isCurrentMatch && (
+                        <Button
+                          onClick={() =>
+                            handleAddEvent(currentTimestamp, section.matchNumber)
+                          }
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add Event
+                        </Button>
+                      )}
+                    </div>
 
-                <div className="space-y-2">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Match Results
-                  </h2>
-                  <MatchResultsTable matchResults={matchResults} />
-                </div>
+                    <EventTable
+                      events={section.events}
+                      onEditEvent={handleEditEvent}
+                      onDeleteEvent={handleDeleteEvent}
+                      deletingEventId={deletingEventId}
+                      onSeekToEvent={handleSeekToEvent}
+                      formatTime={formatTime}
+                      emptyMessage={`No events yet for Match ${section.matchNumber}.`}
+                    />
+
+                    <MatchResultsTable
+                      matchNumber={section.matchNumber}
+                      matchResult={section.result}
+                    />
+                  </section>
+                ))}
               </div>
 
               {events.length > 0 && (
@@ -584,6 +670,7 @@ const FightRecapPage = () => {
         timestamp={currentTimestamp}
         formatTime={formatTime}
         editingEvent={editingEvent}
+        defaultMatchNumber={modalMatchNumber}
       />
 
       <Modal

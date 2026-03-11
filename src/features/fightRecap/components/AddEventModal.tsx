@@ -19,6 +19,7 @@ interface AddEventModalProps {
   timestamp: number;
   formatTime: (seconds: number) => string;
   editingEvent?: FightEvent | null;
+  defaultMatchNumber?: number;
 }
 
 export function AddEventModal({
@@ -28,6 +29,7 @@ export function AddEventModal({
   timestamp,
   formatTime,
   editingEvent,
+  defaultMatchNumber = 1,
 }: AddEventModalProps) {
   const [player, setPlayer] = useState<PlayerType>(
     editingEvent?.player || "Me",
@@ -41,7 +43,7 @@ export function AddEventModal({
     editingEvent?.points?.toString() || "",
   );
   const [matchNumber, setMatchNumber] = useState<number>(
-    editingEvent?.matchNumber || 1,
+    editingEvent?.matchNumber || defaultMatchNumber,
   );
   const [outcome, setOutcome] = useState<"success" | "failed">(
     editingEvent?.outcome || "success",
@@ -90,12 +92,12 @@ export function AddEventModal({
     setPosition(editingEvent?.position || "");
     setNotes(editingEvent?.notes || "");
     setPoints(editingEvent?.points?.toString() || "");
-    setMatchNumber(editingEvent?.matchNumber || 1);
+    setMatchNumber(editingEvent?.matchNumber || defaultMatchNumber);
     setOutcome(editingEvent?.outcome || "success");
     setIsCustomPosition(false);
     setCustomPositionValue("");
     setIsSaving(false);
-  }, [isOpen, editingEvent]);
+  }, [isOpen, editingEvent, defaultMatchNumber]);
 
   const resetForm = () => {
     setPlayer("Me");
@@ -103,7 +105,7 @@ export function AddEventModal({
     setPosition("");
     setNotes("");
     setPoints("");
-    setMatchNumber(1);
+    setMatchNumber(defaultMatchNumber);
     setOutcome("success");
     setIsCustomPosition(false);
     setCustomPositionValue("");

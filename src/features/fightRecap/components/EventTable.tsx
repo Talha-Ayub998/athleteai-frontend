@@ -9,6 +9,7 @@ interface EventTableProps {
   deletingEventId?: string | null;
   onSeekToEvent: (timestamp: number) => void;
   formatTime: (seconds: number) => string;
+  emptyMessage?: string;
 }
 
 export function EventTable({
@@ -18,6 +19,7 @@ export function EventTable({
   deletingEventId,
   onSeekToEvent,
   formatTime,
+  emptyMessage,
 }: EventTableProps) {
   const sortedEvents = [...events].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -53,8 +55,8 @@ export function EventTable({
     return (
       <div className="bg-card rounded-lg p-8 text-center border border-border">
         <p className="text-muted-foreground">
-          No events found for this session yet. Pause the video and click "Add
-          Event" to start annotating.
+          {emptyMessage ||
+            'No events found for this session yet. Pause the video and click "Add Event" to start annotating.'}
         </p>
       </div>
     );
@@ -70,7 +72,6 @@ export function EventTable({
               <th className="w-24">Player</th>
               <th className="w-24">Type</th>
               <th className="w-40">Position</th>
-              <th className="w-36">Match Number</th>
               <th>Notes</th>
               <th className="w-20 text-center">Points</th>
               <th className="w-24 text-center">Actions</th>
@@ -103,7 +104,6 @@ export function EventTable({
                   </span>
                 </td>
                 <td className="font-medium text-white">{event.position}</td>
-                <td className="text-white">{event.matchNumber}</td>
                 <td className="text-muted-foreground max-w-xs">
                   <span className="line-clamp-3">{event.notes || "-"}</span>
                 </td>

@@ -1,7 +1,8 @@
 import { MatchResult } from "../types/events";
 
 interface MatchResultsTableProps {
-  matchResults: MatchResult[];
+  matchNumber: number;
+  matchResult: MatchResult | null;
 }
 
 const getResultBadgeClass = (result: string) => {
@@ -13,16 +14,15 @@ const getResultBadgeClass = (result: string) => {
   return "result-badge";
 };
 
-export function MatchResultsTable({ matchResults }: MatchResultsTableProps) {
-  const sortedResults = [...matchResults].sort(
-    (a, b) => a.matchNumber - b.matchNumber,
-  );
-
-  if (sortedResults.length === 0) {
+export function MatchResultsTable({
+  matchNumber,
+  matchResult,
+}: MatchResultsTableProps) {
+  if (!matchResult) {
     return (
       <div className="bg-card rounded-lg p-8 text-center border border-border">
         <p className="text-muted-foreground">
-          No match results recorded yet for this session.
+          No result recorded yet for Match {matchNumber}.
         </p>
       </div>
     );
@@ -34,7 +34,6 @@ export function MatchResultsTable({ matchResults }: MatchResultsTableProps) {
         <table className="event-table">
           <thead>
             <tr>
-              <th className="w-32">Match</th>
               <th className="w-56">Opponent</th>
               <th className="w-32">Result</th>
               <th className="w-56">Match Type</th>
@@ -43,32 +42,23 @@ export function MatchResultsTable({ matchResults }: MatchResultsTableProps) {
             </tr>
           </thead>
           <tbody>
-            {sortedResults.map((result, index) => (
-              <tr
-                key={result.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <td className="font-medium text-white">
-                  #{result.matchNumber}
-                </td>
-                <td className="text-white">{result.opponent || "-"}</td>
-                <td>
-                  <span className={getResultBadgeClass(result.result)}>
-                    {result.result || "Unknown"}
-                  </span>
-                </td>
-                <td className="text-muted-foreground">
-                  {result.matchType || "-"}
-                </td>
-                <td className="text-muted-foreground">
-                  {result.refereeDecision ? "Yes" : "No"}
-                </td>
-                <td className="text-muted-foreground">
-                  {result.disqualified ? "Yes" : "No"}
-                </td>
-              </tr>
-            ))}
+            <tr key={matchResult.id} className="animate-fade-in">
+              <td className="text-white">{matchResult.opponent || "-"}</td>
+              <td>
+                <span className={getResultBadgeClass(matchResult.result)}>
+                  {matchResult.result || "Unknown"}
+                </span>
+              </td>
+              <td className="text-muted-foreground">
+                {matchResult.matchType || "-"}
+              </td>
+              <td className="text-muted-foreground">
+                {matchResult.refereeDecision ? "Yes" : "No"}
+              </td>
+              <td className="text-muted-foreground">
+                {matchResult.disqualified ? "Yes" : "No"}
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
