@@ -185,8 +185,8 @@ const FightRecapPage = () => {
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [modalMatchNumber, setModalMatchNumber] = useState(1);
   const [resultMatchNumber, setResultMatchNumber] = useState(1);
-  const [expandedMatchNumber, setExpandedMatchNumber] = useState<number | null>(
-    null,
+  const [expandedMatchNumbers, setExpandedMatchNumbers] = useState<number[]>(
+    [],
   );
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
@@ -223,9 +223,13 @@ const FightRecapPage = () => {
   };
 
   const handleToggleMatchSection = (matchNumber: number) => {
-    setExpandedMatchNumber((prev) =>
-      prev === matchNumber ? null : normalizeMatchNumber(matchNumber),
-    );
+    const normalizedMatchNumber = normalizeMatchNumber(matchNumber);
+    setExpandedMatchNumbers((prev) => {
+      if (prev.includes(normalizedMatchNumber)) {
+        return prev.filter((item) => item !== normalizedMatchNumber);
+      }
+      return [...prev, normalizedMatchNumber];
+    });
   };
 
   const handleDeclareResult = async (
@@ -531,7 +535,9 @@ const FightRecapPage = () => {
   }, [events, matchResults]);
 
   useEffect(() => {
-    setExpandedMatchNumber(currentMatchNumber);
+    setExpandedMatchNumbers((prev) =>
+      prev.includes(currentMatchNumber) ? prev : [...prev, currentMatchNumber],
+    );
   }, [currentMatchNumber]);
 
   const orderedMatchSections = useMemo(
@@ -667,13 +673,15 @@ const FightRecapPage = () => {
 
               <div className="space-y-6">
                 {orderedMatchSections.map((section) => {
-                  const isExpanded = expandedMatchNumber === section.matchNumber;
+                  const isExpanded = expandedMatchNumbers.includes(
+                    section.matchNumber,
+                  );
                   const canAddEvent = section.isCurrentMatch && !section.result;
 
                   return (
                     <section
                       key={section.matchNumber}
-                      className="bg-card rounded-lg border border-border p-4 space-y-4"
+                      className="bg-card rounded-lg border border-border p-4"
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div>
