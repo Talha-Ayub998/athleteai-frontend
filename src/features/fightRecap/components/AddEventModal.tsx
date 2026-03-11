@@ -290,7 +290,8 @@ export function AddEventModal({
                 variant="outline"
                 size="sm"
                 onClick={() => setMatchNumber((prev) => Math.max(1, prev - 1))}
-                disabled={isSaving || matchNumber <= 1}
+                // disabled={isSaving || matchNumber <= 1}
+                disabled={true}
                 className="h-8 w-8 p-0 text-white"
               >
                 -
@@ -303,7 +304,8 @@ export function AddEventModal({
                 variant="outline"
                 size="sm"
                 onClick={() => setMatchNumber((prev) => prev + 1)}
-                disabled={isSaving}
+                // disabled={isSaving}
+                disabled={true}
                 className="h-8 w-8 p-0 text-white"
               >
                 +
