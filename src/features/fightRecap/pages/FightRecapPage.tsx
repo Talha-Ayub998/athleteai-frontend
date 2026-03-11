@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Plus, FileVideo, BarChart3, Loader2 } from "lucide-react";
+import {
+  AlertCircle,
+  Plus,
+  FileVideo,
+  BarChart3,
+  Loader2,
+  Trophy,
+} from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import axiosInstance from "../../../api/axiosInstance";
@@ -8,6 +15,10 @@ import { VideoPlayer } from "../components/VideoPlayer";
 import { EventTable } from "../components/EventTable";
 import { MatchResultsTable } from "../components/MatchResultsTable";
 import { AddEventModal } from "../components/AddEventModal";
+import {
+  DeclareResultModal,
+  DeclareMatchResultPayload,
+} from "../components/DeclareResultModal";
 import { MatchMetadataBar } from "../components/MatchMetadataBar";
 import { ToolSidebar } from "../components/ToolSidebar";
 import {
@@ -163,8 +174,11 @@ const FightRecapPage = () => {
   const [events, setEvents] = useState<FightEvent[]>([]);
   const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeclareResultModalOpen, setIsDeclareResultModalOpen] =
+    useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [modalMatchNumber, setModalMatchNumber] = useState(1);
+  const [resultMatchNumber, setResultMatchNumber] = useState(1);
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [eventToDelete, setEventToDelete] = useState<FightEvent | null>(null);
@@ -192,6 +206,45 @@ const FightRecapPage = () => {
     setModalMatchNumber(normalizeMatchNumber(matchNumber));
     setEditingEvent(null);
     setIsModalOpen(true);
+  };
+
+  const handleOpenDeclareResultModal = (matchNumber: number) => {
+    setResultMatchNumber(normalizeMatchNumber(matchNumber));
+    setIsDeclareResultModalOpen(true);
+  };
+
+  const handleDeclareResult = async (
+    payload: DeclareMatchResultPayload,
+  ): Promise<boolean> => {
+    if (!selectedVideo?.session_id) {
+      toast.error("Declare result failed. Video session not ready.");
+      return false;
+    }
+
+    try {
+      const response =
+        await axiosInstance.post<AnnotationSessionMatchResultResponse>(
+          `/reports/annotation-sessions/${selectedVideo.session_id}/match-results/`,
+          payload,
+        );
+
+      const newMatchResult = mapApiMatchResultToMatchResult(response.data);
+      setMatchResults((prev) => {
+        const withoutDuplicate = prev.filter(
+          (result) =>
+            result.id !== newMatchResult.id &&
+            normalizeMatchNumber(result.matchNumber) !==
+              normalizeMatchNumber(newMatchResult.matchNumber),
+        );
+        return [...withoutDuplicate, newMatchResult];
+      });
+
+      toast.success(`Result declared for Match ${payload.match_number}.`);
+      return true;
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Declare result failed."));
+      return false;
+    }
   };
 
   const handleSaveEvent = async (
@@ -423,14 +476,8 @@ const FightRecapPage = () => {
       return Math.max(max, normalizeMatchNumber(result.matchNumber));
     }, 0);
 
-    // Match results represent finished matches, so current match is the next one.
-    const inferredCurrentMatchNumberFromResults = matchResults.length + 1;
-    const derivedCurrentMatchNumber = Math.max(
-      1,
-      inferredCurrentMatchNumberFromResults,
-      highestMatchNumberFromEvents,
-      highestMatchNumberFromResults + 1,
-    );
+    // Current match follows the rule: finished matches count + 1.
+    const derivedCurrentMatchNumber = matchResults.length + 1;
 
     const totalMatchSections = Math.max(
       derivedCurrentMatchNumber,
@@ -613,15 +660,27 @@ const FightRecapPage = () => {
                       </div>
 
                       {section.isCurrentMatch && (
-                        <Button
-                          onClick={() =>
-                            handleAddEvent(currentTimestamp, section.matchNumber)
-                          }
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Add Event
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() =>
+                              handleOpenDeclareResultModal(section.matchNumber)
+                            }
+                            variant="outline"
+                            className="border-border text-foreground hover:bg-secondary gap-2"
+                          >
+                            <Trophy className="w-4 h-4" />
+                            Declare Result
+                          </Button>
+                          <Button
+                            onClick={() =>
+                              handleAddEvent(currentTimestamp, section.matchNumber)
+                            }
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Add Event
+                          </Button>
+                        </div>
                       )}
                     </div>
 
@@ -671,6 +730,13 @@ const FightRecapPage = () => {
         formatTime={formatTime}
         editingEvent={editingEvent}
         defaultMatchNumber={modalMatchNumber}
+      />
+
+      <DeclareResultModal
+        isOpen={isDeclareResultModalOpen}
+        onClose={() => setIsDeclareResultModalOpen(false)}
+        matchNumber={resultMatchNumber}
+        onSubmit={handleDeclareResult}
       />
 
       <Modal
