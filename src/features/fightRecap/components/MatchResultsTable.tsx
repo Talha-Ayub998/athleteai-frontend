@@ -8,8 +8,13 @@ interface MatchResultsTableProps {
 const getResultBadgeClass = (result: string) => {
   const normalized = result.trim().toLowerCase();
   if (normalized === "win") return "result-badge win";
-  if (normalized === "lost" || normalized === "loss")
+  if (
+    normalized === "lose" ||
+    normalized === "lost" ||
+    normalized === "loss"
+  ) {
     return "result-badge loss";
+  }
   if (normalized === "draw") return "result-badge draw";
   return "result-badge";
 };

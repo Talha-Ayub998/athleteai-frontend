@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Loader2, Trophy, X } from "lucide-react";
+import type { MatchResult } from "../types/events";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Label } from "./ui/Label";
@@ -18,6 +19,7 @@ interface DeclareResultModalProps {
   isOpen: boolean;
   onClose: () => void;
   matchNumber: number;
+  editingResult?: MatchResult | null;
   onSubmit: (
     payload: DeclareMatchResultPayload,
   ) => Promise<boolean> | boolean;
@@ -34,10 +36,36 @@ const MATCH_TYPE_OPTIONS: DeclareMatchResultPayload["match_type"][] = [
   "GI Points",
 ];
 
+const normalizeResultValue = (
+  value?: string | null,
+): DeclareMatchResultPayload["result"] => {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === "draw") return "Draw";
+  if (
+    normalized === "lose" ||
+    normalized === "loss" ||
+    normalized === "lost"
+  ) {
+    return "Lose";
+  }
+  return "Win";
+};
+
+const normalizeMatchTypeValue = (
+  value?: string | null,
+): DeclareMatchResultPayload["match_type"] => {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === "gi points" || normalized === "gi") {
+    return "GI Points";
+  }
+  return "No-GI Points";
+};
+
 export function DeclareResultModal({
   isOpen,
   onClose,
   matchNumber,
+  editingResult,
   onSubmit,
 }: DeclareResultModalProps) {
   const [result, setResult] =
@@ -65,13 +93,13 @@ export function DeclareResultModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    setResult("Win");
-    setMatchType("No-GI Points");
-    setRefereeDecision(false);
-    setDisqualified(false);
-    setOpponent("");
+    setResult(normalizeResultValue(editingResult?.result));
+    setMatchType(normalizeMatchTypeValue(editingResult?.matchType));
+    setRefereeDecision(editingResult?.refereeDecision ?? false);
+    setDisqualified(editingResult?.disqualified ?? false);
+    setOpponent(editingResult?.opponent ?? "");
     setIsSubmitting(false);
-  }, [isOpen, matchNumber]);
+  }, [isOpen, matchNumber, editingResult]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -134,7 +162,7 @@ export function DeclareResultModal({
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
               <Trophy className="w-5 h-5 text-primary-foreground" />
             </div>
-            Declare Match Result
+            {editingResult ? "Edit Match Result" : "Declare Match Result"}
           </h2>
           <p className="text-sm text-muted-foreground">
             Match {matchNumber}
@@ -248,10 +276,10 @@ export function DeclareResultModal({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Declaring...
+                  {editingResult ? "Saving..." : "Declaring..."}
                 </>
               ) : (
-                "Declare Result"
+                editingResult ? "Save Result" : "Declare Result"
               )}
             </Button>
           </div>

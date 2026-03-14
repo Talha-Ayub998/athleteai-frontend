@@ -189,6 +189,8 @@ const FightRecapPage = () => {
     [],
   );
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
+  const [editingMatchResult, setEditingMatchResult] =
+    useState<MatchResult | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [eventToDelete, setEventToDelete] = useState<FightEvent | null>(null);
   const { videos, isLoading, fetchError, fetchVideos, createSessionForVideo } =
@@ -217,9 +219,18 @@ const FightRecapPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleOpenDeclareResultModal = (matchNumber: number) => {
+  const handleOpenDeclareResultModal = (
+    matchNumber: number,
+    matchResult: MatchResult | null = null,
+  ) => {
     setResultMatchNumber(normalizeMatchNumber(matchNumber));
+    setEditingMatchResult(matchResult);
     setIsDeclareResultModalOpen(true);
+  };
+
+  const handleCloseDeclareResultModal = () => {
+    setIsDeclareResultModalOpen(false);
+    setEditingMatchResult(null);
   };
 
   const handleToggleMatchSection = (matchNumber: number) => {
@@ -241,11 +252,26 @@ const FightRecapPage = () => {
     }
 
     try {
-      const response =
-        await axiosInstance.post<AnnotationSessionMatchResultResponse>(
-          `/reports/annotation-sessions/${selectedVideo.session_id}/match-results/`,
-          payload,
-        );
+      let response;
+      if (editingMatchResult) {
+        const editingMatchResultId = Number(editingMatchResult.id);
+        if (!Number.isFinite(editingMatchResultId)) {
+          toast.error("Update result failed.");
+          return false;
+        }
+
+        response =
+          await axiosInstance.patch<AnnotationSessionMatchResultResponse>(
+            `/reports/annotation-sessions/${selectedVideo.session_id}/match-results/${editingMatchResultId}/`,
+            payload,
+          );
+      } else {
+        response =
+          await axiosInstance.post<AnnotationSessionMatchResultResponse>(
+            `/reports/annotation-sessions/${selectedVideo.session_id}/match-results/`,
+            payload,
+          );
+      }
 
       const newMatchResult = mapApiMatchResultToMatchResult(response.data);
       setMatchResults((prev) => {
@@ -258,10 +284,22 @@ const FightRecapPage = () => {
         return [...withoutDuplicate, newMatchResult];
       });
 
-      toast.success(`Result declared for Match ${payload.match_number}.`);
+      setEditingMatchResult(null);
+      toast.success(
+        editingMatchResult
+          ? `Result updated for Match ${payload.match_number}.`
+          : `Result declared for Match ${payload.match_number}.`,
+      );
       return true;
     } catch (error) {
-      toast.error(getErrorMessage(error, "Declare result failed."));
+      toast.error(
+        getErrorMessage(
+          error,
+          editingMatchResult
+            ? "Update result failed."
+            : "Declare result failed.",
+        ),
+      );
       return false;
     }
   };
@@ -696,12 +734,29 @@ const FightRecapPage = () => {
                         </div>
 
                         <div className="flex items-center gap-2">
+                          {section.result && (
+                            <Button
+                              onClick={() =>
+                                handleOpenDeclareResultModal(
+                                  section.matchNumber,
+                                  section.result,
+                                )
+                              }
+                              variant="outline"
+                              className="border-border text-foreground hover:bg-secondary gap-2"
+                            >
+                              <Trophy className="w-4 h-4" />
+                              Edit Result
+                            </Button>
+                          )}
                           {canAddEvent && (
                             <>
                               {section.events.length > 0 && (
                                 <Button
                                   onClick={() =>
-                                    handleOpenDeclareResultModal(section.matchNumber)
+                                    handleOpenDeclareResultModal(
+                                      section.matchNumber,
+                                    )
                                   }
                                   variant="outline"
                                   className="border-border text-foreground hover:bg-secondary gap-2"
@@ -712,7 +767,10 @@ const FightRecapPage = () => {
                               )}
                               <Button
                                 onClick={() =>
-                                  handleAddEvent(currentTimestamp, section.matchNumber)
+                                  handleAddEvent(
+                                    currentTimestamp,
+                                    section.matchNumber,
+                                  )
                                 }
                                 className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
                               >
@@ -804,9 +862,10 @@ const FightRecapPage = () => {
 
       <DeclareResultModal
         isOpen={isDeclareResultModalOpen}
-        onClose={() => setIsDeclareResultModalOpen(false)}
+        onClose={handleCloseDeclareResultModal}
         matchNumber={resultMatchNumber}
         onSubmit={handleDeclareResult}
+        editingResult={editingMatchResult}
       />
 
       <Modal
