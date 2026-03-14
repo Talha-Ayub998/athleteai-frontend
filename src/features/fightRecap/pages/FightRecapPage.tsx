@@ -6,8 +6,6 @@ import {
   BarChart3,
   Loader2,
   Trophy,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
@@ -241,6 +239,15 @@ const FightRecapPage = () => {
       }
       return [...prev, normalizedMatchNumber];
     });
+  };
+
+  const handleOpenMatchSection = (matchNumber: number) => {
+    const normalizedMatchNumber = normalizeMatchNumber(matchNumber);
+    setExpandedMatchNumbers((prev) =>
+      prev.includes(normalizedMatchNumber)
+        ? prev
+        : [...prev, normalizedMatchNumber],
+    );
   };
 
   const handleDeclareResult = async (
@@ -721,7 +728,24 @@ const FightRecapPage = () => {
                       key={section.matchNumber}
                       className="bg-card rounded-lg border border-border p-4"
                     >
-                      <div className="flex items-center justify-between gap-4">
+                      <div
+                        className="flex cursor-pointer items-center justify-between gap-4 rounded-lg px-2 py-1 transition-colors hover:bg-secondary/40"
+                        onClick={() => handleToggleMatchSection(section.matchNumber)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleToggleMatchSection(section.matchNumber);
+                          }
+                        }}
+                        aria-expanded={isExpanded}
+                        aria-label={
+                          isExpanded
+                            ? `Collapse match ${section.matchNumber}`
+                            : `Expand match ${section.matchNumber}`
+                        }
+                      >
                         <div>
                           <h2 className="text-lg font-semibold text-foreground">
                             Match {section.matchNumber}
@@ -736,12 +760,14 @@ const FightRecapPage = () => {
                         <div className="flex items-center gap-2">
                           {section.result && (
                             <Button
-                              onClick={() =>
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleOpenMatchSection(section.matchNumber);
                                 handleOpenDeclareResultModal(
                                   section.matchNumber,
                                   section.result,
-                                )
-                              }
+                                );
+                              }}
                               variant="outline"
                               className="border-border text-foreground hover:bg-secondary gap-2"
                             >
@@ -753,11 +779,12 @@ const FightRecapPage = () => {
                             <>
                               {section.events.length > 0 && (
                                 <Button
-                                  onClick={() =>
+                                  onClick={(event) => {
+                                    event.stopPropagation();
                                     handleOpenDeclareResultModal(
                                       section.matchNumber,
-                                    )
-                                  }
+                                    );
+                                  }}
                                   variant="outline"
                                   className="border-border text-foreground hover:bg-secondary gap-2"
                                 >
@@ -766,12 +793,13 @@ const FightRecapPage = () => {
                                 </Button>
                               )}
                               <Button
-                                onClick={() =>
+                                onClick={(event) => {
+                                  event.stopPropagation();
                                   handleAddEvent(
                                     currentTimestamp,
                                     section.matchNumber,
-                                  )
-                                }
+                                  );
+                                }}
                                 className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
                               >
                                 <Plus className="w-4 h-4" />
@@ -779,26 +807,6 @@ const FightRecapPage = () => {
                               </Button>
                             </>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              handleToggleMatchSection(section.matchNumber)
-                            }
-                            className="text-muted-foreground hover:text-foreground"
-                            aria-expanded={isExpanded}
-                            aria-label={
-                              isExpanded
-                                ? `Collapse match ${section.matchNumber}`
-                                : `Expand match ${section.matchNumber}`
-                            }
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4" />
-                            )}
-                          </Button>
                         </div>
                       </div>
 
