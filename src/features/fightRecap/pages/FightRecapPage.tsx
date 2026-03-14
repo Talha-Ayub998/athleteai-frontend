@@ -635,7 +635,8 @@ const FightRecapPage = () => {
               </p>
             </div>
             <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {events.length} event{events.length !== 1 ? "s" : ""} recorded
+              {events.length} total event{events.length !== 1 ? "s" : ""}{" "}
+              recorded
             </span>
           </div>
 
@@ -701,10 +702,10 @@ const FightRecapPage = () => {
 
           {!isPageLoading && !fetchError && !sessionError && selectedVideo && (
             <>
-              <MatchMetadataBar
+              {/* <MatchMetadataBar
                 metadata={matchMetadata}
                 onMetadataChange={setMatchMetadata}
-              />
+              /> */}
 
               <VideoPlayer
                 key={selectedVideo.id}
@@ -730,7 +731,9 @@ const FightRecapPage = () => {
                     >
                       <div
                         className="flex cursor-pointer items-center justify-between gap-4 rounded-lg px-2 py-1 transition-colors hover:bg-secondary/40"
-                        onClick={() => handleToggleMatchSection(section.matchNumber)}
+                        onClick={() =>
+                          handleToggleMatchSection(section.matchNumber)
+                        }
                         role="button"
                         tabIndex={0}
                         onKeyDown={(event) => {
@@ -838,7 +841,7 @@ const FightRecapPage = () => {
                 })}
               </div>
 
-              {events.length > 0 && (
+              {/* {events.length > 0 && (
                 <div className="bg-card rounded-lg p-6 border border-border">
                   <h3 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
                     <BarChart3 className="w-5 h-5 text-primary" />
@@ -849,7 +852,7 @@ const FightRecapPage = () => {
                     more events.
                   </p>
                 </div>
-              )}
+              )} */}
             </>
           )}
         </div>
