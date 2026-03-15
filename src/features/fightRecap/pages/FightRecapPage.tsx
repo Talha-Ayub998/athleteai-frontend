@@ -620,6 +620,7 @@ const FightRecapPage = () => {
   );
 
   const isPageLoading = isLoading || isSessionPreparing || isEventsLoading;
+  const canAddMatch = matchSections.length === 0 || areAllMatchesDeclared;
 
   return (
     <div className="fight-recap-screen min-h-screen bg-background flex ">
@@ -753,7 +754,7 @@ const FightRecapPage = () => {
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
                     onClick={handleAddMatch}
-                    disabled={!areAllMatchesDeclared}
+                    disabled={!canAddMatch}
                     className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="w-4 h-4" />
