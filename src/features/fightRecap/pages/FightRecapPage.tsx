@@ -3,9 +3,9 @@ import {
   AlertCircle,
   Plus,
   FileVideo,
-  BarChart3,
   Loader2,
   Trophy,
+  CheckCircle2,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
@@ -19,12 +19,10 @@ import {
   DeclareResultModal,
   DeclareMatchResultPayload,
 } from "../components/DeclareResultModal";
-import { MatchMetadataBar } from "../components/MatchMetadataBar";
 import { ToolSidebar } from "../components/ToolSidebar";
 import {
   EventType,
   FightEvent,
-  MatchMetadata,
   MatchResult,
   PlayerType,
 } from "../types/events";
@@ -186,6 +184,7 @@ const FightRecapPage = () => {
   const [expandedMatchNumbers, setExpandedMatchNumbers] = useState<number[]>(
     [],
   );
+  const [manualMatchNumbers, setManualMatchNumbers] = useState<number[]>([]);
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
   const [editingMatchResult, setEditingMatchResult] =
     useState<MatchResult | null>(null);
@@ -196,11 +195,6 @@ const FightRecapPage = () => {
   const [isSessionPreparing, setIsSessionPreparing] = useState(false);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
   const [sessionError, setSessionError] = useState("");
-  const [matchMetadata, setMatchMetadata] = useState<MatchMetadata>({
-    matchType: "Gi",
-    belt: "Blue",
-    competition: "IBJJF",
-  });
   const videoId = Number(id);
   const hasValidVideoId = Number.isInteger(videoId) && videoId > 0;
 
@@ -248,6 +242,16 @@ const FightRecapPage = () => {
         ? prev
         : [...prev, normalizedMatchNumber],
     );
+  };
+
+  const handleAddMatch = () => {
+    setManualMatchNumbers((prev) => {
+      if (prev.includes(currentMatchNumber)) {
+        return prev;
+      }
+      return [...prev, currentMatchNumber];
+    });
+    handleOpenMatchSection(currentMatchNumber);
   };
 
   const handleDeclareResult = async (
@@ -443,6 +447,11 @@ const FightRecapPage = () => {
   }, [videos, videoId, hasValidVideoId]);
 
   useEffect(() => {
+    setManualMatchNumbers([]);
+    setExpandedMatchNumbers([]);
+  }, [selectedVideo?.id]);
+
+  useEffect(() => {
     if (isLoading || !selectedVideo) return;
     const hasSession =
       selectedVideo.session_id !== null &&
@@ -531,53 +540,61 @@ const FightRecapPage = () => {
     selectedVideo?.session_id,
   ]);
 
-  const { currentMatchNumber, matchSections } = useMemo(() => {
-    const highestMatchNumberFromEvents = events.reduce((max, event) => {
-      return Math.max(max, normalizeMatchNumber(event.matchNumber));
-    }, 1);
-
-    const highestMatchNumberFromResults = matchResults.reduce((max, result) => {
-      return Math.max(max, normalizeMatchNumber(result.matchNumber));
-    }, 0);
-
-    // Current match follows the rule: finished matches count + 1.
-    const derivedCurrentMatchNumber = matchResults.length + 1;
-
-    const totalMatchSections = Math.max(
-      derivedCurrentMatchNumber,
-      highestMatchNumberFromEvents,
-      highestMatchNumberFromResults,
-      1,
-    );
-
-    const latestResultByMatchNumber = new Map<number, MatchResult>();
-    const sortedResults = [...matchResults].sort(
-      (a, b) => Number(a.id) - Number(b.id),
-    );
-    sortedResults.forEach((result) => {
-      latestResultByMatchNumber.set(
-        normalizeMatchNumber(result.matchNumber),
-        result,
+  const { currentMatchNumber, matchSections, areAllMatchesDeclared } =
+    useMemo(() => {
+      const latestResultByMatchNumber = new Map<number, MatchResult>();
+      const sortedResults = [...matchResults].sort(
+        (a, b) => Number(a.id) - Number(b.id),
       );
-    });
+      sortedResults.forEach((result) => {
+        latestResultByMatchNumber.set(
+          normalizeMatchNumber(result.matchNumber),
+          result,
+        );
+      });
 
-    const sections = Array.from(
-      { length: totalMatchSections },
-      (_, index) => index + 1,
-    ).map((matchNumber) => ({
-      matchNumber,
-      events: events.filter(
-        (event) => normalizeMatchNumber(event.matchNumber) === matchNumber,
-      ),
-      result: latestResultByMatchNumber.get(matchNumber) ?? null,
-      isCurrentMatch: matchNumber === derivedCurrentMatchNumber,
-    }));
+      const knownMatchNumbers = new Set<number>();
 
-    return {
-      currentMatchNumber: derivedCurrentMatchNumber,
-      matchSections: sections,
-    };
-  }, [events, matchResults]);
+      events.forEach((event) => {
+        knownMatchNumbers.add(normalizeMatchNumber(event.matchNumber));
+      });
+      matchResults.forEach((result) => {
+        knownMatchNumbers.add(normalizeMatchNumber(result.matchNumber));
+      });
+      manualMatchNumbers.forEach((matchNumber) => {
+        knownMatchNumbers.add(normalizeMatchNumber(matchNumber));
+      });
+
+      const sortedMatchNumbers = Array.from(knownMatchNumbers).sort(
+        (a, b) => a - b,
+      );
+      const openMatchNumbers = sortedMatchNumbers.filter(
+        (matchNumber) => !latestResultByMatchNumber.has(matchNumber),
+      );
+      const highestKnownMatchNumber =
+        sortedMatchNumbers[sortedMatchNumbers.length - 1] ?? 0;
+      const derivedCurrentMatchNumber =
+        openMatchNumbers[openMatchNumbers.length - 1] ??
+        Math.max(highestKnownMatchNumber + 1, 1);
+
+      const sections = sortedMatchNumbers.map((matchNumber) => ({
+        matchNumber,
+        events: events.filter(
+          (event) => normalizeMatchNumber(event.matchNumber) === matchNumber,
+        ),
+        result: latestResultByMatchNumber.get(matchNumber) ?? null,
+        isCurrentMatch:
+          openMatchNumbers.length > 0 &&
+          matchNumber === derivedCurrentMatchNumber,
+      }));
+
+      return {
+        currentMatchNumber: derivedCurrentMatchNumber,
+        matchSections: sections,
+        areAllMatchesDeclared:
+          sortedMatchNumbers.length > 0 && openMatchNumbers.length === 0,
+      };
+    }, [events, matchResults, manualMatchNumbers]);
 
   useEffect(() => {
     setExpandedMatchNumbers((prev) =>
@@ -702,11 +719,6 @@ const FightRecapPage = () => {
 
           {!isPageLoading && !fetchError && !sessionError && selectedVideo && (
             <>
-              {/* <MatchMetadataBar
-                metadata={matchMetadata}
-                onMetadataChange={setMatchMetadata}
-              /> */}
-
               <VideoPlayer
                 key={selectedVideo.id}
                 src={selectedVideo.playback_url || selectedVideo.url}
@@ -716,6 +728,38 @@ const FightRecapPage = () => {
                 onTimeUpdate={handleTimeUpdate}
                 pauseWhenModalOpen={isModalOpen}
               />
+
+              <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    Video
+                  </p>
+                  <h2 className="truncate text-lg font-semibold text-foreground">
+                    {selectedVideo.file_name || "Untitled video"}
+                  </h2>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    onClick={handleAddMatch}
+                    disabled={!areAllMatchesDeclared}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Match
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {}}
+                    disabled={!areAllMatchesDeclared}
+                    className="border-border text-foreground hover:bg-secondary gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Finalize Report
+                  </Button>
+                </div>
+              </div>
 
               <div className="space-y-6">
                 {orderedMatchSections.map((section) => {
