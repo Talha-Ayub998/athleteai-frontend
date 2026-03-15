@@ -43,6 +43,10 @@
   background-color: hsl(var(--background));
 }
 
+.fight-recap-theme.bg-background {
+  background-color: hsl(var(--background));
+}
+
 .fight-recap-theme .text-foreground {
   color: hsl(var(--foreground));
 }

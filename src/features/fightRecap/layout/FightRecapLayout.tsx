@@ -17,7 +17,7 @@ export default function FightRecapLayout() {
   };
 
   return (
-    <section className="fight-recap-theme">
+    <section className="fight-recap-theme bg-background">
       <div className="px-6 py-4 border-b border-border bg-background sticky top-0 z-30">
         <button
           type="button"
@@ -29,6 +29,7 @@ export default function FightRecapLayout() {
         </button>
       </div>
       <Outlet />
+      <div className="h-40" />
     </section>
   );
 }

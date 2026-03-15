@@ -357,10 +357,7 @@ const FightRecapPage = () => {
     } catch (error) {
       return {
         success: false,
-        errorMessage: getFinalizeErrorMessage(
-          error,
-          "Finalize report failed.",
-        ),
+        errorMessage: getFinalizeErrorMessage(error, "Finalize report failed."),
       };
     }
   };
@@ -1070,7 +1067,9 @@ const FightRecapPage = () => {
                             onDeleteEvent={handleDeleteEvent}
                             deletingEventId={deletingEventId}
                             canEditEvents={!isCompletedSession}
-                            canDeleteEvents={!isCompletedSession && !section.result}
+                            canDeleteEvents={
+                              !isCompletedSession && !section.result
+                            }
                             onSeekToEvent={handleSeekToEvent}
                             formatTime={formatTime}
                             emptyMessage={`No events yet for Match ${section.matchNumber}.`}
