@@ -6,6 +6,7 @@ import {
   Loader2,
   Trophy,
   CheckCircle2,
+  Trash2,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
@@ -252,6 +253,16 @@ const FightRecapPage = () => {
       return [...prev, currentMatchNumber];
     });
     handleOpenMatchSection(currentMatchNumber);
+  };
+
+  const handleDeleteEmptyMatch = (matchNumber: number) => {
+    const normalizedMatchNumber = normalizeMatchNumber(matchNumber);
+    setManualMatchNumbers((prev) =>
+      prev.filter((item) => item !== normalizedMatchNumber),
+    );
+    setExpandedMatchNumbers((prev) =>
+      prev.filter((item) => item !== normalizedMatchNumber),
+    );
   };
 
   const handleDeclareResult = async (
@@ -583,6 +594,7 @@ const FightRecapPage = () => {
           (event) => normalizeMatchNumber(event.matchNumber) === matchNumber,
         ),
         result: latestResultByMatchNumber.get(matchNumber) ?? null,
+        isManualMatch: manualMatchNumbers.includes(matchNumber),
         isCurrentMatch:
           openMatchNumbers.length > 0 &&
           matchNumber === derivedCurrentMatchNumber,
@@ -652,8 +664,7 @@ const FightRecapPage = () => {
               </p>
             </div>
             <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {events.length} total event{events.length !== 1 ? "s" : ""}{" "}
-              recorded
+              Total events recorded: {events.length}
             </span>
           </div>
 
@@ -767,6 +778,10 @@ const FightRecapPage = () => {
                     section.matchNumber,
                   );
                   const canAddEvent = section.isCurrentMatch && !section.result;
+                  const canDeleteEmptyMatch =
+                    section.isManualMatch &&
+                    section.events.length === 0 &&
+                    !section.result;
 
                   return (
                     <section
@@ -852,6 +867,20 @@ const FightRecapPage = () => {
                                 <Plus className="w-4 h-4" />
                                 Add Event
                               </Button>
+                              {canDeleteEmptyMatch && (
+                                <Button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleDeleteEmptyMatch(section.matchNumber);
+                                  }}
+                                  type="button"
+                                  variant="outline"
+                                  className="gap-2  text-red-500 hover:bg-red-500 hover:text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Delete
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>
