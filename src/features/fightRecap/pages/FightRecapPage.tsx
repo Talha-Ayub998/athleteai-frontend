@@ -663,9 +663,9 @@ const FightRecapPage = () => {
                 Annotate and analyze your matches
               </p>
             </div>
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {/* <span className="text-sm text-muted-foreground whitespace-nowrap">
               Total events recorded: {events.length}
-            </span>
+            </span> */}
           </div>
 
           {isPageLoading && (
@@ -898,6 +898,7 @@ const FightRecapPage = () => {
                             onEditEvent={handleEditEvent}
                             onDeleteEvent={handleDeleteEvent}
                             deletingEventId={deletingEventId}
+                            canDeleteEvents={!section.result}
                             onSeekToEvent={handleSeekToEvent}
                             formatTime={formatTime}
                             emptyMessage={`No events yet for Match ${section.matchNumber}.`}

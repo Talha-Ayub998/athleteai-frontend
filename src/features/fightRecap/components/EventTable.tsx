@@ -7,6 +7,7 @@ interface EventTableProps {
   onEditEvent: (event: FightEvent) => void;
   onDeleteEvent: (eventId: string) => Promise<void> | void;
   deletingEventId?: string | null;
+  canDeleteEvents?: boolean;
   onSeekToEvent: (timestamp: number) => void;
   formatTime: (seconds: number) => string;
   emptyMessage?: string;
@@ -17,6 +18,7 @@ export function EventTable({
   onEditEvent,
   onDeleteEvent,
   deletingEventId,
+  canDeleteEvents = true,
   onSeekToEvent,
   formatTime,
   emptyMessage,
@@ -120,19 +122,25 @@ export function EventTable({
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => void onDeleteEvent(event.id)}
-                      disabled={deletingEventId === event.id}
-                      className="action-btn delete h-8 w-8"
-                    >
-                      {deletingEventId === event.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </Button>
+                    {canDeleteEvents ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => void onDeleteEvent(event.id)}
+                        disabled={deletingEventId === event.id}
+                        className="action-btn delete h-8 w-8"
+                      >
+                        {deletingEventId === event.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
+                    ) : (
+                      // Temporarily hide event deletion once a result is declared.
+                      // We may restore this action later if completed matches become editable again.
+                      <></>
+                    )}
                   </div>
                 </td>
               </tr>
