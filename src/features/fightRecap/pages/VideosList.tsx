@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   AlertCircle,
+  Eye,
   FileVideo,
   Loader2,
   PencilLine,
@@ -19,6 +20,16 @@ import {
 interface UploadVideoResponse extends UploadedVideo {
   status: string;
   message: string;
+}
+
+interface ErrorWithResponseData {
+  response?: {
+    data?: {
+      message?: string;
+      detail?: string;
+    };
+  };
+  message?: string;
 }
 
 const formatFileSize = (bytes: number) => {
@@ -40,11 +51,12 @@ const formatDate = (isoDate: string) => {
   return date.toLocaleString();
 };
 
-const getErrorMessage = (error: any, fallback: string) => {
+const getErrorMessage = (error: unknown, fallback: string) => {
+  const normalizedError = error as ErrorWithResponseData;
   return (
-    error?.response?.data?.message ||
-    error?.response?.data?.detail ||
-    error?.message ||
+    normalizedError?.response?.data?.message ||
+    normalizedError?.response?.data?.detail ||
+    normalizedError?.message ||
     fallback
   );
 };
@@ -307,11 +319,19 @@ const VideosList = () => {
                         disabled={creatingSessionVideoId !== null}
                         className="inline-flex items-center gap-1.5 text-primary text-sm font-medium hover:underline whitespace-nowrap"
                       >
-                        <PencilLine className="w-4 h-4" />
+                        {video.session_status?.trim().toLowerCase() ===
+                        "completed" ? (
+                          <Eye className="w-4 h-4" />
+                        ) : (
+                          <PencilLine className="w-4 h-4" />
+                        )}
                         {creatingSessionVideoId === video.id &&
                         (video.session_id === null ||
                           video.session_id === undefined) ? (
                           <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        ) : video.session_status?.trim().toLowerCase() ===
+                          "completed" ? (
+                          "View Annotation"
                         ) : video.session_id !== null &&
                           video.session_id !== undefined ? (
                           "Continue Annotating"
