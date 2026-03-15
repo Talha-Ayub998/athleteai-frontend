@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   AlertCircle,
+  CheckCircle2,
   Eye,
   FileVideo,
   Loader2,
@@ -290,16 +291,37 @@ const VideosList = () => {
                 Video List ({videos.length})
               </h2>
 
-              {videos.map((video) => (
-                <div
-                  key={video.id}
-                  className="rounded-lg border border-border bg-background p-4 space-y-3 animate-lift-in"
-                >
+              {videos.map((video) => {
+                const isCompletedSession =
+                  video.session_status?.trim().toLowerCase() === "completed";
+
+                return (
+                  <div
+                    key={video.id}
+                    className={`rounded-lg border bg-background p-4 space-y-3 animate-lift-in ${
+                      isCompletedSession
+                        ? "bg-green-500/5 shadow-[0_0_0_1px_rgba(34,197,94,0.08)]"
+                        : "border-border"
+                    }`}
+                    style={
+                      isCompletedSession
+                        ? { borderColor: "rgb(34 197 94 / 0.4)" }
+                        : undefined
+                    }
+                  >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-foreground font-medium break-all">
-                        {video.file_name || "Untitled video"}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-foreground font-medium break-all">
+                          {video.file_name || "Untitled video"}
+                        </p>
+                        {isCompletedSession && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-green-300">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Completed
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground mt-1">
                         Uploaded: {formatDate(video.created_at)}
                       </p>
@@ -319,8 +341,7 @@ const VideosList = () => {
                         disabled={creatingSessionVideoId !== null}
                         className="inline-flex items-center gap-1.5 text-primary text-sm font-medium hover:underline whitespace-nowrap"
                       >
-                        {video.session_status?.trim().toLowerCase() ===
-                        "completed" ? (
+                        {isCompletedSession ? (
                           <Eye className="w-4 h-4" />
                         ) : (
                           <PencilLine className="w-4 h-4" />
@@ -329,8 +350,7 @@ const VideosList = () => {
                         (video.session_id === null ||
                           video.session_id === undefined) ? (
                           <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                        ) : video.session_status?.trim().toLowerCase() ===
-                          "completed" ? (
+                        ) : isCompletedSession ? (
                           "View Annotation"
                         ) : video.session_id !== null &&
                           video.session_id !== undefined ? (
@@ -369,8 +389,9 @@ const VideosList = () => {
                       <p className="text-foreground">{video.id}</p>
                     </div>
                   </div>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
