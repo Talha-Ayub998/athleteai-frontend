@@ -20,6 +20,7 @@ import {
   DeclareResultModal,
   DeclareMatchResultPayload,
 } from "../components/DeclareResultModal";
+import { FinalizeReportModal } from "../components/FinalizeReportModal";
 import { ToolSidebar } from "../components/ToolSidebar";
 import {
   EventType,
@@ -179,6 +180,8 @@ const FightRecapPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeclareResultModalOpen, setIsDeclareResultModalOpen] =
     useState(false);
+  const [isFinalizeReportModalOpen, setIsFinalizeReportModalOpen] =
+    useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [modalMatchNumber, setModalMatchNumber] = useState(1);
   const [resultMatchNumber, setResultMatchNumber] = useState(1);
@@ -224,6 +227,14 @@ const FightRecapPage = () => {
   const handleCloseDeclareResultModal = () => {
     setIsDeclareResultModalOpen(false);
     setEditingMatchResult(null);
+  };
+
+  const handleOpenFinalizeReportModal = () => {
+    setIsFinalizeReportModalOpen(true);
+  };
+
+  const handleCloseFinalizeReportModal = () => {
+    setIsFinalizeReportModalOpen(false);
   };
 
   const handleToggleMatchSection = (matchNumber: number) => {
@@ -763,7 +774,7 @@ const FightRecapPage = () => {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => {}}
+                    onClick={handleOpenFinalizeReportModal}
                     disabled={!areAllMatchesDeclared}
                     className="border-border text-foreground hover:bg-secondary gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
@@ -952,6 +963,12 @@ const FightRecapPage = () => {
         matchNumber={resultMatchNumber}
         onSubmit={handleDeclareResult}
         editingResult={editingMatchResult}
+      />
+
+      <FinalizeReportModal
+        isOpen={isFinalizeReportModalOpen}
+        onClose={handleCloseFinalizeReportModal}
+        initialFilename={selectedVideo?.file_name || ""}
       />
 
       <Modal
