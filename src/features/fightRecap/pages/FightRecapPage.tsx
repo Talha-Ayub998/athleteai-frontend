@@ -791,10 +791,10 @@ const FightRecapPage = () => {
         }}
         containerStyle={{ top: 16 }}
       />
-      <ToolSidebar
+      {/* <ToolSidebar
         onAddEvent={() => handleAddEvent(currentTimestamp, currentMatchNumber)}
         canAddEvent={!isCompletedSession}
-      />
+      /> */}
 
       <main className="flex-1 p-6 overflow-y-auto animate-lift-in">
         <div className="max-w-6xl mx-auto space-y-6">
