@@ -881,10 +881,6 @@ const FightRecapPage = () => {
               <VideoPlayer
                 key={selectedVideo.id}
                 src={selectedVideo.playback_url || selectedVideo.url}
-                onAddEvent={(timestamp) =>
-                  handleAddEvent(timestamp, currentMatchNumber)
-                }
-                canAddEvent={!isCompletedSession}
                 onTimeUpdate={handleTimeUpdate}
                 pauseWhenModalOpen={
                   isModalOpen ||
