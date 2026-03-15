@@ -20,7 +20,11 @@ import {
   DeclareResultModal,
   DeclareMatchResultPayload,
 } from "../components/DeclareResultModal";
-import { FinalizeReportModal } from "../components/FinalizeReportModal";
+import {
+  FinalizeReportModal,
+  FinalizeReportPayload,
+  FinalizeReportSubmitResult,
+} from "../components/FinalizeReportModal";
 import { ToolSidebar } from "../components/ToolSidebar";
 import {
   EventType,
@@ -37,6 +41,7 @@ interface ErrorWithResponseData {
       message?: string;
       detail?: string;
       error?: string;
+      errors?: string | string[];
     };
   };
   message?: string;
@@ -48,6 +53,26 @@ const getErrorMessage = (error: unknown, fallback: string) => {
     normalizedError?.response?.data?.message ||
     normalizedError?.response?.data?.detail ||
     normalizedError?.response?.data?.error ||
+    normalizedError?.message ||
+    fallback
+  );
+};
+
+const getFinalizeErrorMessage = (error: unknown, fallback: string) => {
+  const normalizedError = error as ErrorWithResponseData;
+  const responseData = normalizedError?.response?.data;
+
+  if (Array.isArray(responseData?.errors)) {
+    return responseData.errors.join("\n");
+  }
+
+  if (typeof responseData?.errors === "string" && responseData.errors.trim()) {
+    return responseData.errors;
+  }
+
+  return (
+    responseData?.message ||
+    responseData?.error ||
     normalizedError?.message ||
     fallback
   );
@@ -96,6 +121,17 @@ interface CreateSessionEventPayload {
   move_name: string;
   outcome: "success" | "failed";
   note: string;
+}
+
+interface FinalizeReportResponse {
+  status: string;
+  message: string;
+  session_id: number;
+  report_id: number;
+  s3_key: string;
+  s3_url: string;
+  match_count: number;
+  credit_source: string;
 }
 
 const normalizeMatchNumber = (value: number | null | undefined): number => {
@@ -192,10 +228,17 @@ const FightRecapPage = () => {
   const [editingEvent, setEditingEvent] = useState<FightEvent | null>(null);
   const [editingMatchResult, setEditingMatchResult] =
     useState<MatchResult | null>(null);
+  const [isSessionFinalized, setIsSessionFinalized] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [eventToDelete, setEventToDelete] = useState<FightEvent | null>(null);
-  const { videos, isLoading, fetchError, fetchVideos, createSessionForVideo } =
-    useFightRecapVideos();
+  const {
+    videos,
+    isLoading,
+    fetchError,
+    fetchVideos,
+    createSessionForVideo,
+    updateVideo,
+  } = useFightRecapVideos();
   const [isSessionPreparing, setIsSessionPreparing] = useState(false);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
   const [sessionError, setSessionError] = useState("");
@@ -274,6 +317,40 @@ const FightRecapPage = () => {
     setExpandedMatchNumbers((prev) =>
       prev.filter((item) => item !== normalizedMatchNumber),
     );
+  };
+
+  const handleFinalizeReport = async (
+    payload: FinalizeReportPayload,
+  ): Promise<FinalizeReportSubmitResult> => {
+    if (!selectedVideo?.session_id) {
+      return {
+        success: false,
+        errorMessage: "Finalize report failed. Video session not ready.",
+      };
+    }
+
+    try {
+      const response = await axiosInstance.post<FinalizeReportResponse>(
+        `/reports/annotation-sessions/${selectedVideo.session_id}/finalize/`,
+        payload,
+      );
+
+      setIsSessionFinalized(true);
+      updateVideo(selectedVideo.id, { session_status: "completed" });
+      toast.success(
+        response.data?.message || "Annotation session finalized successfully.",
+      );
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        errorMessage: getFinalizeErrorMessage(
+          error,
+          "Finalize report failed.",
+        ),
+      };
+    }
   };
 
   const handleDeclareResult = async (
@@ -471,6 +548,7 @@ const FightRecapPage = () => {
   useEffect(() => {
     setManualMatchNumbers([]);
     setExpandedMatchNumbers([]);
+    setIsSessionFinalized(false);
   }, [selectedVideo?.id]);
 
   useEffect(() => {
@@ -631,7 +709,9 @@ const FightRecapPage = () => {
   );
 
   const isPageLoading = isLoading || isSessionPreparing || isEventsLoading;
-  const canAddMatch = matchSections.length === 0 || areAllMatchesDeclared;
+  const canAddMatch =
+    !isSessionFinalized && (matchSections.length === 0 || areAllMatchesDeclared);
+  const canFinalizeReport = !isSessionFinalized && areAllMatchesDeclared;
 
   return (
     <div className="fight-recap-screen min-h-screen bg-background flex ">
@@ -661,6 +741,7 @@ const FightRecapPage = () => {
       />
       <ToolSidebar
         onAddEvent={() => handleAddEvent(currentTimestamp, currentMatchNumber)}
+        canAddEvent={!isSessionFinalized}
       />
 
       <main className="flex-1 p-6 overflow-y-auto animate-lift-in">
@@ -748,8 +829,13 @@ const FightRecapPage = () => {
                 onAddEvent={(timestamp) =>
                   handleAddEvent(timestamp, currentMatchNumber)
                 }
+                canAddEvent={!isSessionFinalized}
                 onTimeUpdate={handleTimeUpdate}
-                pauseWhenModalOpen={isModalOpen}
+                pauseWhenModalOpen={
+                  isModalOpen ||
+                  isDeclareResultModalOpen ||
+                  isFinalizeReportModalOpen
+                }
               />
 
               <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -762,26 +848,33 @@ const FightRecapPage = () => {
                   </h2>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    onClick={handleAddMatch}
-                    disabled={!canAddMatch}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Match
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleOpenFinalizeReportModal}
-                    disabled={!areAllMatchesDeclared}
-                    className="border-border text-foreground hover:bg-secondary gap-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
+                {isSessionFinalized ? (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm font-medium text-green-300">
                     <CheckCircle2 className="w-4 h-4" />
-                    Finalize Report
-                  </Button>
-                </div>
+                    Report Completed
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      onClick={handleAddMatch}
+                      disabled={!canAddMatch}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Match
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleOpenFinalizeReportModal}
+                      disabled={!canFinalizeReport}
+                      className="border-border text-foreground hover:bg-secondary gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Finalize Report
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-6">
@@ -832,7 +925,7 @@ const FightRecapPage = () => {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {section.result && (
+                          {!isSessionFinalized && section.result && (
                             <Button
                               onClick={(event) => {
                                 event.stopPropagation();
@@ -849,7 +942,7 @@ const FightRecapPage = () => {
                               Edit Result
                             </Button>
                           )}
-                          {canAddEvent && (
+                          {canAddEvent && !isSessionFinalized && (
                             <>
                               {section.events.length > 0 && (
                                 <Button
@@ -910,7 +1003,8 @@ const FightRecapPage = () => {
                             onEditEvent={handleEditEvent}
                             onDeleteEvent={handleDeleteEvent}
                             deletingEventId={deletingEventId}
-                            canDeleteEvents={!section.result}
+                            canEditEvents={!isSessionFinalized}
+                            canDeleteEvents={!isSessionFinalized && !section.result}
                             onSeekToEvent={handleSeekToEvent}
                             formatTime={formatTime}
                             emptyMessage={`No events yet for Match ${section.matchNumber}.`}
@@ -969,6 +1063,7 @@ const FightRecapPage = () => {
         isOpen={isFinalizeReportModalOpen}
         onClose={handleCloseFinalizeReportModal}
         initialFilename={selectedVideo?.file_name || ""}
+        onSubmit={handleFinalizeReport}
       />
 
       <Modal

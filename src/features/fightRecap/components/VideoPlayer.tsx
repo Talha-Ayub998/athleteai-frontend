@@ -17,6 +17,7 @@ import { Slider } from "./ui/Slider";
 interface VideoPlayerProps {
   src?: string;
   onAddEvent?: (timestamp: number) => void;
+  canAddEvent?: boolean;
   onTimeUpdate?: (time: number) => void;
   pauseWhenModalOpen?: boolean;
 }
@@ -24,6 +25,7 @@ interface VideoPlayerProps {
 export function VideoPlayer({
   src,
   onAddEvent,
+  canAddEvent = true,
   onTimeUpdate,
   pauseWhenModalOpen = false,
 }: VideoPlayerProps) {
@@ -209,14 +211,16 @@ export function VideoPlayer({
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => onAddEvent?.(getCurrentTimestamp())}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 px-3 gap-1"
-              size="sm"
-            >
-              <Plus className="w-4 h-4" />
-              Add Event
-            </Button>
+            {canAddEvent && (
+              <Button
+                onClick={() => onAddEvent?.(getCurrentTimestamp())}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 px-3 gap-1"
+                size="sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Event
+              </Button>
+            )}
 
             <Button
               variant="ghost"

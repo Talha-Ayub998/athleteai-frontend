@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { FileSpreadsheet, X } from "lucide-react";
+import { AlertCircle, FileSpreadsheet, Loader2, X } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Label } from "./ui/Label";
@@ -16,13 +16,18 @@ export interface FinalizeReportPayload {
   };
 }
 
+export interface FinalizeReportSubmitResult {
+  success: boolean;
+  errorMessage?: string;
+}
+
 interface FinalizeReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialFilename?: string;
   onSubmit?: (
     payload: FinalizeReportPayload,
-  ) => Promise<boolean> | boolean;
+  ) => Promise<FinalizeReportSubmitResult> | FinalizeReportSubmitResult;
 }
 
 const DEFAULT_ATHLETE = {
@@ -47,6 +52,8 @@ export function FinalizeReportModal({
   const [athleteLanguage, setAthleteLanguage] = useState(
     DEFAULT_ATHLETE.language,
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -70,6 +77,8 @@ export function FinalizeReportModal({
     setAthleteBelt(DEFAULT_ATHLETE.belt);
     setAthleteGym(DEFAULT_ATHLETE.gym);
     setAthleteLanguage(DEFAULT_ATHLETE.language);
+    setIsSubmitting(false);
+    setSubmitError("");
   }, [isOpen, initialFilename]);
 
   useEffect(() => {
@@ -84,6 +93,7 @@ export function FinalizeReportModal({
   }, [isOpen]);
 
   const handleClose = () => {
+    if (isSubmitting) return;
     onClose();
   };
 
@@ -98,7 +108,9 @@ export function FinalizeReportModal({
   const handleSubmit = async () => {
     if (!onSubmit || !isFormComplete) return;
 
-    const didSubmit = await onSubmit({
+    setIsSubmitting(true);
+    setSubmitError("");
+    const result = await onSubmit({
       filename: filename.trim(),
       athlete: {
         name: athleteName.trim(),
@@ -108,8 +120,12 @@ export function FinalizeReportModal({
         language: athleteLanguage.trim(),
       },
     });
+    setIsSubmitting(false);
 
-    if (!didSubmit) return;
+    if (!result.success) {
+      setSubmitError(result.errorMessage || "Failed to finalize report.");
+      return;
+    }
     onClose();
   };
 
@@ -129,6 +145,7 @@ export function FinalizeReportModal({
           onClick={handleClose}
           className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           aria-label="Close"
+          disabled={isSubmitting}
         >
           <X className="h-4 w-4 text-white" />
         </button>
@@ -146,6 +163,15 @@ export function FinalizeReportModal({
         </div>
 
         <div className="grid gap-5 py-1">
+          {submitError && (
+            <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <p className="whitespace-pre-line">{submitError}</p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label className="text-foreground">Filename</Label>
             <Input
@@ -153,6 +179,7 @@ export function FinalizeReportModal({
               onChange={(event) => setFilename(event.target.value)}
               placeholder="McClearySean_2026-03-06.xlsx"
               className="border-border bg-secondary text-foreground"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -164,6 +191,7 @@ export function FinalizeReportModal({
                 onChange={(event) => setAthleteName(event.target.value)}
                 placeholder="Sean McCleary"
                 className="border-border bg-secondary text-foreground"
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -173,6 +201,7 @@ export function FinalizeReportModal({
                 onChange={(event) => setAthleteEmail(event.target.value)}
                 placeholder="abc@gmail.com"
                 className="border-border bg-secondary text-foreground"
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -182,6 +211,7 @@ export function FinalizeReportModal({
                 onChange={(event) => setAthleteBelt(event.target.value)}
                 placeholder="Black"
                 className="border-border bg-secondary text-foreground"
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -191,6 +221,7 @@ export function FinalizeReportModal({
                 onChange={(event) => setAthleteGym(event.target.value)}
                 placeholder="McCleary Jiu-Jitsu"
                 className="border-border bg-secondary text-foreground"
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -202,6 +233,7 @@ export function FinalizeReportModal({
               onChange={(event) => setAthleteLanguage(event.target.value)}
               placeholder="English"
               className="border-border bg-secondary text-foreground"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -209,16 +241,24 @@ export function FinalizeReportModal({
             <Button
               variant="outline"
               onClick={handleClose}
+              disabled={isSubmitting}
               className="flex-1 border-border text-foreground hover:bg-secondary"
             >
               Cancel
             </Button>
             <Button
               onClick={() => void handleSubmit()}
-              disabled={!onSubmit || !isFormComplete}
+              disabled={!onSubmit || !isFormComplete || isSubmitting}
               className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Generate Report
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                "Generate Report"
+              )}
             </Button>
           </div>
         </div>

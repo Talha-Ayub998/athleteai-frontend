@@ -2,10 +2,14 @@ import { MousePointer2, Link, Eraser, Circle, Square, Plus } from "lucide-react"
 import { Button } from "./ui/Button";
 
 interface ToolSidebarProps {
-  onAddEvent: () => void;
+  onAddEvent?: () => void;
+  canAddEvent?: boolean;
 }
 
-export function ToolSidebar({ onAddEvent }: ToolSidebarProps) {
+export function ToolSidebar({
+  onAddEvent,
+  canAddEvent = true,
+}: ToolSidebarProps) {
   const tools = [
     { icon: MousePointer2, label: "Select", active: true },
     { icon: Link, label: "Link" },
@@ -34,14 +38,16 @@ export function ToolSidebar({ onAddEvent }: ToolSidebarProps) {
 
       <div className="flex-1" />
 
-      <Button
-        onClick={onAddEvent}
-        size="icon"
-        title="Add Event"
-        className="w-10 h-10 bg-primary hover:bg-primary/90 text-primary-foreground"
-      >
-        <Plus className="w-5 h-5" />
-      </Button>
+      {canAddEvent && (
+        <Button
+          onClick={onAddEvent}
+          size="icon"
+          title="Add Event"
+          className="w-10 h-10 bg-primary hover:bg-primary/90 text-primary-foreground"
+        >
+          <Plus className="w-5 h-5" />
+        </Button>
+      )}
     </aside>
   );
 }

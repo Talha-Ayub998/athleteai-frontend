@@ -7,6 +7,7 @@ interface EventTableProps {
   onEditEvent: (event: FightEvent) => void;
   onDeleteEvent: (eventId: string) => Promise<void> | void;
   deletingEventId?: string | null;
+  canEditEvents?: boolean;
   canDeleteEvents?: boolean;
   onSeekToEvent: (timestamp: number) => void;
   formatTime: (seconds: number) => string;
@@ -18,6 +19,7 @@ export function EventTable({
   onEditEvent,
   onDeleteEvent,
   deletingEventId,
+  canEditEvents = true,
   canDeleteEvents = true,
   onSeekToEvent,
   formatTime,
@@ -114,14 +116,18 @@ export function EventTable({
                 </td>
                 <td>
                   <div className="flex items-center justify-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEditEvent(event)}
-                      className="action-btn edit h-8 w-8"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    {canEditEvents ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEditEvent(event)}
+                        className="action-btn edit h-8 w-8"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <></>
+                    )}
                     {canDeleteEvents ? (
                       <Button
                         variant="ghost"
