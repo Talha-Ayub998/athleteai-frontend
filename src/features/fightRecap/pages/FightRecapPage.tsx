@@ -7,6 +7,7 @@ import {
   Trophy,
   CheckCircle2,
   Trash2,
+  Download,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
@@ -134,6 +135,16 @@ interface FinalizeReportResponse {
   credit_source: string;
 }
 
+interface DownloadXlsxResponse {
+  status: string;
+  session_id: number;
+  report_id: number;
+  filename: string;
+  s3_key: string;
+  download_url: string;
+  expires_in_seconds: number;
+}
+
 const normalizeMatchNumber = (value: number | null | undefined): number => {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 1) {
     return 1;
@@ -229,6 +240,7 @@ const FightRecapPage = () => {
   const [editingMatchResult, setEditingMatchResult] =
     useState<MatchResult | null>(null);
   const [isSessionFinalized, setIsSessionFinalized] = useState(false);
+  const [isDownloadingXlsx, setIsDownloadingXlsx] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [eventToDelete, setEventToDelete] = useState<FightEvent | null>(null);
   const {
@@ -350,6 +362,38 @@ const FightRecapPage = () => {
           "Finalize report failed.",
         ),
       };
+    }
+  };
+
+  const handleDownloadXlsx = async () => {
+    if (!selectedVideo?.session_id) {
+      toast.error("Failed to fetch XLSX file.");
+      return;
+    }
+
+    setIsDownloadingXlsx(true);
+    try {
+      const response = await axiosInstance.get<DownloadXlsxResponse>(
+        `/reports/annotation-sessions/${selectedVideo.session_id}/download-xlsx/`,
+      );
+
+      const downloadUrl = response.data?.download_url;
+      if (!downloadUrl) {
+        toast.error("Failed to fetch XLSX file.");
+        return;
+      }
+
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = response.data?.filename || "report.xlsx";
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to fetch XLSX file."));
+    } finally {
+      setIsDownloadingXlsx(false);
     }
   };
 
@@ -549,7 +593,14 @@ const FightRecapPage = () => {
     setManualMatchNumbers([]);
     setExpandedMatchNumbers([]);
     setIsSessionFinalized(false);
+    setIsDownloadingXlsx(false);
   }, [selectedVideo?.id]);
+
+  useEffect(() => {
+    setIsSessionFinalized(
+      selectedVideo?.session_status?.trim().toLowerCase() === "completed",
+    );
+  }, [selectedVideo?.session_status]);
 
   useEffect(() => {
     if (isLoading || !selectedVideo) return;
@@ -709,9 +760,13 @@ const FightRecapPage = () => {
   );
 
   const isPageLoading = isLoading || isSessionPreparing || isEventsLoading;
+  const isCompletedSession =
+    isSessionFinalized ||
+    selectedVideo?.session_status?.trim().toLowerCase() === "completed";
   const canAddMatch =
-    !isSessionFinalized && (matchSections.length === 0 || areAllMatchesDeclared);
-  const canFinalizeReport = !isSessionFinalized && areAllMatchesDeclared;
+    !isCompletedSession &&
+    (matchSections.length === 0 || areAllMatchesDeclared);
+  const canFinalizeReport = !isCompletedSession && areAllMatchesDeclared;
 
   return (
     <div className="fight-recap-screen min-h-screen bg-background flex ">
@@ -741,7 +796,7 @@ const FightRecapPage = () => {
       />
       <ToolSidebar
         onAddEvent={() => handleAddEvent(currentTimestamp, currentMatchNumber)}
-        canAddEvent={!isSessionFinalized}
+        canAddEvent={!isCompletedSession}
       />
 
       <main className="flex-1 p-6 overflow-y-auto animate-lift-in">
@@ -829,7 +884,7 @@ const FightRecapPage = () => {
                 onAddEvent={(timestamp) =>
                   handleAddEvent(timestamp, currentMatchNumber)
                 }
-                canAddEvent={!isSessionFinalized}
+                canAddEvent={!isCompletedSession}
                 onTimeUpdate={handleTimeUpdate}
                 pauseWhenModalOpen={
                   isModalOpen ||
@@ -848,11 +903,26 @@ const FightRecapPage = () => {
                   </h2>
                 </div>
 
-                {isSessionFinalized ? (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm font-medium text-green-300">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Report Completed
-                  </div>
+                {isCompletedSession ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void handleDownloadXlsx()}
+                    disabled={isDownloadingXlsx}
+                    className="border-border text-foreground hover:bg-secondary gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isDownloadingXlsx ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        Download XLSX
+                      </>
+                    )}
+                  </Button>
                 ) : (
                   <div className="flex flex-wrap items-center gap-3">
                     <Button
@@ -925,7 +995,7 @@ const FightRecapPage = () => {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {!isSessionFinalized && section.result && (
+                          {!isCompletedSession && section.result && (
                             <Button
                               onClick={(event) => {
                                 event.stopPropagation();
@@ -942,7 +1012,7 @@ const FightRecapPage = () => {
                               Edit Result
                             </Button>
                           )}
-                          {canAddEvent && !isSessionFinalized && (
+                          {canAddEvent && !isCompletedSession && (
                             <>
                               {section.events.length > 0 && (
                                 <Button
@@ -1003,8 +1073,8 @@ const FightRecapPage = () => {
                             onEditEvent={handleEditEvent}
                             onDeleteEvent={handleDeleteEvent}
                             deletingEventId={deletingEventId}
-                            canEditEvents={!isSessionFinalized}
-                            canDeleteEvents={!isSessionFinalized && !section.result}
+                            canEditEvents={!isCompletedSession}
+                            canDeleteEvents={!isCompletedSession && !section.result}
                             onSeekToEvent={handleSeekToEvent}
                             formatTime={formatTime}
                             emptyMessage={`No events yet for Match ${section.matchNumber}.`}
