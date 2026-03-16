@@ -216,12 +216,12 @@ const VideosList = () => {
 
   return (
     <div className="fight-recap-screen min-h-screen bg-background">
-      <main className="p-6 overflow-y-auto">
-        <div className="max-w-5xl mx-auto space-y-6 animate-lift-in">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-                <FileVideo className="w-7 h-7 text-primary" />
+      <main className="overflow-y-auto px-4 py-5 sm:p-6">
+        <div className="mx-auto max-w-5xl space-y-5 animate-lift-in sm:space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="flex items-center gap-2 text-xl font-bold text-foreground sm:gap-3 sm:text-2xl">
+                <FileVideo className="h-6 w-6 text-primary sm:h-7 sm:w-7" />
                 Uploaded Videos
               </h1>
               <p className="text-muted-foreground mt-1">
@@ -232,7 +232,7 @@ const VideosList = () => {
             {hasVideos && (
               <Button
                 onClick={openUploadModal}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                className="w-full bg-primary text-primary-foreground gap-2 hover:bg-primary/90 sm:w-auto"
               >
                 <Upload className="w-4 h-4" />
                 Upload Video
@@ -241,9 +241,11 @@ const VideosList = () => {
           </div>
 
           {isLoading && (
-            <div className="bg-card rounded-lg border border-border p-8 flex items-center justify-center gap-3 text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Loading videos...
+            <div className="bg-card rounded-lg border border-border p-6 text-muted-foreground sm:p-8">
+              <div className="flex items-center justify-center gap-3 text-center">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Loading videos...
+              </div>
             </div>
           )}
 
@@ -257,7 +259,7 @@ const VideosList = () => {
                   <Button
                     onClick={() => void fetchVideos(true)}
                     variant="outline"
-                    className="mt-4 text-foreground"
+                    className="mt-4 w-full text-foreground sm:w-auto"
                   >
                     Try Again
                   </Button>
@@ -267,7 +269,7 @@ const VideosList = () => {
           )}
 
           {!isLoading && !fetchError && !hasVideos && (
-            <div className="bg-card rounded-lg border border-border p-10 text-center">
+            <div className="bg-card rounded-lg border border-border p-6 text-center sm:p-10">
               <FileVideo className="w-12 h-12 text-primary mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-foreground">
                 No videos uploaded yet
@@ -277,7 +279,7 @@ const VideosList = () => {
               </p>
               <Button
                 onClick={openUploadModal}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                className="w-full bg-primary text-primary-foreground gap-2 hover:bg-primary/90 sm:w-auto"
               >
                 <Upload className="w-4 h-4" />
                 Upload Video
@@ -286,7 +288,7 @@ const VideosList = () => {
           )}
 
           {!isLoading && !fetchError && hasVideos && (
-            <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+            <div className="bg-card rounded-lg border border-border p-4 space-y-4 sm:p-6">
               <h2 className="text-lg font-semibold text-foreground">
                 Video List ({videos.length})
               </h2>
@@ -298,7 +300,7 @@ const VideosList = () => {
                 return (
                   <div
                     key={video.id}
-                    className={`rounded-lg border bg-background p-4 space-y-3 animate-lift-in ${
+                    className={`rounded-lg border bg-background p-4 space-y-4 animate-lift-in sm:p-5 ${
                       isCompletedSession
                         ? "bg-green-500/5 shadow-[0_0_0_1px_rgba(34,197,94,0.08)]"
                         : "border-border"
@@ -309,86 +311,86 @@ const VideosList = () => {
                         : undefined
                     }
                   >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-foreground font-medium break-all">
-                          {video.file_name || "Untitled video"}
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-foreground font-medium break-words">
+                            {video.file_name || "Untitled video"}
+                          </p>
+                          {isCompletedSession && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-green-300">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Completed
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Uploaded: {formatDate(video.created_at)}
                         </p>
-                        {isCompletedSession && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-green-300">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Completed
-                          </span>
-                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Uploaded: {formatDate(video.created_at)}
-                      </p>
-                    </div>
-                    {/* <a
-                      href={video.playback_url || video.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-primary text-sm font-medium hover:underline whitespace-nowrap"
-                    >
-                      Play Video
-                    </a> */}
-                    <div className="flex items-center gap-4">
-                      <button
-                        type="button"
-                        onClick={() => void handleAnnotateClick(video)}
-                        disabled={creatingSessionVideoId !== null}
-                        className="inline-flex items-center gap-1.5 text-primary text-sm font-medium hover:underline whitespace-nowrap"
+                      {/* <a
+                        href={video.playback_url || video.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary text-sm font-medium hover:underline whitespace-nowrap"
                       >
-                        {isCompletedSession ? (
-                          <Eye className="w-4 h-4" />
-                        ) : (
-                          <PencilLine className="w-4 h-4" />
-                        )}
-                        {creatingSessionVideoId === video.id &&
-                        (video.session_id === null ||
-                          video.session_id === undefined) ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                        ) : isCompletedSession ? (
-                          "View Annotation"
-                        ) : video.session_id !== null &&
-                          video.session_id !== undefined ? (
-                          "Continue Annotating"
-                        ) : (
-                          "Start Annotation"
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openDeleteModal(video)}
-                        className="inline-flex items-center gap-1.5 text-red-500 text-sm font-medium hover:text-red-400 transition-colors whitespace-nowrap"
-                        disabled={isDeleting}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete Video
-                      </button>
+                        Play Video
+                      </a> */}
+                      <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto md:flex-wrap md:justify-end">
+                        <button
+                          type="button"
+                          onClick={() => void handleAnnotateClick(video)}
+                          disabled={creatingSessionVideoId !== null}
+                          className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-md border border-primary/20 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10 sm:w-auto"
+                        >
+                          {isCompletedSession ? (
+                            <Eye className="w-4 h-4" />
+                          ) : (
+                            <PencilLine className="w-4 h-4" />
+                          )}
+                          {creatingSessionVideoId === video.id &&
+                          (video.session_id === null ||
+                            video.session_id === undefined) ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                          ) : isCompletedSession ? (
+                            "View Annotation"
+                          ) : video.session_id !== null &&
+                            video.session_id !== undefined ? (
+                            "Continue Annotating"
+                          ) : (
+                            "Start Annotation"
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDeleteModal(video)}
+                          className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-md border border-red-500/20 px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-400 sm:w-auto"
+                          disabled={isDeleting}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete Video
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Type</p>
-                      <p className="text-foreground">
-                        {video.content_type || "-"}
-                      </p>
+                    <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="min-w-0">
+                        <p className="text-muted-foreground">Type</p>
+                        <p className="break-words text-foreground">
+                          {video.content_type || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Size</p>
+                        <p className="text-foreground">
+                          {formatFileSize(video.file_size_bytes)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">ID</p>
+                        <p className="text-foreground">{video.id}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Size</p>
-                      <p className="text-foreground">
-                        {formatFileSize(video.file_size_bytes)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">ID</p>
-                      <p className="text-foreground">{video.id}</p>
-                    </div>
-                  </div>
                   </div>
                 );
               })}
@@ -398,15 +400,15 @@ const VideosList = () => {
       </main>
 
       <Modal
-        className="max-w-xl mx-4"
+        className="mx-4 w-[calc(100%-2rem)] max-w-xl"
         isOpen={isUploadModalOpen}
         onClose={closeUploadModal}
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
             Upload Video
           </h3>
-          <p className="text-sm text-gray-600    dark:text-gray-300 mb-4">
+          <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
             Select a video file to upload.
           </p>
 
@@ -416,7 +418,7 @@ const VideosList = () => {
             onChange={(event) =>
               setSelectedFile(event.target.files?.[0] ?? null)
             }
-            className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:cursor-pointer file:bg-red-500 file:text-white hover:file:bg-red-600"
+            className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mb-3 file:mr-0 file:w-full file:rounded-md file:border-0 file:bg-red-500 file:px-4 file:py-2 file:text-white file:cursor-pointer hover:file:bg-red-600 sm:file:mb-0 sm:file:mr-4 sm:file:w-auto"
             disabled={isUploading}
           />
 
@@ -447,19 +449,19 @@ const VideosList = () => {
             </div>
           )}
 
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button
               onClick={closeUploadModal}
               variant="outline"
               disabled={isUploading}
-              className="text-gray-900 dark:text-white"
+              className="w-full text-gray-900 dark:text-white sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               onClick={handleUpload}
               disabled={isUploading || !selectedFile}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+              className="w-full bg-primary text-primary-foreground gap-2 hover:bg-primary/90 sm:w-auto"
             >
               {isUploading ? (
                 <>
@@ -478,12 +480,12 @@ const VideosList = () => {
       </Modal>
 
       <Modal
-        className="max-w-xl mx-4"
+        className="mx-4 w-[calc(100%-2rem)] max-w-xl"
         isOpen={isDeleteModalOpen}
         onClose={closeDeleteModal}
         showCloseButton={false}
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Delete Video
           </h3>
@@ -501,12 +503,12 @@ const VideosList = () => {
             </p>
           )}
 
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button
               onClick={closeDeleteModal}
               variant="outline"
               disabled={isDeleting}
-              className="text-gray-900 dark:text-white"
+              className="w-full text-gray-900 dark:text-white sm:w-auto"
             >
               Cancel
             </Button>
@@ -514,7 +516,7 @@ const VideosList = () => {
               type="button"
               onClick={handleDeleteVideo}
               disabled={isDeleting || !videoToDelete}
-              className="inline-flex items-center justify-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50 transition-colors"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
             >
               {isDeleting ? (
                 <>
