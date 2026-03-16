@@ -113,12 +113,12 @@ export function VideoPlayer({
       )}
 
       <div
-        className={`video-controls transition-opacity duration-300 ${
+        className={`video-controls p-2 sm:px-6 sm:py-4 transition-opacity duration-300 ${
           isHovering || !isPlaying ? "opacity-100" : "opacity-0"
         }`}
       >
         <div
-          className="progress-bar relative mb-3 group/progress cursor-pointer h-2 hover:h-3 transition-all"
+          className="progress-bar relative mb-2 sm:mb-3 group/progress cursor-pointer h-2 hover:h-3 transition-all"
           onClick={handleProgressClick}
         >
           <div className="absolute inset-0 overflow-hidden rounded-full">
@@ -142,16 +142,16 @@ export function VideoPlayer({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 ">
           <div className="flex items-center gap-2">
-            <Button
+            {/* <Button
               variant="ghost"
               size="icon"
               onClick={() => skipBackward(5)}
               className="text-foreground hover:bg-secondary/50 h-8 w-8"
             >
               <SkipBack className="w-4 h-4" />
-            </Button>
+            </Button> */}
 
             <Button
               variant="ghost"
@@ -166,14 +166,14 @@ export function VideoPlayer({
               )}
             </Button>
 
-            <Button
+            {/* <Button
               variant="ghost"
               size="icon"
               onClick={() => skipForward(5)}
               className="text-foreground hover:bg-secondary/50 h-8 w-8"
             >
               <SkipForward className="w-4 h-4" />
-            </Button>
+            </Button> */}
 
             <div className="flex items-center gap-2 group/volume">
               <Button
@@ -198,13 +198,12 @@ export function VideoPlayer({
                 />
               </div>
             </div>
-
-            <span className="text-sm font-mono text-foreground/80 ml-2">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
           </div>
 
           <div className="flex items-center gap-2">
+            <span className="text-sm font-mono text-foreground/80">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
             <Button
               variant="ghost"
               size="icon"
