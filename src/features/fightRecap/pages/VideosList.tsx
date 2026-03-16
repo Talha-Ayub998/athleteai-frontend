@@ -373,8 +373,8 @@ const VideosList = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-3">
-                      <div className="col-span-2 min-w-0 lg:col-span-1">
+                    <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                      <div className="col-span-2 min-w-0 sm:col-span-1">
                         <p className="text-muted-foreground">Type</p>
                         <p className="break-words text-foreground">
                           {video.content_type || "-"}
