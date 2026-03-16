@@ -314,7 +314,7 @@ const VideosList = () => {
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-foreground font-medium break-words">
+                          <p className="max-w-full text-foreground font-medium [overflow-wrap:anywhere]">
                             {video.file_name || "Untitled video"}
                           </p>
                           {isCompletedSession && (
@@ -423,7 +423,7 @@ const VideosList = () => {
           />
 
           {selectedFile && (
-            <p className="mt-3 text-sm text-gray-700 dark:text-gray-200 break-all">
+            <p className="mt-3 max-w-full text-sm text-gray-700 dark:text-gray-200 [overflow-wrap:anywhere]">
               {selectedFile.name} ({formatFileSize(selectedFile.size)})
             </p>
           )}
@@ -491,7 +491,7 @@ const VideosList = () => {
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-300">
             Are you sure you want to delete{" "}
-            <span className="font-medium break-all">
+            <span className="font-medium [overflow-wrap:anywhere]">
               {videoToDelete?.file_name || "this video"}
             </span>
             ? This action cannot be undone.
