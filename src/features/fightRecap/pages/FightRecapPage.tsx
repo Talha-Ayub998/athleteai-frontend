@@ -26,7 +26,6 @@ import {
   FinalizeReportPayload,
   FinalizeReportSubmitResult,
 } from "../components/FinalizeReportModal";
-import { ToolSidebar } from "../components/ToolSidebar";
 import {
   EventType,
   FightEvent,
@@ -796,12 +795,12 @@ const FightRecapPage = () => {
         canAddEvent={!isCompletedSession}
       /> */}
 
-      <main className="flex-1 p-6 overflow-y-auto animate-lift-in">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-                <FileVideo className="w-7 h-7 text-primary" />
+      <main className="flex-1 overflow-y-auto px-4 py-5 animate-lift-in sm:p-6">
+        <div className="mx-auto max-w-6xl space-y-5 sm:space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="flex items-center gap-2 text-xl font-bold text-foreground sm:gap-3 sm:text-2xl">
+                <FileVideo className="h-6 w-6 text-primary sm:h-7 sm:w-7" />
                 BJJ Fight Analysis
               </h1>
               <p className="text-muted-foreground mt-1">
@@ -814,9 +813,11 @@ const FightRecapPage = () => {
           </div>
 
           {isPageLoading && (
-            <div className="bg-card rounded-lg border border-border p-8 flex items-center justify-center gap-3 text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Loading video...
+            <div className="bg-card rounded-lg border border-border p-6 text-muted-foreground sm:p-8">
+              <div className="flex items-center justify-center gap-3 text-center">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Loading video...
+              </div>
             </div>
           )}
 
@@ -830,7 +831,7 @@ const FightRecapPage = () => {
                   <Button
                     onClick={() => void fetchVideos(true)}
                     variant="outline"
-                    className="mt-4 text-foreground"
+                    className="mt-4 w-full text-foreground sm:w-auto"
                   >
                     Try Again
                   </Button>
@@ -852,7 +853,7 @@ const FightRecapPage = () => {
                       void fetchVideos(true);
                     }}
                     variant="outline"
-                    className="mt-4 text-foreground"
+                    className="mt-4 w-full text-foreground sm:w-auto"
                   >
                     Try Again
                   </Button>
@@ -862,7 +863,7 @@ const FightRecapPage = () => {
           )}
 
           {!isPageLoading && !fetchError && !sessionError && !selectedVideo && (
-            <div className="bg-card rounded-lg border border-border p-10 text-center">
+            <div className="bg-card rounded-lg border border-border p-6 text-center sm:p-10">
               <FileVideo className="w-12 h-12 text-primary mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-foreground">
                 Video not found
@@ -891,7 +892,7 @@ const FightRecapPage = () => {
                   <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                     Video
                   </p>
-                  <h2 className="truncate text-lg font-semibold text-foreground">
+                  <h2 className="text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
                     {selectedVideo.file_name || "Untitled video"}
                   </h2>
                 </div>
@@ -902,7 +903,7 @@ const FightRecapPage = () => {
                     variant="outline"
                     onClick={() => void handleDownloadXlsx()}
                     disabled={isDownloadingXlsx}
-                    className="border-border text-foreground hover:bg-secondary gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full gap-2 border-border text-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                   >
                     {isDownloadingXlsx ? (
                       <>
@@ -917,11 +918,11 @@ const FightRecapPage = () => {
                     )}
                   </Button>
                 ) : (
-                  <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                     <Button
                       onClick={handleAddMatch}
                       disabled={!canAddMatch}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                     >
                       <Plus className="w-4 h-4" />
                       Add Match
@@ -931,7 +932,7 @@ const FightRecapPage = () => {
                       variant="outline"
                       onClick={handleOpenFinalizeReportModal}
                       disabled={!canFinalizeReport}
-                      className="border-border text-foreground hover:bg-secondary gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="w-full gap-2 border-border text-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       Finalize Report
@@ -954,10 +955,10 @@ const FightRecapPage = () => {
                   return (
                     <section
                       key={section.matchNumber}
-                      className="bg-card rounded-lg border border-border p-4"
+                      className="bg-card rounded-lg border border-border p-4 sm:p-5"
                     >
                       <div
-                        className="flex cursor-pointer items-center justify-between gap-4 rounded-lg px-2 py-1 transition-colors hover:bg-secondary/40"
+                        className="flex cursor-pointer flex-col gap-4 rounded-lg px-2 py-1 transition-colors hover:bg-secondary/40 sm:flex-row sm:items-center sm:justify-between"
                         onClick={() =>
                           handleToggleMatchSection(section.matchNumber)
                         }
@@ -976,7 +977,7 @@ const FightRecapPage = () => {
                             : `Expand match ${section.matchNumber}`
                         }
                       >
-                        <div>
+                        <div className="min-w-0 self-start">
                           <h2 className="text-lg font-semibold text-foreground">
                             Match {section.matchNumber}
                           </h2>
@@ -987,7 +988,7 @@ const FightRecapPage = () => {
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                           {!isCompletedSession && section.result && (
                             <Button
                               onClick={(event) => {
@@ -999,7 +1000,7 @@ const FightRecapPage = () => {
                                 );
                               }}
                               variant="outline"
-                              className="border-border text-foreground hover:bg-secondary gap-2"
+                              className="w-full gap-2 border-border text-foreground hover:bg-secondary sm:w-auto"
                             >
                               <Trophy className="w-4 h-4" />
                               Edit Result
@@ -1016,7 +1017,7 @@ const FightRecapPage = () => {
                                     );
                                   }}
                                   variant="outline"
-                                  className="border-border text-foreground hover:bg-secondary gap-2"
+                                  className="w-full gap-2 border-border text-foreground hover:bg-secondary sm:w-auto"
                                 >
                                   <Trophy className="w-4 h-4" />
                                   Declare Result
@@ -1030,7 +1031,7 @@ const FightRecapPage = () => {
                                     section.matchNumber,
                                   );
                                 }}
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                                className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
                               >
                                 <Plus className="w-4 h-4" />
                                 Add Event
@@ -1043,7 +1044,7 @@ const FightRecapPage = () => {
                                   }}
                                   type="button"
                                   variant="outline"
-                                  className="gap-2  text-red-500 hover:bg-red-500 hover:text-red-600"
+                                  className="w-full gap-2 text-red-500 hover:bg-red-500 hover:text-red-600 sm:w-auto"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                   Delete
@@ -1132,12 +1133,12 @@ const FightRecapPage = () => {
       />
 
       <Modal
-        className="max-w-xl mx-4"
+        className="mx-4 w-[calc(100%-2rem)] max-w-xl"
         isOpen={Boolean(eventToDelete)}
         onClose={closeDeleteModal}
         showCloseButton={false}
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Delete Event
           </h3>
@@ -1149,12 +1150,12 @@ const FightRecapPage = () => {
             ? This action cannot be undone.
           </p>
 
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button
               onClick={closeDeleteModal}
               variant="outline"
               disabled={Boolean(deletingEventId)}
-              className="text-gray-900 dark:text-white"
+              className="w-full text-gray-900 dark:text-white sm:w-auto"
             >
               Cancel
             </Button>
@@ -1162,7 +1163,7 @@ const FightRecapPage = () => {
               type="button"
               onClick={() => void handleConfirmDeleteEvent()}
               disabled={!eventToDelete || Boolean(deletingEventId)}
-              className="inline-flex items-center justify-center gap-2 h-10 px-4 py-2 rounded-md text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50 transition-colors"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
             >
               {deletingEventId ? (
                 <>
