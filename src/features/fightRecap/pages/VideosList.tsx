@@ -128,7 +128,7 @@ const VideosList = () => {
     }
 
     const formData = new FormData();
-    formData.append("file", selectedFile);
+    formData.append("video", selectedFile);
 
     setIsUploading(true);
     setUploadProgress(0);
