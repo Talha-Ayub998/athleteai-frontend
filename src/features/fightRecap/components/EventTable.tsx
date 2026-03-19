@@ -55,6 +55,17 @@ export function EventTable({
     }
   };
 
+  const getOutcomeBadgeClass = (outcome?: FightEvent["outcome"]) => {
+    switch (outcome) {
+      case "success":
+        return "result-badge win";
+      case "failed":
+        return "result-badge loss";
+      default:
+        return "result-badge";
+    }
+  };
+
   if (events.length === 0) {
     return (
       <div className="bg-card rounded-lg p-8 text-center border border-border">
@@ -76,6 +87,7 @@ export function EventTable({
               <th className="w-24">Player</th>
               <th className="w-24">Type</th>
               <th className="w-40">Position</th>
+              <th className="w-24">Outcome</th>
               <th>Notes</th>
               <th className="w-20 text-center">Points</th>
               <th className="w-24 text-center">Actions</th>
@@ -108,6 +120,15 @@ export function EventTable({
                   </span>
                 </td>
                 <td className="font-medium text-white">{event.position}</td>
+                <td>
+                  <span className={getOutcomeBadgeClass(event.outcome)}>
+                    {event.outcome === "failed"
+                      ? "Failed"
+                      : event.outcome === "success"
+                        ? "Success"
+                        : "-"}
+                  </span>
+                </td>
                 <td className="text-muted-foreground max-w-xs">
                   <span className="line-clamp-3">{event.notes || "-"}</span>
                 </td>
