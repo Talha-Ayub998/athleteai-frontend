@@ -20,39 +20,61 @@ export type CompetitionPreset =
 // | 'Other';
 
 export type PositionPreset =
-  | "Guard"
-  | "Half Guard"
-  | "Mount"
-  | "Side Control"
-  | "Back Control"
-  | "Turtle"
-  | "Standing"
   | "Closed Guard"
-  | "Open Guard"
+  | "Half Guard"
+  | "Deep Half Guard"
+  | "Butterfly Guard"
+  | "De La Riva"
+  | "Reverse De La Riva"
+  | "Single Leg X"
+  | "X Guard"
+  | "50/50 Guard"
+  | "Turtle"
+  | "Side Control"
+  | "Mount"
+  | "Back"
   | "Knee on Belly"
-  | "North South";
+  | "Front Head";
 // | 'Other';
 
 export type TransitionPreset =
-  | "Sweep"
-  | "Takedown"
+  | "Guard Pull"
+  | "Double Leg"
+  | "Single Leg"
+  | "Ankle Pick"
+  | "Foot Sweep"
+  | "Snapdown"
+  | "Knee Tap"
+  | "Body Lock Pass"
+  | "Double Under Pass"
+  | "Knee Cut"
+  | "Leg Drag"
+  | "X Pass"
+  | "Scissor Sweep"
+  | "Hip Bump Sweep"
+  | "Half Guard Sweep"
+  | "Berimbolo"
   | "Guard Pass"
-  | "Escape"
-  | "Reversal"
-  | "Pull Guard";
+  | "Over/Under Pass";
 // | 'Other';
 
 export type SubmissionPreset =
-  | "Armbar"
+  | "Arm Bar"
   | "Triangle"
-  | "Rear Naked Choke"
+  | "RNC"
   | "Guillotine"
   | "Kimura"
   | "Americana"
   | "Heel Hook"
-  | "Ankle Lock"
-  | "Head and Arm Choke"
-  | "Ezekiel";
+  | "Straight Ankle Lock"
+  | "Arm Triangle"
+  | "Darce"
+  | "Cross Collar Choke"
+  | "Bow and Arrow"
+  | "Ezekiel"
+  | "Omoplata"
+  | "Knee Bar"
+  | "Toe Hold";
 // | 'Other';
 
 export type NotePreset =
@@ -102,39 +124,61 @@ export interface EventPresets {
 
 export const DEFAULT_PRESETS: EventPresets = {
   positions: [
-    "Guard",
-    "Half Guard",
-    "Mount",
-    "Side Control",
-    "Back Control",
-    "Turtle",
-    "Standing",
     "Closed Guard",
-    "Open Guard",
+    "Half Guard",
+    "Deep Half Guard",
+    "Butterfly Guard",
+    "De La Riva",
+    "Reverse De La Riva",
+    "Single Leg X",
+    "X Guard",
+    "50/50 Guard",
+    "Turtle",
+    "Side Control",
+    "Mount",
+    "Back",
     "Knee on Belly",
-    "North South",
+    "Front Head",
     // "Other",
   ],
   transitions: [
-    "Sweep",
-    "Takedown",
+    "Guard Pull",
+    "Double Leg",
+    "Single Leg",
+    "Ankle Pick",
+    "Foot Sweep",
+    "Snapdown",
+    "Knee Tap",
+    "Body Lock Pass",
+    "Double Under Pass",
+    "Knee Cut",
+    "Leg Drag",
+    "X Pass",
+    "Scissor Sweep",
+    "Hip Bump Sweep",
+    "Half Guard Sweep",
+    "Berimbolo",
     "Guard Pass",
-    "Escape",
-    "Reversal",
-    "Pull Guard",
+    "Over/Under Pass",
     // 'Other',
   ],
   submissions: [
-    "Armbar",
+    "Arm Bar",
     "Triangle",
-    "Rear Naked Choke",
+    "RNC",
     "Guillotine",
     "Kimura",
     "Americana",
     "Heel Hook",
-    "Ankle Lock",
-    "Head and Arm Choke",
+    "Straight Ankle Lock",
+    "Arm Triangle",
+    "Darce",
+    "Cross Collar Choke",
+    "Bow and Arrow",
     "Ezekiel",
+    "Omoplata",
+    "Knee Bar",
+    "Toe Hold",
     // 'Other',
   ],
   notes: [
