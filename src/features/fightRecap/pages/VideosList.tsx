@@ -243,8 +243,22 @@ const VideosList = () => {
   const isUploadResultDuplicate = uploadResult?.status === "duplicate";
   const canViewAnnotationFromUploadResult =
     uploadResult?.status === "success" || isUploadResultDuplicate;
+  const uploadResultSessionStatus =
+    uploadResult?.video.session_status?.trim().toLowerCase() ?? null;
+  const isReportFinalized = uploadResultSessionStatus === "completed";
+  const uploadResultHasSession =
+    uploadResult?.video.session_id !== null &&
+    uploadResult?.video.session_id !== undefined;
   const isCreatingUploadResultSession =
     uploadResult !== null && creatingSessionVideoId === uploadResult.video.id;
+  const uploadResultActionLabel =
+    uploadResult?.status === "success"
+      ? "Start Annotation"
+      : isReportFinalized
+        ? "View Annotation"
+        : uploadResultHasSession
+          ? "Continue Annotation"
+          : "Start Annotation";
 
   return (
     <div className="fight-recap-screen min-h-screen bg-background">
@@ -472,6 +486,12 @@ const VideosList = () => {
                     <p className="mt-1 text-sm [overflow-wrap:anywhere]">
                       {uploadResult.video.file_name || "Untitled video"}
                     </p>
+                    {isUploadResultDuplicate && isReportFinalized && (
+                      <p className="mt-1 text-sm">
+                        Annotation is complete and the report has been
+                        finalized.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -498,8 +518,12 @@ const VideosList = () => {
                       </>
                     ) : (
                       <>
-                        <Eye className="h-4 w-4" />
-                        View Annotation
+                        {uploadResultActionLabel === "View Annotation" ? (
+                          <Eye className="h-4 w-4" />
+                        ) : (
+                          <PencilLine className="h-4 w-4" />
+                        )}
+                        {uploadResultActionLabel}
                       </>
                     )}
                   </Button>
