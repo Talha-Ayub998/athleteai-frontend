@@ -3,7 +3,6 @@ import { Check, Edit2, X } from "lucide-react";
 import {
   MatchType,
   BeltLevel,
-  CompetitionPreset,
   DEFAULT_PRESETS,
   MatchMetadata,
 } from "../types/events";
@@ -27,6 +26,9 @@ export function MatchMetadataBar({
   const matchTypes: MatchType[] = ["Gi", "No-Gi"];
   const beltLevels: BeltLevel[] = ["White", "Blue", "Purple", "Brown", "Black"];
   const competitions = DEFAULT_PRESETS.competitions;
+  const isCustomCompetition = !competitions.includes(
+    editingMetadata.competition as (typeof competitions)[number],
+  );
 
   const getBeltColor = (belt: BeltLevel) => {
     const colors: Record<BeltLevel, string> = {
@@ -51,11 +53,18 @@ export function MatchMetadataBar({
     setIsEditing(false);
   };
 
-  const handleCompetitionSelect = (competition: string) => {
-    if (competition === "Other") {
+  const handleCompetitionSelect = (
+    competition: (typeof competitions)[number] | "Custom",
+  ) => {
+    if (competition === "Custom") {
+      const nextCustomCompetition = isCustomCompetition
+        ? editingMetadata.competition
+        : "";
+
+      setCustomCompetition(nextCustomCompetition);
       setEditingMetadata((prev) => ({
         ...prev,
-        competition: customCompetition || "Other",
+        competition: nextCustomCompetition,
       }));
       return;
     }
@@ -170,11 +179,7 @@ export function MatchMetadataBar({
               key={competition}
               onClick={() => handleCompetitionSelect(competition)}
               className={`preset-btn text-sm ${
-                editingMetadata.competition === competition ||
-                (competition === "Other" &&
-                  !competitions.includes(
-                    editingMetadata.competition as CompetitionPreset,
-                  ))
+                editingMetadata.competition === competition
                   ? "active"
                   : ""
               }`}
@@ -182,26 +187,24 @@ export function MatchMetadataBar({
               {competition}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => handleCompetitionSelect("Custom")}
+            className={`preset-btn text-sm ${isCustomCompetition ? "active" : ""}`}
+          >
+            Custom
+          </button>
         </div>
 
-        {(editingMetadata.competition === "Other" ||
-          !competitions.includes(
-            editingMetadata.competition as CompetitionPreset,
-          )) && (
+        {isCustomCompetition && (
           <Input
             placeholder="Enter custom event name..."
-            value={
-              !competitions.includes(
-                editingMetadata.competition as CompetitionPreset,
-              ) && editingMetadata.competition !== "Other"
-                ? editingMetadata.competition
-                : customCompetition
-            }
+            value={editingMetadata.competition || customCompetition}
             onChange={(event) => {
               setCustomCompetition(event.target.value);
               setEditingMetadata((prev) => ({
                 ...prev,
-                competition: event.target.value || "Other",
+                competition: event.target.value,
               }));
             }}
             className="mt-2 bg-secondary border-border text-foreground max-w-xs"
