@@ -52,6 +52,16 @@ const formatDate = (isoDate: string) => {
   return date.toLocaleString();
 };
 
+const isVideoNew = (isoDate: string) => {
+  const createdAt = new Date(isoDate);
+  if (Number.isNaN(createdAt.getTime())) return false;
+
+  const oneDayInMs = 24 * 60 * 60 * 1000;
+  const ageInMs = Date.now() - createdAt.getTime();
+
+  return ageInMs >= 0 && ageInMs < oneDayInMs;
+};
+
 const getErrorMessage = (error: unknown, fallback: string) => {
   const normalizedError = error as ErrorWithResponseData;
   return (
@@ -296,21 +306,30 @@ const VideosList = () => {
               {videos.map((video) => {
                 const isCompletedSession =
                   video.session_status?.trim().toLowerCase() === "completed";
+                const isNewVideo = isVideoNew(video.created_at);
 
                 return (
                   <div
                     key={video.id}
-                    className={`rounded-lg border bg-background p-4 space-y-4 animate-lift-in sm:p-5 ${
-                      isCompletedSession
-                        ? "bg-green-500/5 shadow-[0_0_0_1px_rgba(34,197,94,0.08)]"
-                        : "border-border"
-                    }`}
+                    className={`relative rounded-lg border bg-background 
+  ${isNewVideo ? "sm:pt-8" : ""} 
+  p-4 space-y-4 animate-lift-in sm:p-5 
+  ${
+    isCompletedSession
+      ? "bg-green-500/5 shadow-[0_0_0_1px_rgba(34,197,94,0.08)]"
+      : "border-border"
+  }`}
                     style={
                       isCompletedSession
                         ? { borderColor: "rgb(34 197 94 / 0.4)" }
                         : undefined
                     }
                   >
+                    {isNewVideo && (
+                      <span className="absolute left-0 top-0 inline-flex items-center rounded-tl-lg rounded-br-lg bg-primary px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-primary-foreground">
+                        New
+                      </span>
+                    )}
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
