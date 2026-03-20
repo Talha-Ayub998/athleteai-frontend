@@ -1,5 +1,5 @@
 import { Edit, Loader2, Trash2 } from "lucide-react";
-import { FightEvent } from "../types/events";
+import { EVENT_TYPE_BADGE_VARIANTS, FightEvent } from "../types/events";
 import { Button } from "./ui/Button";
 
 interface EventTableProps {
@@ -41,18 +41,14 @@ export function EventTable({
   };
 
   const getTypeBadgeClass = (type: string) => {
-    switch (type) {
-      case "Position":
-        return "type-badge position";
-      case "Transition":
-        return "type-badge transition";
-      case "Submission":
-        return "type-badge submission";
-      case "Note":
-        return "type-badge note";
-      default:
-        return "type-badge";
+    const badgeVariant =
+      EVENT_TYPE_BADGE_VARIANTS[type as keyof typeof EVENT_TYPE_BADGE_VARIANTS];
+
+    if (!badgeVariant) {
+      return "type-badge";
     }
+
+    return `type-badge ${badgeVariant}`;
   };
 
   const getOutcomeBadgeClass = (outcome?: FightEvent["outcome"]) => {
@@ -85,8 +81,8 @@ export function EventTable({
             <tr>
               <th className="w-20">Time</th>
               <th className="w-24">Player</th>
-              <th className="w-24">Type</th>
-              <th className="w-40">Position</th>
+              <th className="w-40">Event Type</th>
+              <th className="w-40">Move Name</th>
               <th className="w-24">Outcome</th>
               <th>Notes</th>
               <th className="w-20 text-center">Points</th>
@@ -119,7 +115,7 @@ export function EventTable({
                     {event.type}
                   </span>
                 </td>
-                <td className="font-medium text-white">{event.position}</td>
+                <td className="font-medium text-white">{event.moveName}</td>
                 <td>
                   <span className={getOutcomeBadgeClass(event.outcome)}>
                     {event.outcome === "failed"

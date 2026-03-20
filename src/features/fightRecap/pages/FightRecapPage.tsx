@@ -28,6 +28,7 @@ import {
   FinalizeReportSubmitResult,
 } from "../components/FinalizeReportModal";
 import {
+  EVENT_TYPES,
   EventType,
   FightEvent,
   MatchResult,
@@ -118,7 +119,7 @@ interface CreateSessionEventPayload {
   match_number: number;
   timestamp_seconds: number;
   player: "me" | "opponent" | "ai_coach";
-  event_type: "position" | "transition" | "submission" | "note";
+  event_type: EventType;
   move_name: string;
   outcome: "success" | "failed";
   note: string;
@@ -179,10 +180,19 @@ const mapPlayerToUi = (player: string): PlayerType => {
 
 const mapEventTypeToUi = (eventType: string): EventType => {
   const normalized = eventType.trim().toLowerCase();
-  if (normalized === "transition") return "Transition";
+  const matchingEventType = EVENT_TYPES.find(
+    (value) => value.toLowerCase() === normalized,
+  );
+
+  if (matchingEventType) {
+    return matchingEventType;
+  }
+
+  if (normalized === "position") return "Neutral Position";
+  if (normalized === "transition") return "Takedown";
   if (normalized === "submission") return "Submission";
-  if (normalized === "note") return "Note";
-  return "Position";
+
+  return EVENT_TYPES[0];
 };
 
 const mapApiEventToFightEvent = (
@@ -193,7 +203,7 @@ const mapApiEventToFightEvent = (
     timestamp: Number(apiEvent.timestamp_seconds) || 0,
     player: mapPlayerToUi(apiEvent.player || ""),
     type: mapEventTypeToUi(apiEvent.event_type || ""),
-    position: apiEvent.move_name || "Unknown",
+    moveName: apiEvent.move_name || "Unknown",
     notes: apiEvent.note || "",
     points: apiEvent.points ?? undefined,
     matchNumber: normalizeMatchNumber(apiEvent.match_number),
@@ -223,14 +233,7 @@ const mapPlayerToApi = (player: PlayerType): "me" | "opponent" | "ai_coach" => {
   return "me";
 };
 
-const mapEventTypeToApi = (
-  eventType: EventType,
-): "position" | "transition" | "submission" | "note" => {
-  if (eventType === "Transition") return "transition";
-  if (eventType === "Submission") return "submission";
-  if (eventType === "Note") return "note";
-  return "position";
-};
+const mapEventTypeToApi = (eventType: EventType): EventType => eventType;
 
 const FightRecapPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -534,7 +537,7 @@ const FightRecapPage = () => {
         timestamp_seconds: Number(eventData.timestamp.toFixed(2)),
         player: mapPlayerToApi(eventData.player),
         event_type: mapEventTypeToApi(eventData.type),
-        move_name: eventData.position,
+        move_name: eventData.moveName,
         outcome: eventData.outcome || "success",
         note: eventData.notes || "",
       };
