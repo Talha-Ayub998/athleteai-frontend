@@ -16,12 +16,14 @@ import { Slider } from "./ui/Slider";
 interface VideoPlayerProps {
   src?: string;
   onTimeUpdate?: (time: number) => void;
+  onDurationChange?: (duration: number) => void;
   pauseWhenModalOpen?: boolean;
 }
 
 export function VideoPlayer({
   src,
   onTimeUpdate,
+  onDurationChange,
   pauseWhenModalOpen = false,
 }: VideoPlayerProps) {
   const {
@@ -48,6 +50,10 @@ export function VideoPlayer({
   useEffect(() => {
     onTimeUpdate?.(currentTime);
   }, [currentTime, onTimeUpdate]);
+
+  useEffect(() => {
+    onDurationChange?.(duration);
+  }, [duration, onDurationChange]);
 
   useEffect(() => {
     if (!pauseWhenModalOpen) return;

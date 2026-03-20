@@ -119,7 +119,7 @@ interface CreateSessionEventPayload {
   match_number: number;
   timestamp_seconds: number;
   player: "me" | "opponent" | "ai_coach";
-  event_type: EventType;
+  event_type: string;
   move_name: string;
   outcome: "success" | "failed";
   note: string;
@@ -273,6 +273,7 @@ const FightRecapPage = () => {
   const [isSessionPreparing, setIsSessionPreparing] = useState(false);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
   const [sessionError, setSessionError] = useState("");
+  const [videoDuration, setVideoDuration] = useState(0);
   const videoId = Number(id);
   const hasValidVideoId = Number.isInteger(videoId) && videoId > 0;
 
@@ -528,6 +529,18 @@ const FightRecapPage = () => {
       return false;
     }
 
+    if (!Number.isFinite(eventData.timestamp) || eventData.timestamp < 0) {
+      toast.error("Timestamp must be 0 or greater.");
+      return false;
+    }
+
+    if (videoDuration > 0 && eventData.timestamp > videoDuration) {
+      toast.error(
+        `Timestamp cannot be greater than ${formatTime(videoDuration)}.`,
+      );
+      return false;
+    }
+
     try {
       const sessionId =
         selectedVideo.session_id ??
@@ -656,6 +669,7 @@ const FightRecapPage = () => {
     setExpandedMatchNumbers([]);
     setIsSessionFinalized(false);
     setIsDownloadingXlsx(false);
+    setVideoDuration(0);
   }, [selectedVideo?.id]);
 
   useEffect(() => {
@@ -946,6 +960,7 @@ const FightRecapPage = () => {
                 key={selectedVideo.id}
                 src={selectedVideo.playback_url || selectedVideo.url}
                 onTimeUpdate={handleTimeUpdate}
+                onDurationChange={setVideoDuration}
                 pauseWhenModalOpen={
                   isModalOpen ||
                   isDeclareResultModalOpen ||
@@ -1200,6 +1215,7 @@ const FightRecapPage = () => {
         }}
         onSave={handleSaveEvent}
         timestamp={currentTimestamp}
+        maxTimestamp={videoDuration}
         formatTime={formatTime}
         editingEvent={editingEvent}
         defaultMatchNumber={modalMatchNumber}

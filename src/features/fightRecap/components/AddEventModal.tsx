@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Loader2, Plus, X } from "lucide-react";
 import {
@@ -17,16 +17,65 @@ interface AddEventModalProps {
   onClose: () => void;
   onSave: (event: Omit<FightEvent, "id">) => Promise<boolean> | boolean;
   timestamp: number;
+  maxTimestamp?: number;
   formatTime: (seconds: number) => string;
   editingEvent?: FightEvent | null;
   defaultMatchNumber?: number;
 }
+
+type TimestampPart = "hours" | "minutes" | "seconds";
+
+interface TimestampParts {
+  hours: string;
+  minutes: string;
+  seconds: string;
+}
+
+const padTimestampPart = (value: number) => String(value).padStart(2, "0");
+
+const getTimestampParts = (valueInSeconds: number): TimestampParts => {
+  const safeSeconds = Math.max(0, Math.floor(valueInSeconds));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+
+  return {
+    hours: padTimestampPart(hours),
+    minutes: padTimestampPart(minutes),
+    seconds: padTimestampPart(seconds),
+  };
+};
+
+const getTimestampSeconds = (parts: TimestampParts): number | null => {
+  if (!parts.hours || !parts.minutes || !parts.seconds) {
+    return null;
+  }
+
+  const hours = Number(parts.hours);
+  const minutes = Number(parts.minutes);
+  const seconds = Number(parts.seconds);
+
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    !Number.isInteger(seconds) ||
+    minutes < 0 ||
+    minutes > 59 ||
+    seconds < 0 ||
+    seconds > 59
+  ) {
+    return null;
+  }
+
+  return hours * 3600 + minutes * 60 + seconds;
+};
 
 export function AddEventModal({
   isOpen,
   onClose,
   onSave,
   timestamp,
+  maxTimestamp,
   formatTime,
   editingEvent,
   defaultMatchNumber = 1,
@@ -36,6 +85,9 @@ export function AddEventModal({
   );
   const [eventType, setEventType] = useState(
     editingEvent?.type || EVENT_TYPES[0],
+  );
+  const [timestampParts, setTimestampParts] = useState<TimestampParts>(
+    getTimestampParts(editingEvent?.timestamp ?? timestamp),
   );
   const [moveName, setMoveName] = useState(editingEvent?.moveName || "");
   const [moveSearch, setMoveSearch] = useState("");
@@ -50,6 +102,9 @@ export function AddEventModal({
     editingEvent?.outcome || "success",
   );
   const [isSaving, setIsSaving] = useState(false);
+  const hoursInputRef = useRef<HTMLInputElement | null>(null);
+  const minutesInputRef = useRef<HTMLInputElement | null>(null);
+  const secondsInputRef = useRef<HTMLInputElement | null>(null);
 
   const players: PlayerType[] = ["Me", "Opponent"];
   const eventTypes = EVENT_TYPES;
@@ -83,6 +138,7 @@ export function AddEventModal({
 
     setPlayer(editingEvent?.player || "Me");
     setEventType(editingEvent?.type || EVENT_TYPES[0]);
+    setTimestampParts(getTimestampParts(editingEvent?.timestamp ?? timestamp));
     setMoveName(editingEvent?.moveName || "");
     setMoveSearch("");
     setNotes(editingEvent?.notes || "");
@@ -95,6 +151,7 @@ export function AddEventModal({
   const resetForm = () => {
     setPlayer("Me");
     setEventType(EVENT_TYPES[0]);
+    setTimestampParts(getTimestampParts(timestamp));
     setMoveName("");
     setMoveSearch("");
     setNotes("");
@@ -119,11 +176,30 @@ export function AddEventModal({
   const presetsForType = getPresetsForType();
   const normalizedMoveSearch = moveSearch.trim().toLowerCase();
   const shouldShowMoveSearch = presetsForType.length > 10;
+  const hasDurationLimit =
+    typeof maxTimestamp === "number" &&
+    Number.isFinite(maxTimestamp) &&
+    maxTimestamp > 0;
   const filteredPresets = normalizedMoveSearch
     ? presetsForType.filter((preset) =>
         preset.toLowerCase().includes(normalizedMoveSearch),
       )
     : presetsForType;
+  const parsedEventTimestamp = getTimestampSeconds(timestampParts);
+  const isTimestampComplete =
+    Boolean(timestampParts.hours) &&
+    Boolean(timestampParts.minutes) &&
+    Boolean(timestampParts.seconds);
+  const isTimestampInRange =
+    parsedEventTimestamp !== null &&
+    (!hasDurationLimit || parsedEventTimestamp <= (maxTimestamp ?? 0));
+  const timestampErrorMessage = !isTimestampComplete
+    ? "Complete the full timestamp."
+    : parsedEventTimestamp === null
+      ? "Minutes and seconds must be between 00 and 59."
+      : hasDurationLimit && parsedEventTimestamp > (maxTimestamp ?? 0)
+        ? `Timestamp cannot be greater than ${formatTime(maxTimestamp ?? 0)}.`
+        : "";
 
   const renderHighlightedMoveName = (preset: string) => {
     if (!normalizedMoveSearch) {
@@ -178,10 +254,10 @@ export function AddEventModal({
   };
 
   const handleSave = async () => {
-    if (!moveName.trim()) return;
+    if (!moveName.trim() || !isTimestampInRange) return;
     setIsSaving(true);
     const didSave = await onSave({
-      timestamp: editingEvent?.timestamp ?? timestamp,
+      timestamp: parsedEventTimestamp ?? 0,
       player,
       type: eventType,
       moveName,
@@ -197,6 +273,142 @@ export function AddEventModal({
     resetForm();
     onClose();
   };
+
+  const getTimestampInputRef = (part: TimestampPart) => {
+    if (part === "hours") return hoursInputRef;
+    if (part === "minutes") return minutesInputRef;
+    return secondsInputRef;
+  };
+
+  const focusNextTimestampInput = (part: TimestampPart) => {
+    if (part === "hours") {
+      minutesInputRef.current?.focus();
+      minutesInputRef.current?.select();
+      return;
+    }
+
+    if (part === "minutes") {
+      secondsInputRef.current?.focus();
+      secondsInputRef.current?.select();
+    }
+  };
+
+  const focusPreviousTimestampInput = (part: TimestampPart) => {
+    if (part === "seconds") {
+      minutesInputRef.current?.focus();
+      minutesInputRef.current?.select();
+      return;
+    }
+
+    if (part === "minutes") {
+      hoursInputRef.current?.focus();
+      hoursInputRef.current?.select();
+    }
+  };
+
+  const handleTimestampPartChange = (part: TimestampPart, value: string) => {
+    if (!/^\d*$/.test(value) || value.length > 2) {
+      return;
+    }
+
+    const nextValue = value;
+    const nextNumericValue = nextValue === "" ? null : Number(nextValue);
+
+    if (
+      (part === "minutes" || part === "seconds") &&
+      nextNumericValue !== null &&
+      nextNumericValue > 59
+    ) {
+      return;
+    }
+
+    const nextParts = {
+      ...timestampParts,
+      [part]: nextValue,
+    };
+    const nextTimestamp = getTimestampSeconds(nextParts);
+
+    if (
+      nextTimestamp !== null &&
+      hasDurationLimit &&
+      nextTimestamp > (maxTimestamp ?? 0)
+    ) {
+      return;
+    }
+
+    setTimestampParts(nextParts);
+
+    if (nextValue.length === 2) {
+      focusNextTimestampInput(part);
+    }
+  };
+
+  const handleTimestampPartKeyDown = (
+    part: TimestampPart,
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === "Backspace" && !timestampParts[part]) {
+      focusPreviousTimestampInput(part);
+    }
+  };
+
+  const handleTimestampPartBlur = (part: TimestampPart) => {
+    const currentValue = timestampParts[part];
+
+    if (!currentValue) {
+      setTimestampParts((prev) => ({
+        ...prev,
+        [part]: "00",
+      }));
+      return;
+    }
+
+    setTimestampParts((prev) => ({
+      ...prev,
+      [part]: currentValue.padStart(2, "0"),
+    }));
+  };
+
+  const renderTimestampInput = (
+    part: TimestampPart,
+    label: string,
+    placeholder: string,
+  ) => (
+    <div className="flex items-center gap-2">
+      <Input
+        ref={getTimestampInputRef(part)}
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        maxLength={2}
+        value={timestampParts[part]}
+        onChange={(event) =>
+          handleTimestampPartChange(part, event.target.value)
+        }
+        onKeyDown={(event) => handleTimestampPartKeyDown(part, event)}
+        onBlur={() => handleTimestampPartBlur(part)}
+        onFocus={(event) => event.target.select()}
+        disabled={isSaving}
+        placeholder={placeholder}
+        aria-label={label}
+        className="w-16 bg-secondary border-border px-2 text-center text-foreground"
+      />
+      {/* <span className="text-xs uppercase tracking-[0.15em] text-muted-foreground">
+        {label}
+      </span> */}
+    </div>
+  );
+
+  const previewTimestamp =
+    parsedEventTimestamp ?? editingEvent?.timestamp ?? timestamp;
+
+  const maxTimestampParts = hasDurationLimit
+    ? getTimestampParts(maxTimestamp ?? 0)
+    : null;
+
+  const maxTimestampDisplay = maxTimestampParts
+    ? `${maxTimestampParts.hours}:${maxTimestampParts.minutes}:${maxTimestampParts.seconds}`
+    : null;
 
   return createPortal(
     <div
@@ -229,8 +441,31 @@ export function AddEventModal({
           <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
             <span className="text-muted-foreground text-sm">Timestamp:</span>
             <span className="timestamp-badge text-base">
-              {formatTime(editingEvent?.timestamp ?? timestamp)}
+              {formatTime(previewTimestamp)}
             </span>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-foreground flex">Timestamp</Label>
+            <div className="flex flex-wrap items-center gap-3 rounded-lg bg-muted p-3">
+              {renderTimestampInput("hours", "Hours", "HH")}
+              <span className="text-sm font-semibold text-muted-foreground">
+                :
+              </span>
+              {renderTimestampInput("minutes", "Minutes", "MM")}
+              <span className="text-sm font-semibold text-muted-foreground">
+                :
+              </span>
+              {renderTimestampInput("seconds", "Seconds", "SS")}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {hasDurationLimit
+                ? `Enter a value between 00:00:00 and ${maxTimestampDisplay}.`
+                : "Enter a valid HH:MM:SS timestamp."}
+            </p>
+            {timestampErrorMessage && (
+              <p className="text-xs text-red-400">{timestampErrorMessage}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -396,7 +631,7 @@ export function AddEventModal({
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isSaving || !moveName}
+              disabled={isSaving || !moveName || !isTimestampInRange}
               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isSaving ? (
