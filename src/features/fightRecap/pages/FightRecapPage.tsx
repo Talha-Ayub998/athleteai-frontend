@@ -1111,6 +1111,19 @@ const FightRecapPage = () => {
                           )}
                           {canAddEvent && !isCompletedSession && (
                             <>
+                              <Button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleAddEvent(
+                                    currentTimestamp,
+                                    section.matchNumber,
+                                  );
+                                }}
+                                className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+                              >
+                                <Plus className="w-4 h-4" />
+                                Add Event
+                              </Button>
                               {section.events.length > 0 && (
                                 <Button
                                   onClick={(event) => {
@@ -1126,19 +1139,6 @@ const FightRecapPage = () => {
                                   Declare Result
                                 </Button>
                               )}
-                              <Button
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleAddEvent(
-                                    currentTimestamp,
-                                    section.matchNumber,
-                                  );
-                                }}
-                                className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
-                              >
-                                <Plus className="w-4 h-4" />
-                                Add Event
-                              </Button>
                               {canDeleteEmptyMatch && (
                                 <Button
                                   onClick={(event) => {

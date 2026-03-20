@@ -274,6 +274,10 @@ export function AddEventModal({
     onClose();
   };
 
+  const handleUseCurrentTimestamp = () => {
+    setTimestampParts(getTimestampParts(timestamp));
+  };
+
   const getTimestampInputRef = (part: TimestampPart) => {
     if (part === "hours") return hoursInputRef;
     if (part === "minutes") return minutesInputRef;
@@ -447,16 +451,27 @@ export function AddEventModal({
 
           <div className="space-y-2">
             <Label className="text-foreground flex">Timestamp</Label>
-            <div className="flex flex-wrap items-center gap-3 rounded-lg bg-muted p-3">
-              {renderTimestampInput("hours", "Hours", "HH")}
-              <span className="text-sm font-semibold text-muted-foreground">
-                :
-              </span>
-              {renderTimestampInput("minutes", "Minutes", "MM")}
-              <span className="text-sm font-semibold text-muted-foreground">
-                :
-              </span>
-              {renderTimestampInput("seconds", "Seconds", "SS")}
+            <div className="flex flex-col gap-3 rounded-lg bg-muted p-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
+                {renderTimestampInput("hours", "Hours", "HH")}
+                <span className="text-sm font-semibold text-muted-foreground">
+                  :
+                </span>
+                {renderTimestampInput("minutes", "Minutes", "MM")}
+                <span className="text-sm font-semibold text-muted-foreground">
+                  :
+                </span>
+                {renderTimestampInput("seconds", "Seconds", "SS")}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleUseCurrentTimestamp}
+                disabled={isSaving}
+                className="w-full border-border text-foreground hover:bg-secondary lg:w-auto"
+              >
+                Current Timestamp
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground">
               {hasDurationLimit
