@@ -233,7 +233,8 @@ const mapPlayerToApi = (player: PlayerType): "me" | "opponent" | "ai_coach" => {
   return "me";
 };
 
-const mapEventTypeToApi = (eventType: EventType): EventType => eventType;
+const mapEventTypeToApi = (eventType: EventType): string =>
+  eventType.toLowerCase();
 
 const FightRecapPage = () => {
   const { id } = useParams<{ id: string }>();
