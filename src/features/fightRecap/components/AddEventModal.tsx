@@ -113,6 +113,8 @@ export function AddEventModal({
 
   if (!isOpen) return null;
 
+  const presetsForType = getPresetsForType();
+
   const handleSave = async () => {
     if (!moveName.trim()) return;
     setIsSaving(true);
@@ -207,9 +209,11 @@ export function AddEventModal({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-foreground">Move Name</Label>
+            <Label className="text-foreground">
+              Moves ({presetsForType.length})
+            </Label>
             <div className="flex gap-2 flex-wrap  overflow-y-auto p-1">
-              {getPresetsForType().map((preset) => (
+              {presetsForType.map((preset) => (
                 <button
                   type="button"
                   key={preset}
