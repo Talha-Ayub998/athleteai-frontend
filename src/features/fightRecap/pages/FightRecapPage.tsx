@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Trash2,
   Download,
+  RotateCcw,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
@@ -144,6 +145,18 @@ interface DownloadXlsxResponse {
   expires_in_seconds: number;
 }
 
+interface ReopenAnnotationResponse {
+  status: "success" | "already_draft" | string;
+  message: string;
+  session_id: number;
+  deleted_report_id?: number | null;
+  deleted_s3_key?: string | null;
+  s3_results?: Array<{
+    key: string;
+    status: string;
+  }>;
+}
+
 const normalizeMatchNumber = (value: number | null | undefined): number => {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 1) {
     return 1;
@@ -228,6 +241,8 @@ const FightRecapPage = () => {
     useState(false);
   const [isFinalizeReportModalOpen, setIsFinalizeReportModalOpen] =
     useState(false);
+  const [isReopenAnnotationModalOpen, setIsReopenAnnotationModalOpen] =
+    useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [modalMatchNumber, setModalMatchNumber] = useState(1);
   const [resultMatchNumber, setResultMatchNumber] = useState(1);
@@ -240,6 +255,7 @@ const FightRecapPage = () => {
     useState<MatchResult | null>(null);
   const [isSessionFinalized, setIsSessionFinalized] = useState(false);
   const [isDownloadingXlsx, setIsDownloadingXlsx] = useState(false);
+  const [isReopeningAnnotation, setIsReopeningAnnotation] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [eventToDelete, setEventToDelete] = useState<FightEvent | null>(null);
   const {
@@ -289,6 +305,15 @@ const FightRecapPage = () => {
 
   const handleCloseFinalizeReportModal = () => {
     setIsFinalizeReportModalOpen(false);
+  };
+
+  const handleOpenReopenAnnotationModal = () => {
+    setIsReopenAnnotationModalOpen(true);
+  };
+
+  const handleCloseReopenAnnotationModal = () => {
+    if (isReopeningAnnotation) return;
+    setIsReopenAnnotationModalOpen(false);
   };
 
   const handleToggleMatchSection = (matchNumber: number) => {
@@ -390,6 +415,43 @@ const FightRecapPage = () => {
       toast.error(getErrorMessage(error, "Failed to fetch XLSX file."));
     } finally {
       setIsDownloadingXlsx(false);
+    }
+  };
+
+  const handleReopenAnnotation = async () => {
+    if (!selectedVideo?.session_id) {
+      toast.error("Reopen annotation failed. Video session not ready.");
+      return;
+    }
+
+    setIsReopeningAnnotation(true);
+    try {
+      const response = await axiosInstance.post<ReopenAnnotationResponse>(
+        `/reports/annotation-sessions/${selectedVideo.session_id}/reopen/`,
+      );
+
+      const responseStatus = response.data?.status?.trim().toLowerCase();
+      const isAlreadyDraft = responseStatus === "already_draft";
+
+      updateVideo(selectedVideo.id, { session_status: "draft" });
+      setIsSessionFinalized(false);
+      setIsReopenAnnotationModalOpen(false);
+
+      if (isAlreadyDraft) {
+        toast.success(
+          response.data?.message || "Session is already in draft state.",
+        );
+        return;
+      }
+
+      toast.success(
+        response.data?.message ||
+          "Annotation reopened successfully. Editing is enabled again.",
+      );
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Reopen annotation failed."));
+    } finally {
+      setIsReopeningAnnotation(false);
     }
   };
 
@@ -883,7 +945,8 @@ const FightRecapPage = () => {
                 pauseWhenModalOpen={
                   isModalOpen ||
                   isDeclareResultModalOpen ||
-                  isFinalizeReportModalOpen
+                  isFinalizeReportModalOpen ||
+                  isReopenAnnotationModalOpen
                 }
               />
 
@@ -898,25 +961,46 @@ const FightRecapPage = () => {
                 </div>
 
                 {isCompletedSession ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => void handleDownloadXlsx()}
-                    disabled={isDownloadingXlsx}
-                    className="w-full gap-2 border-border text-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                  >
-                    {isDownloadingXlsx ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Downloading...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4" />
-                        Download XLSX
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleOpenReopenAnnotationModal}
+                      disabled={isReopeningAnnotation}
+                      className="w-full gap-2 border-border text-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                    >
+                      {isReopeningAnnotation ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Reopening...
+                        </>
+                      ) : (
+                        <>
+                          <RotateCcw className="w-4 h-4" />
+                          Reopen Annotation
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void handleDownloadXlsx()}
+                      disabled={isDownloadingXlsx}
+                      className="w-full gap-2 border-border text-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                    >
+                      {isDownloadingXlsx ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          Download XLSX
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 ) : (
                   <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                     <Button
@@ -1131,6 +1215,50 @@ const FightRecapPage = () => {
         initialFilename={selectedVideo?.file_name || ""}
         onSubmit={handleFinalizeReport}
       />
+
+      <Modal
+        className="mx-4 w-[calc(100%-2rem)] max-w-xl"
+        isOpen={isReopenAnnotationModalOpen}
+        onClose={handleCloseReopenAnnotationModal}
+        showCloseButton={false}
+      >
+        <div className="p-4 sm:p-6">
+          <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+            Reopen Annotation
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Reopening this annotation will permanently delete the current
+            generated report file. You will be able to edit matches and events
+            again after reopening.
+          </p>
+
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button
+              onClick={handleCloseReopenAnnotationModal}
+              variant="outline"
+              disabled={isReopeningAnnotation}
+              className="w-full text-gray-900 dark:text-white sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <button
+              type="button"
+              onClick={() => void handleReopenAnnotation()}
+              disabled={isReopeningAnnotation}
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
+            >
+              {isReopeningAnnotation ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Reopening...
+                </>
+              ) : (
+                "Yes, Reopen Annotation"
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         className="mx-4 w-[calc(100%-2rem)] max-w-xl"
