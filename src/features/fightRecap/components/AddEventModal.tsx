@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Loader2, Plus, X } from "lucide-react";
 import {
@@ -38,6 +38,7 @@ export function AddEventModal({
     editingEvent?.type || EVENT_TYPES[0],
   );
   const [moveName, setMoveName] = useState(editingEvent?.moveName || "");
+  const [moveSearch, setMoveSearch] = useState("");
   const [notes, setNotes] = useState(editingEvent?.notes || "");
   const [points, setPoints] = useState<string>(
     editingEvent?.points?.toString() || "",
@@ -83,6 +84,7 @@ export function AddEventModal({
     setPlayer(editingEvent?.player || "Me");
     setEventType(editingEvent?.type || EVENT_TYPES[0]);
     setMoveName(editingEvent?.moveName || "");
+    setMoveSearch("");
     setNotes(editingEvent?.notes || "");
     setPoints(editingEvent?.points?.toString() || "");
     setMatchNumber(editingEvent?.matchNumber || defaultMatchNumber);
@@ -94,6 +96,7 @@ export function AddEventModal({
     setPlayer("Me");
     setEventType(EVENT_TYPES[0]);
     setMoveName("");
+    setMoveSearch("");
     setNotes("");
     setPoints("");
     setMatchNumber(defaultMatchNumber);
@@ -107,13 +110,72 @@ export function AddEventModal({
     onClose();
   };
 
-  const getPresetsForType = () => {
+  const getPresetsForType = (): readonly string[] => {
     return DEFAULT_PRESETS.movesByEventType[eventType] || [];
   };
 
   if (!isOpen) return null;
 
   const presetsForType = getPresetsForType();
+  const normalizedMoveSearch = moveSearch.trim().toLowerCase();
+  const shouldShowMoveSearch = presetsForType.length > 10;
+  const filteredPresets = normalizedMoveSearch
+    ? presetsForType.filter((preset) =>
+        preset.toLowerCase().includes(normalizedMoveSearch),
+      )
+    : presetsForType;
+
+  const renderHighlightedMoveName = (preset: string) => {
+    if (!normalizedMoveSearch) {
+      return preset;
+    }
+
+    const lowerPreset = preset.toLowerCase();
+    const matches: Array<{ start: number; end: number }> = [];
+    let searchIndex = 0;
+
+    while (searchIndex < preset.length) {
+      const matchIndex = lowerPreset.indexOf(normalizedMoveSearch, searchIndex);
+      if (matchIndex === -1) {
+        break;
+      }
+
+      matches.push({
+        start: matchIndex,
+        end: matchIndex + normalizedMoveSearch.length,
+      });
+      searchIndex = matchIndex + normalizedMoveSearch.length;
+    }
+
+    if (matches.length === 0) {
+      return preset;
+    }
+
+    const content: ReactNode[] = [];
+    let contentIndex = 0;
+
+    matches.forEach((match, index) => {
+      if (match.start > contentIndex) {
+        content.push(preset.slice(contentIndex, match.start));
+      }
+
+      content.push(
+        <span
+          key={`${preset}-${match.start}-${index}`}
+          className="rounded-xs bg-primary/20 text-primary-foreground"
+        >
+          {preset.slice(match.start, match.end)}
+        </span>,
+      );
+      contentIndex = match.end;
+    });
+
+    if (contentIndex < preset.length) {
+      content.push(preset.slice(contentIndex));
+    }
+
+    return content;
+  };
 
   const handleSave = async () => {
     if (!moveName.trim()) return;
@@ -198,6 +260,7 @@ export function AddEventModal({
                   onClick={() => {
                     setEventType(item);
                     setMoveName("");
+                    setMoveSearch("");
                   }}
                   disabled={isSaving}
                   className={`preset-btn ${eventType === item ? "active" : ""}`}
@@ -212,8 +275,17 @@ export function AddEventModal({
             <Label className="text-foreground">
               Moves ({presetsForType.length})
             </Label>
+            {shouldShowMoveSearch && (
+              <Input
+                value={moveSearch}
+                onChange={(event) => setMoveSearch(event.target.value)}
+                placeholder="Search moves..."
+                disabled={isSaving}
+                className="bg-secondary mt-2 border-border text-foreground"
+              />
+            )}
             <div className="flex gap-2 flex-wrap  overflow-y-auto p-1">
-              {presetsForType.map((preset) => (
+              {filteredPresets.map((preset) => (
                 <button
                   type="button"
                   key={preset}
@@ -223,9 +295,14 @@ export function AddEventModal({
                     moveName === preset ? "active" : ""
                   }`}
                 >
-                  {preset}
+                  {renderHighlightedMoveName(preset)}
                 </button>
               ))}
+              {filteredPresets.length === 0 && (
+                <p className="px-1 text-sm text-muted-foreground">
+                  No moves found.
+                </p>
+              )}
             </div>
           </div>
 
