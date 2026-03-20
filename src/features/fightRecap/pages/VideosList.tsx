@@ -428,7 +428,7 @@ const VideosList = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                       <div className="col-span-2 min-w-0 sm:col-span-1">
                         <p className="text-muted-foreground">Type</p>
                         <p className="break-words text-foreground">
@@ -442,9 +442,18 @@ const VideosList = () => {
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">ID</p>
+                        <p className="text-muted-foreground">Video ID</p>
                         <p className="text-foreground">{video.id}</p>
                       </div>
+                      {video.session_id !== null &&
+                        video.session_id !== undefined && (
+                          <div>
+                            <p className="text-muted-foreground">Session ID</p>
+                            <p className="text-foreground">
+                              {video.session_id}
+                            </p>
+                          </div>
+                        )}
                     </div>
                   </div>
                 );
