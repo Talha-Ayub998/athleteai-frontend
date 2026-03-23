@@ -8,7 +8,7 @@ import { Label } from "./ui/Label";
 
 export interface DeclareMatchResultPayload {
   match_number: number;
-  result: "Win" | "Lose" | "Draw";
+  result: "Win" | "Lost" | "Draw";
   match_type: "No-GI Points" | "GI Points";
   referee_decision: boolean;
   disqualified: boolean;
@@ -27,7 +27,7 @@ interface DeclareResultModalProps {
 
 const RESULT_OPTIONS: DeclareMatchResultPayload["result"][] = [
   "Win",
-  "Lose",
+  "Lost",
   "Draw",
 ];
 
@@ -46,7 +46,7 @@ const normalizeResultValue = (
     normalized === "loss" ||
     normalized === "lost"
   ) {
-    return "Lose";
+    return "Lost";
   }
   return "Win";
 };
