@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
+  ArrowLeftFromLine,
   CheckCircle2,
   Eye,
   FileVideo,
@@ -48,6 +49,7 @@ export default function UploadVideoPage() {
     resume,
     cancel,
     clearResume,
+    resetUploadResult,
   } = useMultipartUpload();
 
   useEffect(() => {
@@ -178,7 +180,20 @@ export default function UploadVideoPage() {
                   disabled={creatingSession}
                   className="w-full text-foreground sm:w-auto"
                 >
+                  <ArrowLeftFromLine className="h-4 w-4" />
                   Back to Videos
+                </Button>
+                <Button
+                  onClick={() => {
+                    resetUploadResult();
+                    setSelectedFile(null);
+                  }}
+                  variant="outline"
+                  disabled={creatingSession}
+                  className="w-full gap-2 text-foreground sm:w-auto"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload Another
                 </Button>
                 <Button
                   onClick={() => void handleAnnotate()}
