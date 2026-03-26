@@ -52,6 +52,7 @@ export interface UploadOptions {
     part_size_bytes: number,
   ) => void;
   onProgress?: (completedParts: number, totalParts: number) => void;
+  onBytesProgress?: (loadedBytes: number, totalBytes: number) => void;
   onPartComplete?: (part: Part) => void;
   onPartRetry?: (partNumber: number, attempt: number, maxAttempts: number) => void;
   cancelledRef?: { current: boolean };
@@ -96,24 +97,44 @@ async function getPartUrl(
   return response.data.upload_url;
 }
 
-async function uploadPartToS3(uploadUrl: string, chunk: Blob): Promise<string> {
-  const response = await fetch(uploadUrl, {
-    method: "PUT",
-    body: chunk,
-  });
+function uploadPartToS3(
+  uploadUrl: string,
+  chunk: Blob,
+  onProgress?: (loaded: number) => void,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", uploadUrl);
 
-  if (!response.ok) {
-    throw new Error(
-      `S3 rejected part upload: ${response.status} ${response.statusText}`,
+    if (onProgress) {
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) onProgress(e.loaded);
+      });
+    }
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const etag = xhr.getResponseHeader("ETag");
+        if (!etag) {
+          reject(new Error("S3 did not return an ETag for the uploaded part."));
+        } else {
+          resolve(etag);
+        }
+      } else {
+        reject(
+          new Error(
+            `S3 rejected part upload: ${xhr.status} ${xhr.statusText}`,
+          ),
+        );
+      }
+    });
+
+    xhr.addEventListener("error", () =>
+      reject(new Error("Network error during part upload.")),
     );
-  }
 
-  const etag = response.headers.get("ETag");
-  if (!etag) {
-    throw new Error("S3 did not return an ETag for the uploaded part.");
-  }
-
-  return etag;
+    xhr.send(chunk);
+  });
 }
 
 export async function completeUpload(
@@ -155,6 +176,7 @@ async function uploadSinglePart(
   s3_key: string,
   partSizeBytes: number,
   cancelledRef: { current: boolean },
+  onPartProgress?: (loaded: number) => void,
 ): Promise<Part> {
   if (cancelledRef.current) throw new UploadCancelledError();
 
@@ -166,7 +188,7 @@ async function uploadSinglePart(
 
   if (cancelledRef.current) throw new UploadCancelledError();
 
-  const etag = await uploadPartToS3(uploadUrl, chunk);
+  const etag = await uploadPartToS3(uploadUrl, chunk, onPartProgress);
 
   return { part_number: partNumber, etag };
 }
@@ -183,6 +205,7 @@ async function uploadSinglePartWithRetry(
   maxAttempts: number,
   cancelledRef: { current: boolean },
   onRetry?: (partNumber: number, attempt: number, maxAttempts: number) => void,
+  onPartProgress?: (loaded: number) => void,
 ): Promise<Part> {
   let lastError: unknown;
 
@@ -195,9 +218,11 @@ async function uploadSinglePartWithRetry(
         s3_key,
         partSizeBytes,
         cancelledRef,
+        onPartProgress,
       );
     } catch (error) {
       lastError = error;
+      onPartProgress?.(0); // reset this part's progress on retry
       if (attempt < maxAttempts && !cancelledRef.current) {
         onRetry?.(partNumber, attempt + 1, maxAttempts);
         const delayMs = 1000 * 2 ** (attempt - 1); // 1s → 2s → 4s
@@ -277,6 +302,7 @@ export async function runMultipartUpload(
     maxRetries = 3,
     onUploadStarted,
     onProgress,
+    onBytesProgress,
     onPartComplete,
     onPartRetry,
     cancelledRef = { current: false },
@@ -288,8 +314,14 @@ export async function runMultipartUpload(
   onUploadStarted?.(upload_id, s3_key, total_parts, part_size_bytes);
 
   let completedCount = 0;
+  let completedBytes = 0;
+  const partProgress = new Map<number, number>();
 
   const uploadFn = async (partNumber: number): Promise<Part> => {
+    const chunkSize = Math.min(
+      part_size_bytes,
+      file.size - (partNumber - 1) * part_size_bytes,
+    );
     const part = await uploadSinglePartWithRetry(
       partNumber,
       file,
@@ -299,7 +331,19 @@ export async function runMultipartUpload(
       maxRetries,
       cancelledRef,
       onPartRetry,
+      onBytesProgress
+        ? (loaded) => {
+            partProgress.set(partNumber, loaded);
+            const inFlight = Array.from(partProgress.values()).reduce(
+              (a, b) => a + b,
+              0,
+            );
+            onBytesProgress(completedBytes + inFlight, file.size);
+          }
+        : undefined,
     );
+    completedBytes += chunkSize;
+    partProgress.delete(partNumber);
     completedCount++;
     onProgress?.(completedCount, total_parts);
     onPartComplete?.(part);
@@ -348,6 +392,7 @@ export async function resumeMultipartUpload(
     concurrency = 3,
     maxRetries = 3,
     onProgress,
+    onBytesProgress,
     onPartComplete,
     onPartRetry,
     cancelledRef = { current: false },
@@ -364,8 +409,16 @@ export async function resumeMultipartUpload(
 
   // Start progress from already-completed parts
   let completedCount = completed_parts.length;
+  let completedBytes = completed_parts.reduce((acc, p) => {
+    return acc + Math.min(part_size_bytes, file.size - (p.part_number - 1) * part_size_bytes);
+  }, 0);
+  const partProgress = new Map<number, number>();
 
   const uploadFn = async (partNumber: number): Promise<Part> => {
+    const chunkSize = Math.min(
+      part_size_bytes,
+      file.size - (partNumber - 1) * part_size_bytes,
+    );
     const part = await uploadSinglePartWithRetry(
       partNumber,
       file,
@@ -375,7 +428,19 @@ export async function resumeMultipartUpload(
       maxRetries,
       cancelledRef,
       onPartRetry,
+      onBytesProgress
+        ? (loaded) => {
+            partProgress.set(partNumber, loaded);
+            const inFlight = Array.from(partProgress.values()).reduce(
+              (a, b) => a + b,
+              0,
+            );
+            onBytesProgress(completedBytes + inFlight, file.size);
+          }
+        : undefined,
     );
+    completedBytes += chunkSize;
+    partProgress.delete(partNumber);
     completedCount++;
     onProgress?.(completedCount, total_parts);
     onPartComplete?.(part);

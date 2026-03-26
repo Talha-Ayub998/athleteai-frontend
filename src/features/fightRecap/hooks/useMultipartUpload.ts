@@ -88,8 +88,10 @@ export function useMultipartUpload() {
   const makeProgressCallbacks = (initialCompleted = 0) => ({
     onProgress: (completed: number, total: number) => {
       setPartsProgress({ completed, total });
-      setUploadProgress(Math.round((completed / total) * 100));
       setRetryingPart(null); // part succeeded — clear any retry indicator
+    },
+    onBytesProgress: (loaded: number, total: number) => {
+      setUploadProgress(Math.round((loaded / total) * 100));
     },
     onPartComplete: (part: Part) => {
       appendPartToStorage(part);
@@ -191,9 +193,15 @@ export function useMultipartUpload() {
 
     // Show progress starting from already-completed parts
     const initialCompleted = pendingResume.completed_parts.length;
+    const initialBytes = pendingResume.completed_parts.reduce((acc, p) => {
+      return acc + Math.min(
+        pendingResume.part_size_bytes,
+        pendingResume.file_size_bytes - (p.part_number - 1) * pendingResume.part_size_bytes,
+      );
+    }, 0);
     setIsUploading(true);
     setUploadProgress(
-      Math.round((initialCompleted / pendingResume.total_parts) * 100),
+      Math.round((initialBytes / pendingResume.file_size_bytes) * 100),
     );
     setPartsProgress({
       completed: initialCompleted,
