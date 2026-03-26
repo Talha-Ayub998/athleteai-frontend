@@ -17,7 +17,7 @@ import {
   UploadedVideo,
   useFightRecapVideos,
 } from "../context/FightRecapVideosContext";
-import { runMultipartUpload } from "../services/multipartUpload";
+import { useMultipartUpload } from "../hooks/useMultipartUpload";
 
 interface UploadVideoResponse extends UploadedVideo {
   status: string;
@@ -107,6 +107,18 @@ const VideosList = () => {
   const [creatingSessionVideoId, setCreatingSessionVideoId] = useState<
     number | null
   >(null);
+
+  const {
+    upload,
+    cancel,
+    isUploading: hookUploading,
+    uploadProgress: hookProgress,
+    partsProgress,
+    uploadError: hookError,
+    uploadResult: hookResult,
+    pendingResume,
+    clearResume,
+  } = useMultipartUpload();
 
   useEffect(() => {
     void fetchVideos();
@@ -287,19 +299,28 @@ const VideosList = () => {
             )}
           </div>
 
-          <input
-            type="file"
-            accept="video/*"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const result = await runMultipartUpload(file, {
-                onProgress: (done, total) =>
-                  console.log(`${done}/${total} parts`),
-              });
-              console.log("Upload complete:", result);
-            }}
-          />
+          <div style={{ padding: 20, background: "#333", margin: 20 }}>
+            <input
+              type="file"
+              accept="video/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void upload(file);
+              }}
+            />
+            <button onClick={cancel}>Cancel</button>
+            {pendingResume && (
+              <button onClick={() => void clearResume()}>Clear Resume</button>
+            )}
+            <p>
+              Progress: {hookProgress}% ({partsProgress.completed}/
+              {partsProgress.total} parts)
+            </p>
+            <p>Uploading: {String(hookUploading)}</p>
+            <p>Error: {hookError}</p>
+            <p>Result: {hookResult?.file_name}</p>
+            <p>Pending resume: {pendingResume?.file_name}</p>
+          </div>
 
           {isLoading && (
             <div className="bg-card rounded-lg border border-border p-6 text-muted-foreground sm:p-8">

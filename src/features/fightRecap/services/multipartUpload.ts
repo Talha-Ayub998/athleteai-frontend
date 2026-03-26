@@ -33,7 +33,9 @@ export interface CompleteUploadResponse {
 
 export interface UploadOptions {
   concurrency?: number;
+  onUploadStarted?: (upload_id: string, s3_key: string) => void;
   onProgress?: (completedParts: number, totalParts: number) => void;
+  onPartComplete?: (part: Part) => void;
   cancelledRef?: { current: boolean };
 }
 
@@ -161,7 +163,6 @@ async function uploadSinglePart(
   upload_id: string,
   s3_key: string,
   partSizeBytes: number,
-  onPartComplete: () => void,
 ): Promise<Part> {
   const start = (partNumber - 1) * partSizeBytes;
   const end = Math.min(start + partSizeBytes, file.size);
@@ -169,8 +170,6 @@ async function uploadSinglePart(
 
   const uploadUrl = await getPartUrl(upload_id, s3_key, partNumber);
   const etag = await uploadPartToS3(uploadUrl, chunk);
-
-  onPartComplete();
 
   return { part_number: partNumber, etag };
 }
@@ -191,7 +190,9 @@ export async function runMultipartUpload(
 ): Promise<RunMultipartUploadResult> {
   const {
     concurrency = 3,
+    onUploadStarted,
     onProgress,
+    onPartComplete,
     cancelledRef = { current: false },
   } = options;
 
@@ -199,20 +200,23 @@ export async function runMultipartUpload(
   const { upload_id, s3_key, total_parts, part_size_bytes } =
     await startUpload(file);
 
+  onUploadStarted?.(upload_id, s3_key);
+
   let completedCount = 0;
 
-  const uploadFn = (partNumber: number): Promise<Part> =>
-    uploadSinglePart(
+  const uploadFn = async (partNumber: number): Promise<Part> => {
+    const part = await uploadSinglePart(
       partNumber,
       file,
       upload_id,
       s3_key,
       part_size_bytes,
-      () => {
-        completedCount++;
-        onProgress?.(completedCount, total_parts);
-      },
     );
+    completedCount++;
+    onProgress?.(completedCount, total_parts);
+    onPartComplete?.(part);
+    return part;
+  };
 
   try {
     // Steps 2 & 3 — get signed URL + PUT to S3 for each chunk, 3 at a time
