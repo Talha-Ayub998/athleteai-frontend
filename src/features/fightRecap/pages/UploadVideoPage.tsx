@@ -381,7 +381,7 @@ export default function UploadVideoPage() {
                 {isUploading ? (
                   <Button
                     onClick={cancel}
-                    disabled={isCancelling}
+                    disabled={isCancelling || uploadProgress >= 100}
                     variant="outline"
                     className="w-full text-foreground sm:w-auto"
                   >
