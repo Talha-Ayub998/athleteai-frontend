@@ -40,6 +40,8 @@ export function UploadVideoModal({
 }: UploadVideoModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeFileError, setResumeFileError] = useState("");
 
   const {
     isUploading,
@@ -49,6 +51,7 @@ export function UploadVideoModal({
     uploadResult,
     pendingResume,
     upload,
+    resume,
     cancel,
     clearResume,
     resetUploadResult,
@@ -66,7 +69,24 @@ export function UploadVideoModal({
     resetUploadResult();
     setSelectedFile(null);
     setFileError("");
+    setResumeFile(null);
+    setResumeFileError("");
     onClose();
+  };
+
+  const handleResumeFileSelect = (file: File) => {
+    if (
+      file.name !== pendingResume?.file_name ||
+      file.size !== pendingResume?.file_size_bytes
+    ) {
+      setResumeFileError(
+        `Please select the original file "${pendingResume?.file_name}" to resume.`,
+      );
+      setResumeFile(null);
+      return;
+    }
+    setResumeFileError("");
+    setResumeFile(file);
   };
 
   const handleUpload = () => {
@@ -149,23 +169,60 @@ export function UploadVideoModal({
           // ── Upload form ──────────────────────────────────────────────────
           <>
             {pendingResume && !isUploading && (
-              <div className="mt-3 flex items-start justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-800 dark:text-amber-200">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <p className="text-sm">
-                    Incomplete upload:{" "}
-                    <span className="font-medium [overflow-wrap:anywhere]">
-                      {pendingResume.file_name}
-                    </span>
-                  </p>
+              <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-800 dark:text-amber-200">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div className="text-sm">
+                      <p>
+                        Incomplete upload:{" "}
+                        <span className="font-medium [overflow-wrap:anywhere]">
+                          {pendingResume.file_name}
+                        </span>
+                      </p>
+                      <p className="mt-0.5 text-xs opacity-80">
+                        {pendingResume.completed_parts.length} of{" "}
+                        {pendingResume.total_parts} parts uploaded
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void clearResume()}
+                    className="shrink-0 text-sm font-medium underline underline-offset-2"
+                  >
+                    Discard
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void clearResume()}
-                  className="shrink-0 text-sm font-medium underline underline-offset-2"
-                >
-                  Discard
-                </button>
+
+                <div className="mt-3">
+                  <p className="mb-2 text-xs opacity-80">
+                    Select the same file to resume where you left off:
+                  </p>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleResumeFileSelect(file);
+                    }}
+                    className="block w-full text-sm text-amber-800 dark:text-amber-200 file:mr-3 file:rounded-md file:border-0 file:bg-amber-500/20 file:px-3 file:py-1.5 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-amber-500/30"
+                  />
+                  {resumeFileError && (
+                    <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                      {resumeFileError}
+                    </p>
+                  )}
+                  {resumeFile && (
+                    <Button
+                      onClick={() => void resume(resumeFile)}
+                      className="mt-3 w-full gap-2 bg-amber-600 text-white hover:bg-amber-700 sm:w-auto"
+                    >
+                      <Upload className="h-4 w-4" />
+                      Resume Upload
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
 

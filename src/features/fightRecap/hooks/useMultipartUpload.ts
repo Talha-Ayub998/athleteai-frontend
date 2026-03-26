@@ -3,19 +3,13 @@ import {
   abortUpload,
   CompleteUploadResponse,
   Part,
+  PendingUploadStorage,
+  resumeMultipartUpload,
   runMultipartUpload,
   UploadCancelledError,
 } from "../services/multipartUpload";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface PendingUploadStorage {
-  upload_id: string;
-  s3_key: string;
-  file_name: string;
-  file_size_bytes: number;
-  completed_parts: Part[];
-}
+export type { PendingUploadStorage };
 
 const STORAGE_KEY = "athleteai_pending_upload";
 
@@ -30,6 +24,26 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
     e?.message ||
     fallback
   );
+};
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+
+const readStorage = (): PendingUploadStorage | null => {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored) as PendingUploadStorage;
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+};
+
+const appendPartToStorage = (part: Part) => {
+  const pending = readStorage();
+  if (!pending) return;
+  pending.completed_parts.push(part);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
 };
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -59,14 +73,52 @@ export function useMultipartUpload() {
 
   // Check for an incomplete upload left behind by a previous session
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return;
-    try {
-      setPendingResume(JSON.parse(stored) as PendingUploadStorage);
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    const pending = readStorage();
+    if (pending) setPendingResume(pending);
   }, []);
+
+  // ── Shared progress/part callbacks ──────────────────────────────────────────
+
+  const makeProgressCallbacks = (initialCompleted = 0) => ({
+    onProgress: (completed: number, total: number) => {
+      setPartsProgress({ completed, total });
+      setUploadProgress(Math.round((completed / total) * 100));
+    },
+    onPartComplete: (part: Part) => {
+      appendPartToStorage(part);
+    },
+    _initialCompleted: initialCompleted,
+  });
+
+  // ── Shared success/error/cancel handling ─────────────────────────────────────
+
+  const handleSuccess = (completeResponse: CompleteUploadResponse) => {
+    localStorage.removeItem(STORAGE_KEY);
+    setPendingResume(null);
+    setUploadResult(completeResponse);
+  };
+
+  const handleCancel = async () => {
+    if (abortInfoRef.current) {
+      await abortUpload(
+        abortInfoRef.current.upload_id,
+        abortInfoRef.current.s3_key,
+      ).catch(() => {});
+    }
+    localStorage.removeItem(STORAGE_KEY);
+    setPendingResume(null);
+    setUploadProgress(0);
+    setPartsProgress({ completed: 0, total: 0 });
+  };
+
+  const handleError = (error: unknown) => {
+    // runMultipartUpload/resumeMultipartUpload already called abortUpload
+    localStorage.removeItem(STORAGE_KEY);
+    setPendingResume(null);
+    setUploadError(getErrorMessage(error, "Upload failed. Please try again."));
+  };
+
+  // ── upload ───────────────────────────────────────────────────────────────────
 
   const upload = async (file: File) => {
     cancelledRef.current = false;
@@ -82,59 +134,29 @@ export function useMultipartUpload() {
       const result = await runMultipartUpload(file, {
         concurrency: 3,
         cancelledRef,
-        onUploadStarted: (upload_id, s3_key) => {
+        onUploadStarted: (upload_id, s3_key, total_parts, part_size_bytes) => {
           abortInfoRef.current = { upload_id, s3_key };
           const pending: PendingUploadStorage = {
             upload_id,
             s3_key,
             file_name: file.name,
             file_size_bytes: file.size,
+            total_parts,
+            part_size_bytes,
             completed_parts: [],
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
           setPendingResume(pending);
         },
-        onProgress: (completed, total) => {
-          setPartsProgress({ completed, total });
-          setUploadProgress(Math.round((completed / total) * 100));
-        },
-        onPartComplete: (part) => {
-          // Keep localStorage in sync so resume has accurate completed parts
-          const stored = localStorage.getItem(STORAGE_KEY);
-          if (!stored) return;
-          try {
-            const pending = JSON.parse(stored) as PendingUploadStorage;
-            pending.completed_parts.push(part);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
-          } catch {
-            // ignore storage errors — upload continues regardless
-          }
-        },
+        ...makeProgressCallbacks(),
       });
 
-      localStorage.removeItem(STORAGE_KEY);
-      setPendingResume(null);
-      setUploadResult(result.completeResponse);
+      handleSuccess(result.completeResponse);
     } catch (error) {
       if (error instanceof UploadCancelledError) {
-        // User cancelled — abort the S3 multipart upload to clean up orphaned chunks
-        if (abortInfoRef.current) {
-          await abortUpload(
-            abortInfoRef.current.upload_id,
-            abortInfoRef.current.s3_key,
-          ).catch(() => {});
-        }
-        localStorage.removeItem(STORAGE_KEY);
-        setPendingResume(null);
-        setUploadProgress(0);
-        setPartsProgress({ completed: 0, total: 0 });
+        await handleCancel();
       } else {
-        // Genuine failure — runMultipartUpload already called abortUpload
-        localStorage.removeItem(STORAGE_KEY);
-        setPendingResume(null);
-        setUploadError(
-          getErrorMessage(error, "Upload failed. Please try again."),
-        );
+        handleError(error);
       }
     } finally {
       setIsUploading(false);
@@ -142,28 +164,68 @@ export function useMultipartUpload() {
     }
   };
 
-  // Signals the worker pool to stop claiming new parts. In-flight chunks
-  // finish naturally, then runMultipartUpload throws UploadCancelledError,
-  // which the catch block above handles by calling abortUpload.
+  // ── resume ───────────────────────────────────────────────────────────────────
+
+  const resume = async (file: File) => {
+    if (!pendingResume) return;
+
+    cancelledRef.current = false;
+    abortInfoRef.current = {
+      upload_id: pendingResume.upload_id,
+      s3_key: pendingResume.s3_key,
+    };
+
+    // Show progress starting from already-completed parts
+    const initialCompleted = pendingResume.completed_parts.length;
+    setIsUploading(true);
+    setUploadProgress(
+      Math.round((initialCompleted / pendingResume.total_parts) * 100),
+    );
+    setPartsProgress({
+      completed: initialCompleted,
+      total: pendingResume.total_parts,
+    });
+    setUploadError("");
+    setUploadResult(null);
+
+    try {
+      const result = await resumeMultipartUpload(file, pendingResume, {
+        concurrency: 3,
+        cancelledRef,
+        ...makeProgressCallbacks(initialCompleted),
+      });
+
+      handleSuccess(result.completeResponse);
+    } catch (error) {
+      if (error instanceof UploadCancelledError) {
+        await handleCancel();
+      } else {
+        handleError(error);
+      }
+    } finally {
+      setIsUploading(false);
+      abortInfoRef.current = null;
+    }
+  };
+
+  // ── cancel ───────────────────────────────────────────────────────────────────
+
   const cancel = () => {
     cancelledRef.current = true;
   };
 
-  // Discards a pending resume — aborts the incomplete S3 upload and clears
-  // localStorage so the user can start fresh.
+  // ── clearResume ───────────────────────────────────────────────────────────────
+
   const clearResume = async () => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const pending = JSON.parse(stored) as PendingUploadStorage;
-        await abortUpload(pending.upload_id, pending.s3_key).catch(() => {});
-      } catch {
-        // ignore parse errors
-      }
+    const pending = readStorage();
+    if (pending) {
+      await abortUpload(pending.upload_id, pending.s3_key).catch(() => {});
     }
     localStorage.removeItem(STORAGE_KEY);
     setPendingResume(null);
   };
+
+  // ── resetUploadResult ─────────────────────────────────────────────────────────
 
   const resetUploadResult = () => {
     setUploadResult(null);
@@ -180,6 +242,7 @@ export function useMultipartUpload() {
     uploadResult,
     pendingResume,
     upload,
+    resume,
     cancel,
     clearResume,
     resetUploadResult,

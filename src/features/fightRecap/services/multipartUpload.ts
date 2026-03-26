@@ -31,9 +31,25 @@ export interface CompleteUploadResponse {
   created_at: string;
 }
 
+// Stored in localStorage so resume can skip already-completed parts
+export interface PendingUploadStorage {
+  upload_id: string;
+  s3_key: string;
+  file_name: string;
+  file_size_bytes: number;
+  total_parts: number;
+  part_size_bytes: number;
+  completed_parts: Part[];
+}
+
 export interface UploadOptions {
   concurrency?: number;
-  onUploadStarted?: (upload_id: string, s3_key: string) => void;
+  onUploadStarted?: (
+    upload_id: string,
+    s3_key: string,
+    total_parts: number,
+    part_size_bytes: number,
+  ) => void;
   onProgress?: (completedParts: number, totalParts: number) => void;
   onPartComplete?: (part: Part) => void;
   cancelledRef?: { current: boolean };
@@ -128,9 +144,28 @@ export async function abortUpload(
   });
 }
 
-// ─── Worker pool ──────────────────────────────────────────────────────────────
-// Keeps `concurrency` upload slots busy at all times.
-// Workers share a counter — JS single-thread guarantees the ++ is atomic.
+// ─── Single part orchestration ────────────────────────────────────────────────
+
+async function uploadSinglePart(
+  partNumber: number,
+  file: File,
+  upload_id: string,
+  s3_key: string,
+  partSizeBytes: number,
+): Promise<Part> {
+  const start = (partNumber - 1) * partSizeBytes;
+  const end = Math.min(start + partSizeBytes, file.size);
+  const chunk = file.slice(start, end);
+
+  const uploadUrl = await getPartUrl(upload_id, s3_key, partNumber);
+  const etag = await uploadPartToS3(uploadUrl, chunk);
+
+  return { part_number: partNumber, etag };
+}
+
+// ─── Worker pools ─────────────────────────────────────────────────────────────
+// Keeps `concurrency` slots busy at all times.
+// Workers share a counter/index — JS single-thread guarantees atomicity.
 
 async function uploadWithConcurrency(
   totalParts: number,
@@ -150,33 +185,36 @@ async function uploadWithConcurrency(
   }
 
   await Promise.all(Array.from({ length: concurrency }, worker));
+  return results;
+}
+
+// Used by resume — only uploads specific part numbers, not a full sequential range
+async function uploadRemainingPartsWithConcurrency(
+  remainingPartNumbers: number[],
+  uploadFn: (partNumber: number) => Promise<Part>,
+  concurrency: number,
+  cancelledRef: { current: boolean },
+): Promise<Part[]> {
+  const results: Part[] = [];
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (nextIndex < remainingPartNumbers.length) {
+      if (cancelledRef.current) return;
+      const idx = nextIndex++;
+      results.push(await uploadFn(remainingPartNumbers[idx]));
+    }
+  }
+
+  const workerCount = Math.min(concurrency, remainingPartNumbers.length);
+  if (workerCount > 0) {
+    await Promise.all(Array.from({ length: workerCount }, worker));
+  }
 
   return results;
 }
 
-// ─── Single part orchestration ────────────────────────────────────────────────
-// Slices the file, fetches the signed URL, uploads to S3, fires the callback.
-
-async function uploadSinglePart(
-  partNumber: number,
-  file: File,
-  upload_id: string,
-  s3_key: string,
-  partSizeBytes: number,
-): Promise<Part> {
-  const start = (partNumber - 1) * partSizeBytes;
-  const end = Math.min(start + partSizeBytes, file.size);
-  const chunk = file.slice(start, end);
-
-  const uploadUrl = await getPartUrl(upload_id, s3_key, partNumber);
-  const etag = await uploadPartToS3(uploadUrl, chunk);
-
-  return { part_number: partNumber, etag };
-}
-
 // ─── Main orchestrator ────────────────────────────────────────────────────────
-// Returns upload_id and s3_key alongside the result so the hook can store
-// them for the cancel/abort flow and resume support.
 
 export interface RunMultipartUploadResult {
   completeResponse: CompleteUploadResponse;
@@ -196,11 +234,10 @@ export async function runMultipartUpload(
     cancelledRef = { current: false },
   } = options;
 
-  // Step 1 — start the multipart upload, get upload_id + s3_key
   const { upload_id, s3_key, total_parts, part_size_bytes } =
     await startUpload(file);
 
-  onUploadStarted?.(upload_id, s3_key);
+  onUploadStarted?.(upload_id, s3_key, total_parts, part_size_bytes);
 
   let completedCount = 0;
 
@@ -219,7 +256,6 @@ export async function runMultipartUpload(
   };
 
   try {
-    // Steps 2 & 3 — get signed URL + PUT to S3 for each chunk, 3 at a time
     const parts = await uploadWithConcurrency(
       total_parts,
       uploadFn,
@@ -228,12 +264,9 @@ export async function runMultipartUpload(
     );
 
     if (cancelledRef.current) {
-      // Workers exited cleanly due to cancel — hook is responsible for calling
-      // abortUpload since it holds upload_id/s3_key in state for resume support.
       throw new UploadCancelledError();
     }
 
-    // Step 4 — tell the backend all parts are done
     const completeResponse = await completeUpload(
       upload_id,
       s3_key,
@@ -244,12 +277,83 @@ export async function runMultipartUpload(
     return { completeResponse, upload_id, s3_key };
   } catch (error) {
     if (error instanceof UploadCancelledError) {
-      throw error; // let the hook handle abort
+      throw error;
     }
-    // Genuine failure — abort to avoid orphaned chunks sitting on S3
-    await abortUpload(upload_id, s3_key).catch(() => {
-      // best-effort, don't mask the original error
-    });
+    await abortUpload(upload_id, s3_key).catch(() => {});
+    throw error;
+  }
+}
+
+// ─── Resume orchestrator ──────────────────────────────────────────────────────
+// Skips already-completed parts, uploads only the remaining ones,
+// then merges all parts and calls /complete/.
+
+export async function resumeMultipartUpload(
+  file: File,
+  pending: PendingUploadStorage,
+  options: UploadOptions = {},
+): Promise<RunMultipartUploadResult> {
+  const {
+    concurrency = 3,
+    onProgress,
+    onPartComplete,
+    cancelledRef = { current: false },
+  } = options;
+
+  const { upload_id, s3_key, total_parts, part_size_bytes, completed_parts } =
+    pending;
+
+  const completedSet = new Set(completed_parts.map((p) => p.part_number));
+  const remainingPartNumbers = Array.from(
+    { length: total_parts },
+    (_, i) => i + 1,
+  ).filter((n) => !completedSet.has(n));
+
+  // Start progress from already-completed parts
+  let completedCount = completed_parts.length;
+
+  const uploadFn = async (partNumber: number): Promise<Part> => {
+    const part = await uploadSinglePart(
+      partNumber,
+      file,
+      upload_id,
+      s3_key,
+      part_size_bytes,
+    );
+    completedCount++;
+    onProgress?.(completedCount, total_parts);
+    onPartComplete?.(part);
+    return part;
+  };
+
+  try {
+    const newParts = await uploadRemainingPartsWithConcurrency(
+      remainingPartNumbers,
+      uploadFn,
+      concurrency,
+      cancelledRef,
+    );
+
+    if (cancelledRef.current) {
+      throw new UploadCancelledError();
+    }
+
+    // Merge already-completed + newly uploaded, sort by part_number for S3
+    const allParts = [...completed_parts, ...newParts].sort(
+      (a, b) => a.part_number - b.part_number,
+    );
+
+    const completeResponse = await completeUpload(
+      upload_id,
+      s3_key,
+      file,
+      allParts,
+    );
+
+    return { completeResponse, upload_id, s3_key };
+  } catch (error) {
+    if (error instanceof UploadCancelledError) throw error;
+    await abortUpload(upload_id, s3_key).catch(() => {});
     throw error;
   }
 }
