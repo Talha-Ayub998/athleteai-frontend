@@ -10,14 +10,25 @@ export interface StartUploadResponse {
 }
 
 export interface Part {
-  PartNumber: number;
-  ETag: string;
+  part_number: number;
+  etag: string;
 }
 
 export interface CompleteUploadResponse {
   status: string;
   message: string;
+  id: number;
   url: string;
+  s3_key: string;
+  file_name: string;
+  content_type: string;
+  file_size_bytes: number;
+  file_hash: string | null;
+  session_id: number | null;
+  session_status: string | null;
+  session_updated_at: string | null;
+  playback_url: string;
+  created_at: string;
 }
 
 export interface UploadOptions {
@@ -161,7 +172,7 @@ async function uploadSinglePart(
 
   onPartComplete();
 
-  return { PartNumber: partNumber, ETag: etag };
+  return { part_number: partNumber, etag };
 }
 
 // ─── Main orchestrator ────────────────────────────────────────────────────────
