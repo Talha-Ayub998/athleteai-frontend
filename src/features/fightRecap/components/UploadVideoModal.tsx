@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import {
   AlertCircle,
   CheckCircle2,
   Eye,
+  FileVideo,
   Loader2,
   PencilLine,
   Upload,
+  X,
 } from "lucide-react";
 import { Modal } from "../../../components/ui/modal";
 import { Button } from "./ui/Button";
@@ -56,6 +59,27 @@ export function UploadVideoModal({
     clearResume,
     resetUploadResult,
   } = useMultipartUpload();
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: { "video/*": [] },
+    maxFiles: 1,
+    disabled: isUploading,
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles[0]) {
+        setSelectedFile(acceptedFiles[0]);
+        setFileError("");
+      }
+    },
+    onDropRejected: (rejections) => {
+      const code = rejections[0]?.errors[0]?.code;
+      setFileError(
+        code === "file-invalid-type"
+          ? "Only video files are accepted."
+          : (rejections[0]?.errors[0]?.message ?? "File was rejected."),
+      );
+      setSelectedFile(null);
+    },
+  });
 
   // Notify parent when upload completes so the video appears in the list
   useEffect(() => {
@@ -168,6 +192,7 @@ export function UploadVideoModal({
         ) : (
           // ── Upload form ──────────────────────────────────────────────────
           <>
+            {/* Pending resume banner */}
             {pendingResume && !isUploading && (
               <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-800 dark:text-amber-200">
                 <div className="flex items-start justify-between gap-3">
@@ -226,49 +251,98 @@ export function UploadVideoModal({
               </div>
             )}
 
-            <p className="mb-4 mt-3 text-sm text-gray-600 dark:text-gray-300">
-              Select a video file to upload.
-            </p>
-
-            <input
-              type="file"
-              accept="video/*"
-              onChange={(e) => {
-                setSelectedFile(e.target.files?.[0] ?? null);
-                setFileError("");
-              }}
-              className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mb-3 file:mr-0 file:w-full file:rounded-md file:border-0 file:bg-red-500 file:px-4 file:py-2 file:text-white file:cursor-pointer hover:file:bg-red-600 sm:file:mb-0 sm:file:mr-4 sm:file:w-auto"
-              disabled={isUploading}
-            />
-
-            {selectedFile && (
-              <p className="mt-3 max-w-full text-sm text-gray-700 dark:text-gray-200 [overflow-wrap:anywhere]">
-                {selectedFile.name} ({formatFileSize(selectedFile.size)})
-              </p>
+            {/* Dropzone */}
+            {!isUploading && (
+              <div
+                {...getRootProps()}
+                className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors
+                  ${
+                    isDragActive
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/40 hover:bg-muted/20"
+                  }`}
+              >
+                <input {...getInputProps()} />
+                <Upload
+                  className={`mx-auto mb-3 h-10 w-10 ${isDragActive ? "text-primary" : "text-muted-foreground"}`}
+                />
+                {isDragActive ? (
+                  <p className="text-sm font-medium text-primary">
+                    Drop your video here
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-foreground">
+                      Drag & drop your video here
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      or{" "}
+                      <span className="text-primary underline underline-offset-2">
+                        click to browse
+                      </span>
+                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      MP4, MOV, AVI and other video formats supported
+                    </p>
+                  </>
+                )}
+              </div>
             )}
 
-            {(fileError || uploadError) && (
-              <p className="mt-3 text-sm text-red-600 dark:text-red-400">
-                {fileError || uploadError}
-              </p>
+            {/* Selected file info */}
+            {selectedFile && !isUploading && (
+              <div className="mt-3 flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+                <FileVideo className="h-5 w-5 shrink-0 text-primary" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatFileSize(selectedFile.size)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFile(null)}
+                  className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label="Remove selected file"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             )}
 
+            {/* Upload progress */}
             {isUploading && (
               <div className="mt-4">
-                <div className="mb-2 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
-                  <span>
-                    Uploading part {partsProgress.completed} of{" "}
-                    {partsProgress.total}...
+                <div className="mb-2 flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+                  <FileVideo className="h-5 w-5 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">
+                      {selectedFile?.name ?? pendingResume?.file_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Part {partsProgress.completed} of {partsProgress.total}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-sm font-medium text-foreground">
+                    {uploadProgress}%
                   </span>
-                  <span>{uploadProgress}%</span>
                 </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full bg-red-500 transition-all duration-200"
+                    className="h-full bg-primary transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
               </div>
+            )}
+
+            {(fileError || uploadError) && (
+              <p className="mt-3 flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {fileError || uploadError}
+              </p>
             )}
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
