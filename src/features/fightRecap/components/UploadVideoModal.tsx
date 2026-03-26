@@ -320,7 +320,9 @@ export function UploadVideoModal({
                     <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">
                       {selectedFile?.name ?? pendingResume?.file_name}
                     </p>
-                    <p className="text-xs text-muted-foreground">Uploading...</p>
+                    <p className="text-xs text-muted-foreground">
+                      Uploading...
+                    </p>
                   </div>
                   <span className="shrink-0 text-sm font-medium text-foreground">
                     {uploadProgress}%

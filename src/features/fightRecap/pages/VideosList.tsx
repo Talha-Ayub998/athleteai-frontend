@@ -17,7 +17,6 @@ import {
   UploadedVideo,
   useFightRecapVideos,
 } from "../context/FightRecapVideosContext";
-import { UploadVideoModal } from "../components/UploadVideoModal";
 
 interface ErrorWithResponseData {
   response?: {
@@ -74,12 +73,10 @@ const VideosList = () => {
     isLoading,
     fetchError,
     fetchVideos,
-    upsertVideo,
     createSessionForVideo,
     removeVideo,
   } = useFightRecapVideos();
   const navigate = useNavigate();
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<UploadedVideo | null>(
     null,
@@ -178,7 +175,7 @@ const VideosList = () => {
 
             {hasVideos && (
               <Button
-                onClick={() => setIsUploadModalOpen(true)}
+                onClick={() => navigate("upload")}
                 className="w-full bg-primary text-primary-foreground gap-2 hover:bg-primary/90 sm:w-auto"
               >
                 <Upload className="w-4 h-4" />
@@ -225,7 +222,7 @@ const VideosList = () => {
                 Upload your first video to start building your video library.
               </p>
               <Button
-                onClick={() => setIsUploadModalOpen(true)}
+                onClick={() => navigate("upload")}
                 className="w-full bg-primary text-primary-foreground gap-2 hover:bg-primary/90 sm:w-auto"
               >
                 <Upload className="w-4 h-4" />
@@ -355,14 +352,6 @@ const VideosList = () => {
           )}
         </div>
       </main>
-
-      <UploadVideoModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-        onUploadSuccess={upsertVideo}
-        onAnnotate={(video) => void handleAnnotateClick(video)}
-        creatingSessionVideoId={creatingSessionVideoId}
-      />
 
       <Modal
         className="mx-4 w-[calc(100%-2rem)] max-w-xl"
