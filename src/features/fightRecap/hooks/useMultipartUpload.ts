@@ -50,6 +50,7 @@ const appendPartToStorage = (part: Part) => {
 
 export function useMultipartUpload() {
   const [isUploading, setIsUploading] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [partsProgress, setPartsProgress] = useState<{
     completed: number;
@@ -120,6 +121,7 @@ export function useMultipartUpload() {
     setRetryingPart(null);
     setUploadProgress(0);
     setPartsProgress({ completed: 0, total: 0 });
+    setIsCancelling(false);
   };
 
   const handleError = (error: unknown) => {
@@ -223,7 +225,13 @@ export function useMultipartUpload() {
   // ── cancel ───────────────────────────────────────────────────────────────────
 
   const cancel = () => {
+    setIsCancelling(true);
     cancelledRef.current = true;
+    if (abortInfoRef.current) {
+      const { upload_id, s3_key } = abortInfoRef.current;
+      abortInfoRef.current = null; // prevent double-abort in handleCancel
+      void abortUpload(upload_id, s3_key).catch(() => {});
+    }
   };
 
   // ── clearResume ───────────────────────────────────────────────────────────────
@@ -248,6 +256,7 @@ export function useMultipartUpload() {
 
   return {
     isUploading,
+    isCancelling,
     uploadProgress,
     partsProgress,
     retryingPart,

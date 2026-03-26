@@ -39,6 +39,7 @@ export default function UploadVideoPage() {
 
   const {
     isUploading,
+    isCancelling,
     uploadProgress,
     uploadError,
     uploadResult,
@@ -365,10 +366,18 @@ export default function UploadVideoPage() {
                 {isUploading ? (
                   <Button
                     onClick={cancel}
+                    disabled={isCancelling}
                     variant="outline"
                     className="w-full text-foreground sm:w-auto"
                   >
-                    Cancel Upload
+                    {isCancelling ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Cancelling...
+                      </>
+                    ) : (
+                      "Cancel Upload"
+                    )}
                   </Button>
                 ) : (
                   <Button
@@ -384,7 +393,7 @@ export default function UploadVideoPage() {
                   disabled={isUploading || !selectedFile}
                   className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
                 >
-                  {isUploading ? (
+                  {isUploading && !isCancelling ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Uploading...

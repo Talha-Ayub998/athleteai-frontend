@@ -154,12 +154,18 @@ async function uploadSinglePart(
   upload_id: string,
   s3_key: string,
   partSizeBytes: number,
+  cancelledRef: { current: boolean },
 ): Promise<Part> {
+  if (cancelledRef.current) throw new UploadCancelledError();
+
   const start = (partNumber - 1) * partSizeBytes;
   const end = Math.min(start + partSizeBytes, file.size);
   const chunk = file.slice(start, end);
 
   const uploadUrl = await getPartUrl(upload_id, s3_key, partNumber);
+
+  if (cancelledRef.current) throw new UploadCancelledError();
+
   const etag = await uploadPartToS3(uploadUrl, chunk);
 
   return { part_number: partNumber, etag };
@@ -188,6 +194,7 @@ async function uploadSinglePartWithRetry(
         upload_id,
         s3_key,
         partSizeBytes,
+        cancelledRef,
       );
     } catch (error) {
       lastError = error;
