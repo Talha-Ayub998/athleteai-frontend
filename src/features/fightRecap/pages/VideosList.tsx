@@ -17,18 +17,7 @@ import {
   UploadedVideo,
   useFightRecapVideos,
 } from "../context/FightRecapVideosContext";
-import { useMultipartUpload } from "../hooks/useMultipartUpload";
-
-interface UploadVideoResponse extends UploadedVideo {
-  status: string;
-  message: string;
-}
-
-interface UploadResultState {
-  status: string;
-  message: string;
-  video: UploadedVideo;
-}
+import { UploadVideoModal } from "../components/UploadVideoModal";
 
 interface ErrorWithResponseData {
   response?: {
@@ -91,13 +80,6 @@ const VideosList = () => {
   } = useFightRecapVideos();
   const navigate = useNavigate();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadError, setUploadError] = useState("");
-  const [uploadResult, setUploadResult] = useState<UploadResultState | null>(
-    null,
-  );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<UploadedVideo | null>(
     null,
@@ -108,39 +90,9 @@ const VideosList = () => {
     number | null
   >(null);
 
-  const {
-    upload,
-    cancel,
-    isUploading: hookUploading,
-    uploadProgress: hookProgress,
-    partsProgress,
-    uploadError: hookError,
-    uploadResult: hookResult,
-    pendingResume,
-    clearResume,
-  } = useMultipartUpload();
-
   useEffect(() => {
     void fetchVideos();
   }, [fetchVideos]);
-
-  const openUploadModal = () => {
-    setUploadError("");
-    setUploadResult(null);
-    setSelectedFile(null);
-    setUploadProgress(0);
-    setIsUploadModalOpen(true);
-  };
-
-  const closeUploadModal = () => {
-    if (isUploading || creatingSessionVideoId === uploadResult?.video.id)
-      return;
-    setUploadError("");
-    setUploadResult(null);
-    setSelectedFile(null);
-    setUploadProgress(0);
-    setIsUploadModalOpen(false);
-  };
 
   const openDeleteModal = (video: UploadedVideo) => {
     if (isDeleting) return;
@@ -154,51 +106,6 @@ const VideosList = () => {
     setDeleteError("");
     setVideoToDelete(null);
     setIsDeleteModalOpen(false);
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      setUploadError("Please select a video file before uploading.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("video", selectedFile);
-
-    setIsUploading(true);
-    setUploadProgress(0);
-    setUploadError("");
-
-    try {
-      const response = await axiosInstance.post<UploadVideoResponse>(
-        "/reports/video-upload/",
-        formData,
-        {
-          onUploadProgress: (progressEvent) => {
-            const total = progressEvent.total || selectedFile.size || 1;
-            const progress = Math.round((progressEvent.loaded * 100) / total);
-            setUploadProgress(Math.min(Math.max(progress, 0), 100));
-          },
-        },
-      );
-
-      const uploadedVideo = response.data;
-      upsertVideo(uploadedVideo);
-
-      setUploadProgress(100);
-      setUploadResult({
-        status: uploadedVideo.status,
-        message: uploadedVideo.message,
-        video: uploadedVideo,
-      });
-      setSelectedFile(null);
-    } catch (error) {
-      setUploadError(
-        getErrorMessage(error, "Failed to upload video. Please try again."),
-      );
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   const handleDeleteVideo = async () => {
@@ -253,25 +160,6 @@ const VideosList = () => {
   };
 
   const hasVideos = videos.length > 0;
-  const isUploadResultDuplicate = uploadResult?.status === "duplicate";
-  const canViewAnnotationFromUploadResult =
-    uploadResult?.status === "success" || isUploadResultDuplicate;
-  const uploadResultSessionStatus =
-    uploadResult?.video.session_status?.trim().toLowerCase() ?? null;
-  const isReportFinalized = uploadResultSessionStatus === "completed";
-  const uploadResultHasSession =
-    uploadResult?.video.session_id !== null &&
-    uploadResult?.video.session_id !== undefined;
-  const isCreatingUploadResultSession =
-    uploadResult !== null && creatingSessionVideoId === uploadResult.video.id;
-  const uploadResultActionLabel =
-    uploadResult?.status === "success"
-      ? "Start Annotation"
-      : isReportFinalized
-        ? "View Annotation"
-        : uploadResultHasSession
-          ? "Continue Annotation"
-          : "Start Annotation";
 
   return (
     <div className="fight-recap-screen min-h-screen bg-background">
@@ -290,36 +178,13 @@ const VideosList = () => {
 
             {hasVideos && (
               <Button
-                onClick={openUploadModal}
+                onClick={() => setIsUploadModalOpen(true)}
                 className="w-full bg-primary text-primary-foreground gap-2 hover:bg-primary/90 sm:w-auto"
               >
                 <Upload className="w-4 h-4" />
                 Upload Video
               </Button>
             )}
-          </div>
-
-          <div style={{ padding: 20, background: "#333", margin: 20 }}>
-            <input
-              type="file"
-              accept="video/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void upload(file);
-              }}
-            />
-            <button onClick={cancel}>Cancel</button>
-            {pendingResume && (
-              <button onClick={() => void clearResume()}>Clear Resume</button>
-            )}
-            <p>
-              Progress: {hookProgress}% ({partsProgress.completed}/
-              {partsProgress.total} parts)
-            </p>
-            <p>Uploading: {String(hookUploading)}</p>
-            <p>Error: {hookError}</p>
-            <p>Result: {hookResult?.file_name}</p>
-            <p>Pending resume: {pendingResume?.file_name}</p>
           </div>
 
           {isLoading && (
@@ -360,7 +225,7 @@ const VideosList = () => {
                 Upload your first video to start building your video library.
               </p>
               <Button
-                onClick={openUploadModal}
+                onClick={() => setIsUploadModalOpen(true)}
                 className="w-full bg-primary text-primary-foreground gap-2 hover:bg-primary/90 sm:w-auto"
               >
                 <Upload className="w-4 h-4" />
@@ -383,9 +248,9 @@ const VideosList = () => {
                 return (
                   <div
                     key={video.id}
-                    className={`relative rounded-lg border bg-background 
-  ${isNewVideo ? "sm:pt-8" : ""} 
-  p-4 space-y-4 animate-lift-in sm:p-5 
+                    className={`relative rounded-lg border bg-background
+  ${isNewVideo ? "sm:pt-8" : ""}
+  p-4 space-y-4 animate-lift-in sm:p-5
   ${
     isCompletedSession
       ? "bg-green-500/5 shadow-[0_0_0_1px_rgba(34,197,94,0.08)]"
@@ -419,14 +284,6 @@ const VideosList = () => {
                           Uploaded: {formatDate(video.created_at)}
                         </p>
                       </div>
-                      {/* <a
-                        href={video.playback_url || video.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary text-sm font-medium hover:underline whitespace-nowrap"
-                      >
-                        Play Video
-                      </a> */}
                       <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto md:flex-wrap md:justify-end">
                         <button
                           type="button"
@@ -499,156 +356,13 @@ const VideosList = () => {
         </div>
       </main>
 
-      <Modal
-        className="mx-4 w-[calc(100%-2rem)] max-w-xl"
+      <UploadVideoModal
         isOpen={isUploadModalOpen}
-        onClose={closeUploadModal}
-      >
-        <div className="p-4 sm:p-6">
-          <h3 className="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
-            {uploadResult ? "Upload Complete" : "Upload Video"}
-          </h3>
-
-          {uploadResult ? (
-            <>
-              <div
-                className={`mt-4 rounded-lg border px-4 py-3 ${
-                  isUploadResultDuplicate
-                    ? "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200"
-                    : "border-green-500/30 bg-green-500/10 text-green-800 dark:text-green-200"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  {isUploadResultDuplicate ? (
-                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-                  ) : (
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">
-                      {uploadResult.message}
-                    </p>
-                    <p className="mt-1 text-sm [overflow-wrap:anywhere]">
-                      {uploadResult.video.file_name || "Untitled video"}
-                    </p>
-                    {isUploadResultDuplicate && isReportFinalized && (
-                      <p className="mt-1 text-sm">
-                        Annotation is complete and the report has been
-                        finalized.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <Button
-                  onClick={closeUploadModal}
-                  variant="outline"
-                  disabled={isCreatingUploadResultSession}
-                  className="w-full text-gray-900 dark:text-white sm:w-auto"
-                >
-                  Close
-                </Button>
-                {canViewAnnotationFromUploadResult && (
-                  <Button
-                    onClick={() => void handleAnnotateClick(uploadResult.video)}
-                    disabled={isCreatingUploadResultSession}
-                    className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
-                  >
-                    {isCreatingUploadResultSession ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Opening...
-                      </>
-                    ) : (
-                      <>
-                        {uploadResultActionLabel === "View Annotation" ? (
-                          <Eye className="h-4 w-4" />
-                        ) : (
-                          <PencilLine className="h-4 w-4" />
-                        )}
-                        {uploadResultActionLabel}
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
-                Select a video file to upload.
-              </p>
-
-              <input
-                type="file"
-                accept="video/*"
-                onChange={(event) =>
-                  setSelectedFile(event.target.files?.[0] ?? null)
-                }
-                className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mb-3 file:mr-0 file:w-full file:rounded-md file:border-0 file:bg-red-500 file:px-4 file:py-2 file:text-white file:cursor-pointer hover:file:bg-red-600 sm:file:mb-0 sm:file:mr-4 sm:file:w-auto"
-                disabled={isUploading}
-              />
-
-              {selectedFile && (
-                <p className="mt-3 max-w-full text-sm text-gray-700 dark:text-gray-200 [overflow-wrap:anywhere]">
-                  {selectedFile.name} ({formatFileSize(selectedFile.size)})
-                </p>
-              )}
-
-              {uploadError && (
-                <p className="mt-3 text-sm text-red-600 dark:text-red-400">
-                  {uploadError}
-                </p>
-              )}
-
-              {isUploading && (
-                <div className="mt-4">
-                  <div className="mb-2 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
-                    <span>Uploading...</span>
-                    <span>{uploadProgress}%</span>
-                  </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                    <div
-                      className="h-full bg-red-500 transition-all duration-200"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <Button
-                  onClick={closeUploadModal}
-                  variant="outline"
-                  disabled={isUploading}
-                  className="w-full text-gray-900 dark:text-white sm:w-auto"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleUpload}
-                  disabled={isUploading || !selectedFile}
-                  className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      Upload
-                    </>
-                  )}
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-      </Modal>
+        onClose={() => setIsUploadModalOpen(false)}
+        onUploadSuccess={upsertVideo}
+        onAnnotate={(video) => void handleAnnotateClick(video)}
+        creatingSessionVideoId={creatingSessionVideoId}
+      />
 
       <Modal
         className="mx-4 w-[calc(100%-2rem)] max-w-xl"

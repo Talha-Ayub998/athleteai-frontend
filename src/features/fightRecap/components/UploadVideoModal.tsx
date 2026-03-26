@@ -1,0 +1,258 @@
+import { useEffect, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Eye,
+  Loader2,
+  PencilLine,
+  Upload,
+} from "lucide-react";
+import { Modal } from "../../../components/ui/modal";
+import { Button } from "./ui/Button";
+import { UploadedVideo } from "../context/FightRecapVideosContext";
+import { useMultipartUpload } from "../hooks/useMultipartUpload";
+
+const formatFileSize = (bytes: number) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const unitIndex = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1,
+  );
+  const value = bytes / 1024 ** unitIndex;
+  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+};
+
+interface UploadVideoModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onUploadSuccess: (video: UploadedVideo) => void;
+  onAnnotate: (video: UploadedVideo) => void;
+  creatingSessionVideoId: number | null;
+}
+
+export function UploadVideoModal({
+  isOpen,
+  onClose,
+  onUploadSuccess,
+  onAnnotate,
+  creatingSessionVideoId,
+}: UploadVideoModalProps) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState("");
+
+  const {
+    isUploading,
+    uploadProgress,
+    partsProgress,
+    uploadError,
+    uploadResult,
+    pendingResume,
+    upload,
+    cancel,
+    clearResume,
+    resetUploadResult,
+  } = useMultipartUpload();
+
+  // Notify parent when upload completes so the video appears in the list
+  useEffect(() => {
+    if (uploadResult) {
+      onUploadSuccess(uploadResult as UploadedVideo);
+    }
+  }, [uploadResult, onUploadSuccess]);
+
+  const handleClose = () => {
+    if (isUploading) return;
+    resetUploadResult();
+    setSelectedFile(null);
+    setFileError("");
+    onClose();
+  };
+
+  const handleUpload = () => {
+    if (!selectedFile) {
+      setFileError("Please select a video file before uploading.");
+      return;
+    }
+    setFileError("");
+    void upload(selectedFile);
+  };
+
+  const isAnnotating =
+    uploadResult !== null && creatingSessionVideoId === uploadResult.id;
+  const isCompletedSession =
+    uploadResult?.session_status?.trim().toLowerCase() === "completed";
+  const hasSession =
+    uploadResult?.session_id !== null && uploadResult?.session_id !== undefined;
+  const annotationLabel = isCompletedSession
+    ? "View Annotation"
+    : hasSession
+      ? "Continue Annotation"
+      : "Start Annotation";
+  const AnnotationIcon = isCompletedSession ? Eye : PencilLine;
+
+  return (
+    <Modal
+      className="mx-4 w-[calc(100%-2rem)] max-w-xl"
+      isOpen={isOpen}
+      onClose={handleClose}
+    >
+      <div className="p-4 sm:p-6">
+        <h3 className="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+          {uploadResult ? "Upload Complete" : "Upload Video"}
+        </h3>
+
+        {uploadResult ? (
+          // ── Success state ────────────────────────────────────────────────
+          <>
+            <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-green-800 dark:text-green-200">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{uploadResult.message}</p>
+                  <p className="mt-1 text-sm [overflow-wrap:anywhere]">
+                    {uploadResult.file_name || "Untitled video"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button
+                onClick={handleClose}
+                variant="outline"
+                disabled={isAnnotating}
+                className="w-full text-gray-900 dark:text-white sm:w-auto"
+              >
+                Close
+              </Button>
+              <Button
+                onClick={() => onAnnotate(uploadResult as UploadedVideo)}
+                disabled={isAnnotating}
+                className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+              >
+                {isAnnotating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Opening...
+                  </>
+                ) : (
+                  <>
+                    <AnnotationIcon className="h-4 w-4" />
+                    {annotationLabel}
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
+        ) : (
+          // ── Upload form ──────────────────────────────────────────────────
+          <>
+            {pendingResume && !isUploading && (
+              <div className="mt-3 flex items-start justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-800 dark:text-amber-200">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p className="text-sm">
+                    Incomplete upload:{" "}
+                    <span className="font-medium [overflow-wrap:anywhere]">
+                      {pendingResume.file_name}
+                    </span>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void clearResume()}
+                  className="shrink-0 text-sm font-medium underline underline-offset-2"
+                >
+                  Discard
+                </button>
+              </div>
+            )}
+
+            <p className="mb-4 mt-3 text-sm text-gray-600 dark:text-gray-300">
+              Select a video file to upload.
+            </p>
+
+            <input
+              type="file"
+              accept="video/*"
+              onChange={(e) => {
+                setSelectedFile(e.target.files?.[0] ?? null);
+                setFileError("");
+              }}
+              className="block w-full text-sm text-gray-700 dark:text-gray-200 file:mb-3 file:mr-0 file:w-full file:rounded-md file:border-0 file:bg-red-500 file:px-4 file:py-2 file:text-white file:cursor-pointer hover:file:bg-red-600 sm:file:mb-0 sm:file:mr-4 sm:file:w-auto"
+              disabled={isUploading}
+            />
+
+            {selectedFile && (
+              <p className="mt-3 max-w-full text-sm text-gray-700 dark:text-gray-200 [overflow-wrap:anywhere]">
+                {selectedFile.name} ({formatFileSize(selectedFile.size)})
+              </p>
+            )}
+
+            {(fileError || uploadError) && (
+              <p className="mt-3 text-sm text-red-600 dark:text-red-400">
+                {fileError || uploadError}
+              </p>
+            )}
+
+            {isUploading && (
+              <div className="mt-4">
+                <div className="mb-2 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+                  <span>
+                    Uploading part {partsProgress.completed} of{" "}
+                    {partsProgress.total}...
+                  </span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                  <div
+                    className="h-full bg-red-500 transition-all duration-200"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              {isUploading ? (
+                <Button
+                  onClick={cancel}
+                  variant="outline"
+                  className="w-full text-gray-900 dark:text-white sm:w-auto"
+                >
+                  Cancel Upload
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleClose}
+                  variant="outline"
+                  className="w-full text-gray-900 dark:text-white sm:w-auto"
+                >
+                  Cancel
+                </Button>
+              )}
+              <Button
+                onClick={handleUpload}
+                disabled={isUploading || !selectedFile}
+                className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Upload
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </Modal>
+  );
+}
