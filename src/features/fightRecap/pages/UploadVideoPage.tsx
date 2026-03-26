@@ -267,42 +267,42 @@ export default function UploadVideoPage() {
               )}
 
               {/* Dropzone */}
-              {!isUploading && (
-                <div
-                  {...getRootProps()}
-                  className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-16 text-center transition-colors
-                    ${
-                      isDragActive
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/40 hover:bg-muted/20"
-                    }`}
-                >
-                  <input {...getInputProps()} />
-                  <Upload
-                    className={`mx-auto mb-4 h-12 w-12 ${isDragActive ? "text-primary" : "text-muted-foreground"}`}
-                  />
-                  {isDragActive ? (
-                    <p className="text-base font-medium text-primary">
-                      Drop your video here
+              <div
+                {...getRootProps()}
+                className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-16 text-center transition-colors
+                  ${
+                    isUploading
+                      ? "cursor-not-allowed border-border opacity-50"
+                      : isDragActive
+                        ? "cursor-pointer border-primary bg-primary/5"
+                        : "cursor-pointer border-border hover:border-primary/40 hover:bg-muted/20"
+                  }`}
+              >
+                <input {...getInputProps()} />
+                <Upload
+                  className={`mx-auto mb-4 h-12 w-12 ${isDragActive && !isUploading ? "text-primary" : "text-muted-foreground"}`}
+                />
+                {isDragActive && !isUploading ? (
+                  <p className="text-base font-medium text-primary">
+                    Drop your video here
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-base font-medium text-foreground">
+                      Drag & drop your video here
                     </p>
-                  ) : (
-                    <>
-                      <p className="text-base font-medium text-foreground">
-                        Drag & drop your video here
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        or{" "}
-                        <span className="text-primary underline underline-offset-2">
-                          click to browse
-                        </span>
-                      </p>
-                      <p className="mt-3 text-xs text-muted-foreground">
-                        MP4, MOV, AVI and other video formats supported
-                      </p>
-                    </>
-                  )}
-                </div>
-              )}
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      or{" "}
+                      <span className="text-primary underline underline-offset-2">
+                        click to browse
+                      </span>
+                    </p>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      MP4, MOV, AVI and other video formats supported
+                    </p>
+                  </>
+                )}
+              </div>
 
               {/* Selected file */}
               {selectedFile && !isUploading && (
