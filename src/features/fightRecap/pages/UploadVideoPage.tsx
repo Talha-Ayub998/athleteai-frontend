@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,10 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
-import {
-  UploadedVideo,
-  useFightRecapVideos,
-} from "../context/FightRecapVideosContext";
+import { useFightRecapVideos } from "../context/FightRecapVideosContext";
 import { useMultipartUpload } from "../hooks/useMultipartUpload";
 
 const formatFileSize = (bytes: number) => {
@@ -31,7 +28,7 @@ const formatFileSize = (bytes: number) => {
 
 export default function UploadVideoPage() {
   const navigate = useNavigate();
-  const { upsertVideo, createSessionForVideo } = useFightRecapVideos();
+  const { createSessionForVideo } = useFightRecapVideos();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
@@ -51,13 +48,6 @@ export default function UploadVideoPage() {
     cancel,
     clearResume,
   } = useMultipartUpload();
-
-  // Add uploaded video to the list as soon as upload completes
-  useEffect(() => {
-    if (uploadResult) {
-      upsertVideo(uploadResult as UploadedVideo);
-    }
-  }, [uploadResult, upsertVideo]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "video/*": [] },
