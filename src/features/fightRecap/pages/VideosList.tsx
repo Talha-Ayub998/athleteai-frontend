@@ -17,6 +17,7 @@ import {
   UploadedVideo,
   useFightRecapVideos,
 } from "../context/FightRecapVideosContext";
+import { runMultipartUpload } from "../services/multipartUpload";
 
 interface UploadVideoResponse extends UploadedVideo {
   status: string;
@@ -285,6 +286,20 @@ const VideosList = () => {
               </Button>
             )}
           </div>
+
+          <input
+            type="file"
+            accept="video/*"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const result = await runMultipartUpload(file, {
+                onProgress: (done, total) =>
+                  console.log(`${done}/${total} parts`),
+              });
+              console.log("Upload complete:", result);
+            }}
+          />
 
           {isLoading && (
             <div className="bg-card rounded-lg border border-border p-6 text-muted-foreground sm:p-8">
