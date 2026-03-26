@@ -49,11 +49,9 @@ export function UploadVideoModal({
   const {
     isUploading,
     uploadProgress,
-    partsProgress,
     uploadError,
     uploadResult,
     pendingResume,
-    retryingPart,
     upload,
     resume,
     cancel,
@@ -322,9 +320,7 @@ export function UploadVideoModal({
                     <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">
                       {selectedFile?.name ?? pendingResume?.file_name}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      Part {partsProgress.completed} of {partsProgress.total}
-                    </p>
+                    <p className="text-xs text-muted-foreground">Uploading...</p>
                   </div>
                   <span className="shrink-0 text-sm font-medium text-foreground">
                     {uploadProgress}%
@@ -336,13 +332,6 @@ export function UploadVideoModal({
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
-                {retryingPart && (
-                  <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Part {retryingPart.partNumber} failed — retrying (attempt{" "}
-                    {retryingPart.attempt} of {retryingPart.maxAttempts})...
-                  </p>
-                )}
               </div>
             )}
 
