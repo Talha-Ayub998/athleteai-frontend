@@ -53,6 +53,7 @@ export function UploadVideoModal({
     uploadError,
     uploadResult,
     pendingResume,
+    retryingPart,
     upload,
     resume,
     cancel,
@@ -335,6 +336,13 @@ export function UploadVideoModal({
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
+                {retryingPart && (
+                  <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Part {retryingPart.partNumber} failed — retrying (attempt{" "}
+                    {retryingPart.attempt} of {retryingPart.maxAttempts})...
+                  </p>
+                )}
               </div>
             )}
 

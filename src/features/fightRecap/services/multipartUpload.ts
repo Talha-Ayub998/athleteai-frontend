@@ -44,6 +44,7 @@ export interface PendingUploadStorage {
 
 export interface UploadOptions {
   concurrency?: number;
+  maxRetries?: number;
   onUploadStarted?: (
     upload_id: string,
     s3_key: string,
@@ -52,6 +53,7 @@ export interface UploadOptions {
   ) => void;
   onProgress?: (completedParts: number, totalParts: number) => void;
   onPartComplete?: (part: Part) => void;
+  onPartRetry?: (partNumber: number, attempt: number, maxAttempts: number) => void;
   cancelledRef?: { current: boolean };
 }
 
@@ -163,6 +165,43 @@ async function uploadSinglePart(
   return { part_number: partNumber, etag };
 }
 
+// Retries a single part upload with exponential backoff.
+// Gets a fresh signed URL on each attempt — the previous URL may be stale.
+// Does NOT retry if the upload was cancelled.
+async function uploadSinglePartWithRetry(
+  partNumber: number,
+  file: File,
+  upload_id: string,
+  s3_key: string,
+  partSizeBytes: number,
+  maxAttempts: number,
+  cancelledRef: { current: boolean },
+  onRetry?: (partNumber: number, attempt: number, maxAttempts: number) => void,
+): Promise<Part> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await uploadSinglePart(
+        partNumber,
+        file,
+        upload_id,
+        s3_key,
+        partSizeBytes,
+      );
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts && !cancelledRef.current) {
+        onRetry?.(partNumber, attempt + 1, maxAttempts);
+        const delayMs = 1000 * 2 ** (attempt - 1); // 1s → 2s → 4s
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 // ─── Worker pools ─────────────────────────────────────────────────────────────
 // Keeps `concurrency` slots busy at all times.
 // Workers share a counter/index — JS single-thread guarantees atomicity.
@@ -228,9 +267,11 @@ export async function runMultipartUpload(
 ): Promise<RunMultipartUploadResult> {
   const {
     concurrency = 3,
+    maxRetries = 3,
     onUploadStarted,
     onProgress,
     onPartComplete,
+    onPartRetry,
     cancelledRef = { current: false },
   } = options;
 
@@ -242,12 +283,15 @@ export async function runMultipartUpload(
   let completedCount = 0;
 
   const uploadFn = async (partNumber: number): Promise<Part> => {
-    const part = await uploadSinglePart(
+    const part = await uploadSinglePartWithRetry(
       partNumber,
       file,
       upload_id,
       s3_key,
       part_size_bytes,
+      maxRetries,
+      cancelledRef,
+      onPartRetry,
     );
     completedCount++;
     onProgress?.(completedCount, total_parts);
@@ -295,8 +339,10 @@ export async function resumeMultipartUpload(
 ): Promise<RunMultipartUploadResult> {
   const {
     concurrency = 3,
+    maxRetries = 3,
     onProgress,
     onPartComplete,
+    onPartRetry,
     cancelledRef = { current: false },
   } = options;
 
@@ -313,12 +359,15 @@ export async function resumeMultipartUpload(
   let completedCount = completed_parts.length;
 
   const uploadFn = async (partNumber: number): Promise<Part> => {
-    const part = await uploadSinglePart(
+    const part = await uploadSinglePartWithRetry(
       partNumber,
       file,
       upload_id,
       s3_key,
       part_size_bytes,
+      maxRetries,
+      cancelledRef,
+      onPartRetry,
     );
     completedCount++;
     onProgress?.(completedCount, total_parts);

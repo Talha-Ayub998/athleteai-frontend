@@ -60,6 +60,11 @@ export function useMultipartUpload() {
     useState<CompleteUploadResponse | null>(null);
   const [pendingResume, setPendingResume] =
     useState<PendingUploadStorage | null>(null);
+  const [retryingPart, setRetryingPart] = useState<{
+    partNumber: number;
+    attempt: number;
+    maxAttempts: number;
+  } | null>(null);
 
   // cancelledRef is passed directly into the worker pool — setting .current
   // stops workers from claiming new parts without interrupting in-flight ones.
@@ -83,9 +88,13 @@ export function useMultipartUpload() {
     onProgress: (completed: number, total: number) => {
       setPartsProgress({ completed, total });
       setUploadProgress(Math.round((completed / total) * 100));
+      setRetryingPart(null); // part succeeded — clear any retry indicator
     },
     onPartComplete: (part: Part) => {
       appendPartToStorage(part);
+    },
+    onPartRetry: (partNumber: number, attempt: number, maxAttempts: number) => {
+      setRetryingPart({ partNumber, attempt, maxAttempts });
     },
     _initialCompleted: initialCompleted,
   });
@@ -95,6 +104,7 @@ export function useMultipartUpload() {
   const handleSuccess = (completeResponse: CompleteUploadResponse) => {
     localStorage.removeItem(STORAGE_KEY);
     setPendingResume(null);
+    setRetryingPart(null);
     setUploadResult(completeResponse);
   };
 
@@ -107,6 +117,7 @@ export function useMultipartUpload() {
     }
     localStorage.removeItem(STORAGE_KEY);
     setPendingResume(null);
+    setRetryingPart(null);
     setUploadProgress(0);
     setPartsProgress({ completed: 0, total: 0 });
   };
@@ -115,6 +126,7 @@ export function useMultipartUpload() {
     // runMultipartUpload/resumeMultipartUpload already called abortUpload
     localStorage.removeItem(STORAGE_KEY);
     setPendingResume(null);
+    setRetryingPart(null);
     setUploadError(getErrorMessage(error, "Upload failed. Please try again."));
   };
 
@@ -238,6 +250,7 @@ export function useMultipartUpload() {
     isUploading,
     uploadProgress,
     partsProgress,
+    retryingPart,
     uploadError,
     uploadResult,
     pendingResume,
