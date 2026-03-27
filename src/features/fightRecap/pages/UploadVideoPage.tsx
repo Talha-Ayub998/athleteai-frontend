@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { useFightRecapVideos } from "../context/FightRecapVideosContext";
-import { useMultipartUpload } from "../hooks/useMultipartUpload";
+import { useUpload } from "../context/UploadContext";
 
 const formatFileSize = (bytes: number) => {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
@@ -50,7 +50,7 @@ export default function UploadVideoPage() {
     cancel,
     clearResume,
     resetUploadResult,
-  } = useMultipartUpload();
+  } = useUpload();
 
   useEffect(() => {
     if (uploadResult) {
@@ -231,8 +231,8 @@ export default function UploadVideoPage() {
                           </span>
                         </p>
                         <p className="mt-0.5 text-xs opacity-80">
-                          {pendingResume.completed_parts.length} of{" "}
-                          {pendingResume.total_parts} parts uploaded —{" "}
+                          {/* {pendingResume.completed_parts.length} of{" "}
+                          {pendingResume.total_parts} parts uploaded —{" "} */}
                           {Math.round(
                             (pendingResume.completed_parts.length /
                               pendingResume.total_parts) *
