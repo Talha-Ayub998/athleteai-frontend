@@ -54,7 +54,11 @@ export interface UploadOptions {
   onProgress?: (completedParts: number, totalParts: number) => void;
   onBytesProgress?: (loadedBytes: number, totalBytes: number) => void;
   onPartComplete?: (part: Part) => void;
-  onPartRetry?: (partNumber: number, attempt: number, maxAttempts: number) => void;
+  onPartRetry?: (
+    partNumber: number,
+    attempt: number,
+    maxAttempts: number,
+  ) => void;
   cancelledRef?: { current: boolean };
 }
 
@@ -122,9 +126,7 @@ function uploadPartToS3(
         }
       } else {
         reject(
-          new Error(
-            `S3 rejected part upload: ${xhr.status} ${xhr.statusText}`,
-          ),
+          new Error(`S3 rejected part upload: ${xhr.status} ${xhr.statusText}`),
         );
       }
     });
@@ -410,7 +412,13 @@ export async function resumeMultipartUpload(
   // Start progress from already-completed parts
   let completedCount = completed_parts.length;
   let completedBytes = completed_parts.reduce((acc, p) => {
-    return acc + Math.min(part_size_bytes, file.size - (p.part_number - 1) * part_size_bytes);
+    return (
+      acc +
+      Math.min(
+        part_size_bytes,
+        file.size - (p.part_number - 1) * part_size_bytes,
+      )
+    );
   }, 0);
   const partProgress = new Map<number, number>();
 

@@ -28,6 +28,17 @@ const formatFileSize = (bytes: number) => {
   return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 };
 
+const formatSpeed = (bytesPerSecond: number) => {
+  if (!bytesPerSecond) return null;
+  const units = ["B/s", "KB/s", "MB/s", "GB/s"];
+  const unitIndex = Math.min(
+    Math.floor(Math.log(bytesPerSecond) / Math.log(1024)),
+    units.length - 1,
+  );
+  const value = bytesPerSecond / 1024 ** unitIndex;
+  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+};
+
 export default function UploadVideoPage() {
   const navigate = useNavigate();
   const { createSessionForVideo, fetchVideos } = useFightRecapVideos();
@@ -44,6 +55,7 @@ export default function UploadVideoPage() {
     isUploading,
     isCancelling,
     uploadProgress,
+    uploadSpeed,
     uploadError,
     uploadResult,
     pendingResume,
@@ -354,8 +366,10 @@ export default function UploadVideoPage() {
                       <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">
                         {selectedFile?.name ?? pendingResume?.file_name}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Uploading...
+                      <p className="text-xs text-muted-foreground pt-1">
+                        {uploadSpeed > 0
+                          ? `${formatSpeed(uploadSpeed)} · Uploading...`
+                          : "Uploading..."}
                       </p>
                     </div>
                     <span className="shrink-0 text-sm font-medium text-foreground">

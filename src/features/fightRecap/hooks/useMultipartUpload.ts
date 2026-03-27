@@ -52,6 +52,7 @@ export function useMultipartUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadSpeed, setUploadSpeed] = useState(0); // bytes per second
   const [partsProgress, setPartsProgress] = useState<{
     completed: number;
     total: number;
@@ -70,6 +71,12 @@ export function useMultipartUpload() {
   // cancelledRef is passed directly into the worker pool — setting .current
   // stops workers from claiming new parts without interrupting in-flight ones.
   const cancelledRef = useRef(false);
+
+  // Tracks the last bytes/timestamp sample for computing upload speed
+  const lastSpeedSampleRef = useRef<{ bytes: number; time: number } | null>(null);
+  // Throttle speed UI updates to once per 800ms
+  const lastSpeedUpdateRef = useRef<number>(0);
+  const SPEED_THROTTLE_MS = 800;
 
   // Stores upload_id + s3_key as soon as /start/ succeeds so cancel() can
   // call abortUpload even before runMultipartUpload returns.
@@ -91,7 +98,21 @@ export function useMultipartUpload() {
       setRetryingPart(null); // part succeeded — clear any retry indicator
     },
     onBytesProgress: (loaded: number, total: number) => {
-      setUploadProgress(Math.round((loaded / total) * 100));
+      setUploadProgress(Math.min(100, Math.round((loaded / total) * 100)));
+      const now = Date.now();
+      const last = lastSpeedSampleRef.current;
+      if (last) {
+        const deltaMs = now - last.time;
+        const deltaBytes = loaded - last.bytes;
+        if (deltaMs > 0 && deltaBytes >= 0) {
+          const speed = Math.round((deltaBytes / deltaMs) * 1000);
+          if (now - lastSpeedUpdateRef.current >= SPEED_THROTTLE_MS) {
+            setUploadSpeed(speed);
+            lastSpeedUpdateRef.current = now;
+          }
+        }
+      }
+      lastSpeedSampleRef.current = { bytes: loaded, time: now };
     },
     onPartComplete: (part: Part) => {
       appendPartToStorage(part);
@@ -108,6 +129,8 @@ export function useMultipartUpload() {
     localStorage.removeItem(STORAGE_KEY);
     setPendingResume(null);
     setRetryingPart(null);
+    setUploadSpeed(0);
+    lastSpeedSampleRef.current = null;
     setUploadResult(completeResponse);
   };
 
@@ -122,6 +145,8 @@ export function useMultipartUpload() {
     setPendingResume(null);
     setRetryingPart(null);
     setUploadProgress(0);
+    setUploadSpeed(0);
+    lastSpeedSampleRef.current = null;
     setPartsProgress({ completed: 0, total: 0 });
     setIsCancelling(false);
   };
@@ -131,6 +156,8 @@ export function useMultipartUpload() {
     localStorage.removeItem(STORAGE_KEY);
     setPendingResume(null);
     setRetryingPart(null);
+    setUploadSpeed(0);
+    lastSpeedSampleRef.current = null;
     setUploadError(getErrorMessage(error, "Upload failed. Please try again."));
   };
 
@@ -194,9 +221,13 @@ export function useMultipartUpload() {
     // Show progress starting from already-completed parts
     const initialCompleted = pendingResume.completed_parts.length;
     const initialBytes = pendingResume.completed_parts.reduce((acc, p) => {
-      return acc + Math.min(
-        pendingResume.part_size_bytes,
-        pendingResume.file_size_bytes - (p.part_number - 1) * pendingResume.part_size_bytes,
+      return (
+        acc +
+        Math.min(
+          pendingResume.part_size_bytes,
+          pendingResume.file_size_bytes -
+            (p.part_number - 1) * pendingResume.part_size_bytes,
+        )
       );
     }, 0);
     setIsUploading(true);
@@ -266,6 +297,7 @@ export function useMultipartUpload() {
     isUploading,
     isCancelling,
     uploadProgress,
+    uploadSpeed,
     partsProgress,
     retryingPart,
     uploadError,
