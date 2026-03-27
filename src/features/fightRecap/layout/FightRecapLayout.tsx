@@ -24,11 +24,11 @@ export default function FightRecapLayout() {
 
   return (
     <section className="fight-recap-theme bg-background">
-      <div className="px-6 py-4 border-b border-border bg-background sticky top-0 z-30">
+      <div className="px-4 py-2 border-b border-border bg-background sticky top-0 z-30">
         <button
           type="button"
           onClick={handleBack}
-          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex py-2 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back

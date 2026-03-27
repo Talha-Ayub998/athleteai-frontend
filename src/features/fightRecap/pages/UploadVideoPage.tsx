@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { Modal } from "../../../components/ui/modal";
 import { useFightRecapVideos } from "../context/FightRecapVideosContext";
 import { useUpload } from "../context/UploadContext";
 
@@ -37,6 +38,7 @@ export default function UploadVideoPage() {
   const [resumeFileError, setResumeFileError] = useState("");
   const [creatingSession, setCreatingSession] = useState(false);
   const [sessionError, setSessionError] = useState("");
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const {
     isUploading,
@@ -380,7 +382,7 @@ export default function UploadVideoPage() {
               <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end">
                 {isUploading ? (
                   <Button
-                    onClick={cancel}
+                    onClick={() => setShowCancelConfirm(true)}
                     disabled={isCancelling || uploadProgress >= 100}
                     variant="outline"
                     className="w-full text-foreground sm:w-auto"
@@ -425,6 +427,42 @@ export default function UploadVideoPage() {
           )}
         </div>
       </main>
+
+      <Modal
+        className="mx-4 w-[calc(100%-2rem)] max-w-md"
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        showCloseButton={false}
+      >
+        <div className="p-4 sm:p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            Cancel Upload?
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            All upload progress will be lost and cannot be resumed. Are you sure
+            you want to cancel?
+          </p>
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button
+              onClick={() => setShowCancelConfirm(false)}
+              variant="outline"
+              className="w-full text-foreground sm:w-auto"
+            >
+              Keep Uploading
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowCancelConfirm(false);
+                cancel();
+              }}
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 sm:w-auto"
+            >
+              Yes, Cancel Upload
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
