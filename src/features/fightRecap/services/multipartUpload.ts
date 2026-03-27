@@ -376,6 +376,8 @@ export async function runMultipartUpload(
     if (error instanceof UploadCancelledError) {
       throw error;
     }
+    // Stop other workers from starting new parts before aborting the session
+    cancelledRef.current = true;
     await abortUpload(upload_id, s3_key).catch(() => {});
     throw error;
   }
@@ -467,10 +469,16 @@ export async function resumeMultipartUpload(
       throw new UploadCancelledError();
     }
 
-    // Merge already-completed + newly uploaded, sort by part_number for S3
-    const allParts = [...completed_parts, ...newParts].sort(
-      (a, b) => a.part_number - b.part_number,
-    );
+    // Merge already-completed + newly uploaded, deduplicate by part_number
+    // (keep the newest ETag — newParts wins), then sort for S3.
+    const seenParts = new Set<number>();
+    const allParts = [...newParts, ...completed_parts]
+      .filter((p) => {
+        if (seenParts.has(p.part_number)) return false;
+        seenParts.add(p.part_number);
+        return true;
+      })
+      .sort((a, b) => a.part_number - b.part_number);
 
     const completeResponse = await completeUpload(
       upload_id,
@@ -482,6 +490,8 @@ export async function resumeMultipartUpload(
     return { completeResponse, upload_id, s3_key };
   } catch (error) {
     if (error instanceof UploadCancelledError) throw error;
+    // Stop other workers from starting new parts before aborting the session
+    cancelledRef.current = true;
     await abortUpload(upload_id, s3_key).catch(() => {});
     throw error;
   }

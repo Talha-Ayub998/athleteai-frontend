@@ -42,6 +42,8 @@ const readStorage = (): PendingUploadStorage | null => {
 const appendPartToStorage = (part: Part) => {
   const pending = readStorage();
   if (!pending) return;
+  if (pending.completed_parts.some((p) => p.part_number === part.part_number))
+    return;
   pending.completed_parts.push(part);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
 };
@@ -68,12 +70,16 @@ export function useMultipartUpload() {
     maxAttempts: number;
   } | null>(null);
 
-  // cancelledRef is passed directly into the worker pool — setting .current
-  // stops workers from claiming new parts without interrupting in-flight ones.
-  const cancelledRef = useRef(false);
+  // Each upload/resume creates a fresh token object and stores it here.
+  // Old workers sleeping in the backoff-retry loop hold a reference to their
+  // own (previous) token object, so swapping in a new token for the next
+  // session doesn't accidentally reset their cancelled flag to false.
+  const activeTokenRef = useRef<{ current: boolean }>({ current: false });
 
   // Tracks the last bytes/timestamp sample for computing upload speed
-  const lastSpeedSampleRef = useRef<{ bytes: number; time: number } | null>(null);
+  const lastSpeedSampleRef = useRef<{ bytes: number; time: number } | null>(
+    null,
+  );
   // Throttle speed UI updates to once per 800ms
   const lastSpeedUpdateRef = useRef<number>(0);
   const SPEED_THROTTLE_MS = 800;
@@ -164,7 +170,8 @@ export function useMultipartUpload() {
   // ── upload ───────────────────────────────────────────────────────────────────
 
   const upload = async (file: File) => {
-    cancelledRef.current = false;
+    const sessionToken = { current: false };
+    activeTokenRef.current = sessionToken;
     abortInfoRef.current = null;
 
     setIsUploading(true);
@@ -176,7 +183,7 @@ export function useMultipartUpload() {
     try {
       const result = await runMultipartUpload(file, {
         concurrency: 3,
-        cancelledRef,
+        cancelledRef: sessionToken,
         onUploadStarted: (upload_id, s3_key, total_parts, part_size_bytes) => {
           abortInfoRef.current = { upload_id, s3_key };
           const pending: PendingUploadStorage = {
@@ -212,7 +219,8 @@ export function useMultipartUpload() {
   const resume = async (file: File) => {
     if (!pendingResume) return;
 
-    cancelledRef.current = false;
+    const sessionToken = { current: false };
+    activeTokenRef.current = sessionToken;
     abortInfoRef.current = {
       upload_id: pendingResume.upload_id,
       s3_key: pendingResume.s3_key,
@@ -244,7 +252,7 @@ export function useMultipartUpload() {
     try {
       const result = await resumeMultipartUpload(file, pendingResume, {
         concurrency: 3,
-        cancelledRef,
+        cancelledRef: sessionToken,
         ...makeProgressCallbacks(initialCompleted),
       });
 
@@ -265,7 +273,7 @@ export function useMultipartUpload() {
 
   const cancel = () => {
     setIsCancelling(true);
-    cancelledRef.current = true;
+    activeTokenRef.current.current = true;
     if (abortInfoRef.current) {
       const { upload_id, s3_key } = abortInfoRef.current;
       abortInfoRef.current = null; // prevent double-abort in handleCancel
