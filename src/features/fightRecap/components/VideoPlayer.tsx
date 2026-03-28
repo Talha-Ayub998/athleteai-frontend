@@ -144,25 +144,19 @@ export function VideoPlayer({
         onClick={handleVideoClick}
       />
 
-      {isBuffering && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/25 pointer-events-none">
-          <div className="inline-flex items-center gap-2 rounded-full bg-black/65 text-white px-3 py-1.5 text-sm">
-            <Loader2 className="w-8 h-8 animate-spin" />
-          </div>
-        </div>
-      )}
-
-      {controlsVisible && (
+      {(controlsVisible || isBuffering) && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity pointer-events-none">
           <div
             className="w-20 h-20 cursor-pointer rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 transition-transform pointer-events-auto"
             onClick={(e) => {
               e.stopPropagation();
-              togglePlay();
+              if (!isBuffering) togglePlay();
               showMobileControls();
             }}
           >
-            {isPlaying ? (
+            {isBuffering ? (
+              <Loader2 className="w-8 h-8 text-primary-foreground animate-spin" />
+            ) : isPlaying ? (
               <Pause
                 className="w-8 h-8 text-primary-foreground"
                 fill="currentColor"
