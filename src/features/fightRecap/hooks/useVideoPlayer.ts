@@ -215,6 +215,7 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
       updateBufferedRanges(video);
     };
     const handleSeeking = () => {
+      setCurrentTime(video.currentTime);
       setIsBuffering(!isTimeBuffered(video, video.currentTime));
     };
     const handlePlaying = () => {

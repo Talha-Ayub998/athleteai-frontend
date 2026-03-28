@@ -56,10 +56,14 @@ export function VideoPlayer({
   const [mobileControlsVisible, setMobileControlsVisible] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsView, setSettingsView] = useState<"main" | "playback">("main");
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragProgress, setDragProgress] = useState<number | null>(null);
   const lastPointerTypeRef = useRef<string>("mouse");
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
 
   const showMobileControls = () => {
     setMobileControlsVisible(true);
@@ -98,7 +102,7 @@ export function VideoPlayer({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isSettingsOpen]);
 
-  const controlsVisible = isHovering || mobileControlsVisible || !isPlaying;
+  const controlsVisible = isHovering || mobileControlsVisible || isDragging;
 
   const handleVideoClick = () => {
     if (lastPointerTypeRef.current === "touch") {
@@ -153,10 +157,40 @@ export function VideoPlayer({
     video.pause();
   }, [pauseWhenModalOpen, videoRef]);
 
-  const handleProgressClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const percent = ((event.clientX - rect.left) / rect.width) * 100;
-    seekByPercent(percent);
+  const calcProgressPercent = (clientX: number) => {
+    const bar = progressBarRef.current;
+    if (!bar) return 0;
+    const rect = bar.getBoundingClientRect();
+    return Math.max(
+      0,
+      Math.min(100, ((clientX - rect.left) / rect.width) * 100),
+    );
+  };
+
+  const handleProgressPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    document.body.style.cursor = "grabbing";
+    const pct = calcProgressPercent(e.clientX);
+    setDragProgress(pct);
+    seekByPercent(pct);
+  };
+
+  const handleProgressPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current) return;
+    const pct = calcProgressPercent(e.clientX);
+    setDragProgress(pct);
+    seekByPercent(pct);
+  };
+
+  const handleProgressPointerUp = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    setDragProgress(null);
+    document.body.style.cursor = "";
   };
 
   const handleFullscreen = () => {
@@ -227,10 +261,14 @@ export function VideoPlayer({
         }`}
       >
         <div
-          className="progress-bar  relative mb-2 sm:mb-3 group/progress cursor-pointer h-2 hover:h-3 transition-all"
-          onClick={handleProgressClick}
+          ref={progressBarRef}
+          className={`relative mb-2 sm:mb-3 group/progress h-5 flex items-center touch-none select-none cursor-pointer`}
+          onPointerDown={handleProgressPointerDown}
+          onPointerMove={handleProgressPointerMove}
+          onPointerUp={handleProgressPointerUp}
         >
-          <div className="absolute inset-0 overflow-hidden rounded-full">
+          {/* Visual track — overflow-hidden clips buffered/fill bars */}
+          <div className="w-full h-1 group-hover/progress:h-1.5 transition-all rounded-full overflow-hidden relative bg-white/20">
             {bufferedRanges.map((range, index) => (
               <div
                 key={`${range.startPercent}-${range.endPercent}-${index}`}
@@ -241,14 +279,21 @@ export function VideoPlayer({
                 }}
               />
             ))}
+            <div
+              className="absolute inset-y-0 left-0 bg-primary rounded-full"
+              style={{ width: `${dragProgress ?? progress}%` }}
+            />
           </div>
 
+          {/* Thumb — always visible, grows on hover/drag */}
           <div
-            className="progress-bar-fill relative z-0"
-            style={{ width: `${progress}%` }}
-          >
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-md" />
-          </div>
+            className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 bg-primary rounded-full shadow-md pointer-events-none ${
+              isDragging
+                ? "w-4 h-4"
+                : "w-3 h-3 group-hover/progress:w-4 group-hover/progress:h-4 transition-all duration-150"
+            }`}
+            style={{ left: `${dragProgress ?? progress}%` }}
+          />
         </div>
 
         <div className="flex items-center justify-between gap-4 ">
@@ -382,7 +427,7 @@ export function VideoPlayer({
                   }}
                 >
                   <button
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/5"
                     onClick={() => setSettingsView("main")}
                   >
                     <ArrowLeft className="w-4 h-4 text-white/70" />
