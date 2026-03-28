@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Play,
   Pause,
@@ -46,6 +46,39 @@ export function VideoPlayer({
   } = useVideoPlayer();
 
   const [isHovering, setIsHovering] = useState(false);
+  const [mobileControlsVisible, setMobileControlsVisible] = useState(false);
+  const lastPointerTypeRef = useRef<string>("mouse");
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showMobileControls = () => {
+    setMobileControlsVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(
+      () => setMobileControlsVisible(false),
+      3000,
+    );
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, []);
+
+  const controlsVisible = isHovering || mobileControlsVisible || !isPlaying;
+
+  const handleVideoClick = () => {
+    if (lastPointerTypeRef.current === "touch") {
+      if (!mobileControlsVisible) {
+        showMobileControls();
+      } else {
+        togglePlay();
+        showMobileControls();
+      }
+    } else {
+      togglePlay();
+    }
+  };
 
   useEffect(() => {
     onTimeUpdate?.(currentTime);
@@ -87,12 +120,15 @@ export function VideoPlayer({
       className="video-container relative aspect-video bg-player rounded-lg overflow-hidden group animate-lift-in"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
+      onPointerDown={(e) => {
+        lastPointerTypeRef.current = e.pointerType;
+      }}
     >
       <video
         ref={videoRef}
         className="w-full h-full object-contain bg-black"
         src={videoSrc}
-        onClick={togglePlay}
+        onClick={handleVideoClick}
       />
 
       {isBuffering && (
@@ -103,24 +139,34 @@ export function VideoPlayer({
         </div>
       )}
 
-      {!isPlaying && (
-        <button
-          type="button"
-          onClick={togglePlay}
-          className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity"
-        >
-          <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
-            <Play
-              className="w-8 h-8 text-primary-foreground ml-1"
-              fill="currentColor"
-            />
+      {controlsVisible && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity pointer-events-none">
+          <div
+            className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 transition-transform pointer-events-auto"
+            onClick={(e) => {
+              e.stopPropagation();
+              togglePlay();
+              showMobileControls();
+            }}
+          >
+            {isPlaying ? (
+              <Pause
+                className="w-8 h-8 text-primary-foreground"
+                fill="currentColor"
+              />
+            ) : (
+              <Play
+                className="w-8 h-8 text-primary-foreground ml-1"
+                fill="currentColor"
+              />
+            )}
           </div>
-        </button>
+        </div>
       )}
 
       <div
         className={`video-controls p-2 sm:px-6 sm:py-4 transition-opacity duration-300 ${
-          isHovering || !isPlaying ? "opacity-100" : "opacity-0"
+          controlsVisible ? "opacity-100" : "opacity-0"
         }`}
       >
         <div
