@@ -420,6 +420,7 @@ export default function UploadVideoPage() {
                     variant="outline"
                     className="w-full text-foreground sm:w-auto"
                   >
+                    <ArrowLeftFromLine className="w-4 h-4 " />
                     Cancel
                   </Button>
                 )}
