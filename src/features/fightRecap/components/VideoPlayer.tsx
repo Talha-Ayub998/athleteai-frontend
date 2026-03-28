@@ -8,6 +8,11 @@ import {
   SkipForward,
   Maximize,
   Loader2,
+  Settings,
+  Gauge,
+  ChevronRight,
+  ArrowLeft,
+  Check,
 } from "lucide-react";
 import { useVideoPlayer } from "../hooks/useVideoPlayer";
 import { Button } from "./ui/Button";
@@ -36,6 +41,7 @@ export function VideoPlayer({
     isMuted,
     progress,
     bufferedRanges,
+    playbackRate,
     togglePlay,
     seekByPercent,
     setVolume,
@@ -43,13 +49,17 @@ export function VideoPlayer({
     skipForward,
     skipBackward,
     formatTime,
+    setPlaybackRate,
   } = useVideoPlayer();
 
   const [isHovering, setIsHovering] = useState(false);
   const [mobileControlsVisible, setMobileControlsVisible] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsView, setSettingsView] = useState<"main" | "playback">("main");
   const lastPointerTypeRef = useRef<string>("mouse");
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
 
   const showMobileControls = () => {
     setMobileControlsVisible(true);
@@ -72,6 +82,21 @@ export function VideoPlayer({
       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        settingsRef.current &&
+        !settingsRef.current.contains(e.target as Node)
+      ) {
+        setIsSettingsOpen(false);
+        setSettingsView("main");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSettingsOpen]);
 
   const controlsVisible = isHovering || mobileControlsVisible || !isPlaying;
 
@@ -202,7 +227,7 @@ export function VideoPlayer({
         }`}
       >
         <div
-          className="progress-bar relative mb-2 sm:mb-3 group/progress cursor-pointer h-2 hover:h-3 transition-all"
+          className="progress-bar  relative mb-2 sm:mb-3 group/progress cursor-pointer h-2 hover:h-3 transition-all"
           onClick={handleProgressClick}
         >
           <div className="absolute inset-0 overflow-hidden rounded-full">
@@ -219,7 +244,7 @@ export function VideoPlayer({
           </div>
 
           <div
-            className="progress-bar-fill relative z-10"
+            className="progress-bar-fill relative z-0"
             style={{ width: `${progress}%` }}
           >
             <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-md" />
@@ -288,6 +313,101 @@ export function VideoPlayer({
             <span className="text-sm font-mono text-foreground/80">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
+
+            <div ref={settingsRef} className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setIsSettingsOpen((prev) => {
+                    if (prev) setSettingsView("main");
+                    return !prev;
+                  });
+                }}
+                className="text-foreground hover:bg-secondary/50 h-8 w-8"
+              >
+                <Settings
+                  className={`w-4 h-4 transition-transform duration-300 ${isSettingsOpen ? "rotate-45" : "rotate-0"}`}
+                />
+              </Button>
+
+              {/* Settings panel — height transitions between views, panels slide on x-axis */}
+              <div
+                className={`absolute bottom-full right-0 mb-2 w-60 rounded-lg bg-black/60 backdrop-blur-sm overflow-hidden transition-all duration-200 origin-bottom-right ${
+                  isSettingsOpen
+                    ? "opacity-100 scale-100 pointer-events-auto"
+                    : "opacity-0 scale-95 pointer-events-none"
+                }`}
+                style={{
+                  // main: py-1 (8px) + 1 row (36px) = 44px
+                  // playback: py-1 (8px) + header (37px w/ border) + 8 rows (8×36px=288px) = 333px
+                  height: settingsView === "main" ? "44px" : "333px",
+                }}
+              >
+                {/* Main panel */}
+                <div
+                  className="absolute inset-x-0 top-0 py-1 transition-transform duration-200"
+                  style={{
+                    transform:
+                      settingsView === "playback"
+                        ? "translateX(-100%)"
+                        : "translateX(0)",
+                  }}
+                >
+                  <button
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                    onClick={() => setSettingsView("playback")}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Gauge className="w-4 h-4 text-white/70" />
+                      <span>Playback speed</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-white/50">
+                      <span className="text-xs">
+                        {playbackRate === 1 ? "Normal" : `${playbackRate}x`}
+                      </span>
+                      <ChevronRight className="w-3 h-3" />
+                    </div>
+                  </button>
+                </div>
+
+                {/* Playback speed panel */}
+                <div
+                  className="absolute inset-x-0 top-0 py-1 transition-transform duration-200"
+                  style={{
+                    transform:
+                      settingsView === "playback"
+                        ? "translateX(0)"
+                        : "translateX(100%)",
+                  }}
+                >
+                  <button
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/10"
+                    onClick={() => setSettingsView("main")}
+                  >
+                    <ArrowLeft className="w-4 h-4 text-white/70" />
+                    <span>Playback speed</span>
+                  </button>
+                  {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
+                    <button
+                      key={rate}
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                      onClick={() => {
+                        setPlaybackRate(rate);
+                        setIsSettingsOpen(false);
+                        setSettingsView("main");
+                      }}
+                    >
+                      <span>{rate === 1 ? "Normal" : `${rate}x`}</span>
+                      {rate === playbackRate && (
+                        <Check className="w-4 h-4 text-primary" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <Button
               variant="ghost"
               size="icon"

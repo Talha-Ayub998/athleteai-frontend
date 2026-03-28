@@ -21,6 +21,7 @@ interface UseVideoPlayerReturn {
   isMuted: boolean;
   progress: number;
   bufferedRanges: BufferedRangeSegment[];
+  playbackRate: number;
   togglePlay: () => void;
   seek: (time: number) => void;
   seekByPercent: (percent: number) => void;
@@ -30,6 +31,7 @@ interface UseVideoPlayerReturn {
   skipBackward: (seconds?: number) => void;
   getCurrentTimestamp: () => number;
   formatTime: (seconds: number) => string;
+  setPlaybackRate: (rate: number) => void;
 }
 
 export function useVideoPlayer(): UseVideoPlayerReturn {
@@ -43,6 +45,7 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
   const [bufferedRanges, setBufferedRanges] = useState<BufferedRangeSegment[]>(
     [],
   );
+  const [playbackRate, setPlaybackRateState] = useState(1);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -176,6 +179,13 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
     return videoRef.current?.currentTime || 0;
   }, []);
 
+  const setPlaybackRate = useCallback((rate: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.playbackRate = rate;
+    setPlaybackRateState(rate);
+  }, []);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -210,6 +220,9 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
     const handlePlaying = () => {
       setIsBuffering(false);
     };
+    const handleRateChange = () => {
+      setPlaybackRateState(video.playbackRate);
+    };
 
     video.addEventListener("timeupdate", handleTimeUpdate);
     video.addEventListener("progress", handleProgress);
@@ -222,6 +235,7 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
     video.addEventListener("play", handlePlay);
     video.addEventListener("pause", handlePause);
     video.addEventListener("volumechange", handleVolumeChange);
+    video.addEventListener("ratechange", handleRateChange);
 
     return () => {
       video.removeEventListener("timeupdate", handleTimeUpdate);
@@ -235,6 +249,7 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
       video.removeEventListener("play", handlePlay);
       video.removeEventListener("pause", handlePause);
       video.removeEventListener("volumechange", handleVolumeChange);
+      video.removeEventListener("ratechange", handleRateChange);
     };
   }, [isTimeBuffered, updateBufferedRanges]);
 
@@ -248,6 +263,7 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
     isMuted,
     progress,
     bufferedRanges,
+    playbackRate,
     togglePlay,
     seek,
     seekByPercent,
@@ -257,5 +273,6 @@ export function useVideoPlayer(): UseVideoPlayerReturn {
     skipBackward,
     getCurrentTimestamp,
     formatTime,
+    setPlaybackRate,
   };
 }
