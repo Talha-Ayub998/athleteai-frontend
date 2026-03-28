@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { RefObject } from "react";
+import type { FeedbackType } from "../components/VideoPlayerFeedback";
 
 const SPEED_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 const FRAME_DURATION = 1 / 30;
@@ -10,6 +11,7 @@ interface UseVideoKeyboardOptions {
   volume: number;
   currentTime: number;
   playbackRate: number;
+  isMuted: boolean;
   togglePlay: () => void;
   toggleMute: () => void;
   skipBackward: (seconds?: number) => void;
@@ -18,6 +20,7 @@ interface UseVideoKeyboardOptions {
   seekByPercent: (percent: number) => void;
   seek: (time: number) => void;
   setPlaybackRate: (rate: number) => void;
+  onAction?: (type: FeedbackType, value?: number) => void;
 }
 
 export function useVideoKeyboard({
@@ -26,6 +29,7 @@ export function useVideoKeyboard({
   volume,
   currentTime,
   playbackRate,
+  isMuted,
   togglePlay,
   toggleMute,
   skipBackward,
@@ -34,6 +38,7 @@ export function useVideoKeyboard({
   seekByPercent,
   seek,
   setPlaybackRate,
+  onAction,
 }: UseVideoKeyboardOptions) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,28 +50,37 @@ export function useVideoKeyboard({
         case "k":
         case "K":
           e.preventDefault();
+          onAction?.(isPlaying ? "pause" : "play");
           togglePlay();
           break;
 
         case "ArrowLeft":
           e.preventDefault();
+          onAction?.("seekBackward");
           skipBackward(10);
           break;
 
         case "ArrowRight":
           e.preventDefault();
+          onAction?.("seekForward");
           skipForward(10);
           break;
 
-        case "ArrowUp":
+        case "ArrowUp": {
           e.preventDefault();
-          setVolume(Math.min(1, volume + 0.1));
+          const newVol = Math.min(1, volume + 0.1);
+          onAction?.("volumeUp", newVol);
+          setVolume(newVol);
           break;
+        }
 
-        case "ArrowDown":
+        case "ArrowDown": {
           e.preventDefault();
-          setVolume(Math.max(0, volume - 0.1));
+          const newVol = Math.max(0, volume - 0.1);
+          onAction?.("volumeDown", newVol);
+          setVolume(newVol);
           break;
+        }
 
         case "f":
         case "F": {
@@ -82,12 +96,14 @@ export function useVideoKeyboard({
 
         case "m":
         case "M":
+          onAction?.(isMuted ? "unmute" : "mute", isMuted ? volume : undefined);
           toggleMute();
           break;
 
         case ".":
           if (!isPlaying) {
             e.preventDefault();
+            onAction?.("frameForward");
             seek(currentTime + FRAME_DURATION);
           }
           break;
@@ -95,19 +111,28 @@ export function useVideoKeyboard({
         case ",":
           if (!isPlaying) {
             e.preventDefault();
+            onAction?.("frameBackward");
             seek(currentTime - FRAME_DURATION);
           }
           break;
 
         case ">": {
           const idx = SPEED_STEPS.indexOf(playbackRate);
-          if (idx < SPEED_STEPS.length - 1) setPlaybackRate(SPEED_STEPS[idx + 1]);
+          if (idx < SPEED_STEPS.length - 1) {
+            const newSpeed = SPEED_STEPS[idx + 1];
+            onAction?.("speedUp", newSpeed);
+            setPlaybackRate(newSpeed);
+          }
           break;
         }
 
         case "<": {
           const idx = SPEED_STEPS.indexOf(playbackRate);
-          if (idx > 0) setPlaybackRate(SPEED_STEPS[idx - 1]);
+          if (idx > 0) {
+            const newSpeed = SPEED_STEPS[idx - 1];
+            onAction?.("speedDown", newSpeed);
+            setPlaybackRate(newSpeed);
+          }
           break;
         }
 
@@ -126,6 +151,7 @@ export function useVideoKeyboard({
     volume,
     currentTime,
     playbackRate,
+    isMuted,
     togglePlay,
     toggleMute,
     skipBackward,
@@ -134,5 +160,6 @@ export function useVideoKeyboard({
     seekByPercent,
     seek,
     setPlaybackRate,
+    onAction,
   ]);
 }

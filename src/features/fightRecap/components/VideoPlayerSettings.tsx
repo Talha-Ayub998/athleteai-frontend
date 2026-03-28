@@ -63,7 +63,9 @@ export function VideoPlayerSettings({
     const onMouseDown = (e: MouseEvent) => {
       if (!containerRef.current?.contains(e.target as Node)) {
         setIsOpen(false);
-        setView("main");
+        setTimeout(() => {
+          setView("main");
+        }, 100);
       }
     };
     document.addEventListener("mousedown", onMouseDown);
@@ -72,7 +74,10 @@ export function VideoPlayerSettings({
 
   const handleToggle = () => {
     setIsOpen((prev) => {
-      if (prev) setView("main");
+      if (prev)
+        setTimeout(() => {
+          setView("main");
+        }, 100);
       return !prev;
     });
   };
@@ -188,7 +193,7 @@ export function VideoPlayerSettings({
             {SHORTCUTS.map(({ keys, label }) => (
               <div
                 key={label}
-                className="flex items-center justify-between px-3 py-[7px] bg-white/5"
+                className="flex items-center justify-between px-3 py-[7px] hover:bg-white/10"
               >
                 <span className="text-xs text-white/60">{label}</span>
                 <div className="flex items-center gap-1">

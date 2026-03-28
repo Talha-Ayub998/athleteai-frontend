@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Play,
   Pause,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useVideoPlayer } from "../hooks/useVideoPlayer";
 import { useVideoKeyboard } from "../hooks/useVideoKeyboard";
+import { VideoPlayerFeedback, type FeedbackState, type FeedbackType } from "./VideoPlayerFeedback";
 import { VideoPlayerSettings } from "./VideoPlayerSettings";
 import { Button } from "./ui/Button";
 import { Slider } from "./ui/Slider";
@@ -55,9 +56,11 @@ export function VideoPlayer({
   const [isDragging, setIsDragging] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [dragProgress, setDragProgress] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const lastPointerTypeRef = useRef<string>("mouse");
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
 
@@ -76,10 +79,23 @@ export function VideoPlayer({
     inactivityTimerRef.current = setTimeout(() => setIsHovering(false), 2000);
   };
 
+  const showFeedback = useCallback(
+    (type: FeedbackType, value?: number) => {
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      setFeedback({ type, value, id: Date.now() });
+      if (type === "play" || type === "pause") {
+        resetInactivityTimer();
+      }
+      feedbackTimerRef.current = setTimeout(() => setFeedback(null), 1500);
+    },
+    [resetInactivityTimer],
+  );
+
   useEffect(() => {
     return () => {
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     };
   }, []);
 
@@ -104,6 +120,7 @@ export function VideoPlayer({
     volume,
     currentTime,
     playbackRate,
+    isMuted,
     togglePlay,
     toggleMute,
     skipBackward,
@@ -112,6 +129,7 @@ export function VideoPlayer({
     seekByPercent,
     seek,
     setPlaybackRate,
+    onAction: showFeedback,
   });
 
   useEffect(() => {
@@ -226,6 +244,8 @@ export function VideoPlayer({
           </div>
         </div>
       )}
+
+      {feedback && <VideoPlayerFeedback feedback={feedback} />}
 
       <div
         className={`video-controls p-2 sm:px-6 sm:py-4 transition-opacity duration-300 ${
