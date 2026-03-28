@@ -89,6 +89,31 @@ export function VideoPlayer({
   };
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === "f" || e.key === "F") {
+        const container = videoRef.current?.parentElement;
+        if (!container) return;
+        if (document.fullscreenElement) {
+          void document.exitFullscreen();
+        } else {
+          void container.requestFullscreen();
+        }
+      } else if (e.key === "m" || e.key === "M") {
+        toggleMute();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [togglePlay, toggleMute, videoRef]);
+
+  useEffect(() => {
     onTimeUpdate?.(currentTime);
   }, [currentTime, onTimeUpdate]);
 
