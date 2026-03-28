@@ -68,13 +68,17 @@ export default function UploadVideoPage() {
 
   // Reset success state when user navigates away after a successful upload
   // so the upload form is fresh on next visit.
+  // Both values are kept in refs so the cleanup has empty deps and only
+  // fires on true unmount — not every time resetUploadResult changes reference.
   const uploadResultRef = useRef(uploadResult);
   uploadResultRef.current = uploadResult;
+  const resetUploadResultRef = useRef(resetUploadResult);
+  resetUploadResultRef.current = resetUploadResult;
   useEffect(() => {
     return () => {
-      if (uploadResultRef.current) resetUploadResult();
+      if (uploadResultRef.current) resetUploadResultRef.current();
     };
-  }, [resetUploadResult]);
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "video/*": [] },
