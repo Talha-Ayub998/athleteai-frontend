@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 import {
@@ -66,6 +66,15 @@ export default function UploadVideoPage() {
     resetUploadResult,
   } = useUpload();
 
+  // Reset success state when user navigates away after a successful upload
+  // so the upload form is fresh on next visit.
+  const uploadResultRef = useRef(uploadResult);
+  uploadResultRef.current = uploadResult;
+  useEffect(() => {
+    return () => {
+      if (uploadResultRef.current) resetUploadResult();
+    };
+  }, [resetUploadResult]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "video/*": [] },
