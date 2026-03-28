@@ -7,7 +7,6 @@ import {
   SkipBack,
   SkipForward,
   Maximize,
-  Loader2,
 } from "lucide-react";
 import { useVideoPlayer } from "../hooks/useVideoPlayer";
 import { useVideoKeyboard } from "../hooks/useVideoKeyboard";
@@ -106,10 +105,12 @@ export function VideoPlayer({
       if (!mobileControlsVisible) {
         showMobileControls();
       } else {
+        showFeedback(isPlaying ? "pause" : "play");
         togglePlay();
         showMobileControls();
       }
     } else {
+      showFeedback(isPlaying ? "pause" : "play");
       togglePlay();
     }
   };
@@ -218,34 +219,7 @@ export function VideoPlayer({
         onClick={handleVideoClick}
       />
 
-      {(controlsVisible || isBuffering) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity duration-300 pointer-events-none">
-          <div
-            className="w-20 h-20 cursor-pointer rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 transition-transform pointer-events-auto"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isBuffering) togglePlay();
-              showMobileControls();
-            }}
-          >
-            {isBuffering ? (
-              <Loader2 className="w-8 h-8 text-primary-foreground animate-spin" />
-            ) : isPlaying ? (
-              <Pause
-                className="w-8 h-8 text-primary-foreground"
-                fill="currentColor"
-              />
-            ) : (
-              <Play
-                className="w-8 h-8 text-primary-foreground ml-1"
-                fill="currentColor"
-              />
-            )}
-          </div>
-        </div>
-      )}
-
-      {feedback && <VideoPlayerFeedback feedback={feedback} />}
+      <VideoPlayerFeedback feedback={feedback} isBuffering={isBuffering} />
 
       <div
         className={`video-controls p-2 sm:px-6 sm:py-4 transition-opacity duration-300 ${

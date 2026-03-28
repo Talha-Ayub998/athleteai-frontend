@@ -9,6 +9,7 @@ import {
   Gauge,
   ChevronRight,
   ChevronLeft,
+  Loader2,
 } from "lucide-react";
 
 export type FeedbackType =
@@ -76,53 +77,54 @@ function getFeedbackContent(
         label: value !== undefined ? `${value}x` : null,
       };
     case "seekForward":
-      return {
-        icon: <SkipForward className="w-7 h-7 text-white" />,
-        label: "+10s",
-      };
+      return { icon: <SkipForward className="w-7 h-7 text-white" />, label: "+10s" };
     case "seekBackward":
-      return {
-        icon: <SkipBack className="w-7 h-7 text-white" />,
-        label: "−10s",
-      };
+      return { icon: <SkipBack className="w-7 h-7 text-white" />, label: "−10s" };
     case "frameForward":
-      return {
-        icon: <ChevronRight className="w-7 h-7 text-white" />,
-        label: "+1f",
-      };
+      return { icon: <ChevronRight className="w-7 h-7 text-white" />, label: "+1f" };
     case "frameBackward":
-      return {
-        icon: <ChevronLeft className="w-7 h-7 text-white" />,
-        label: "−1f",
-      };
+      return { icon: <ChevronLeft className="w-7 h-7 text-white" />, label: "−1f" };
   }
 }
 
 interface VideoPlayerFeedbackProps {
-  feedback: FeedbackState;
+  feedback: FeedbackState | null;
+  isBuffering: boolean;
 }
 
-export function VideoPlayerFeedback({ feedback }: VideoPlayerFeedbackProps) {
-  const { icon, label } = getFeedbackContent(feedback.type, feedback.value);
+export function VideoPlayerFeedback({
+  feedback,
+  isBuffering,
+}: VideoPlayerFeedbackProps) {
+  if (!isBuffering && !feedback) return null;
 
   return (
     <>
       <style>{KEYFRAME_STYLE}</style>
-      <div
-        key={feedback.id}
-        className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
-      >
-        <div
-          className="w-20 h-20 rounded-full bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-1"
-          style={{ animation: "vp-feedback 1.5s ease-out forwards" }}
-        >
-          {icon}
-          {label && (
-            <span className="text-white text-[11px] font-medium leading-none">
-              {label}
-            </span>
-          )}
-        </div>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+        {isBuffering ? (
+          <div className="w-20 h-20 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-white animate-spin" />
+          </div>
+        ) : (
+          (() => {
+            const { icon, label } = getFeedbackContent(feedback!.type, feedback!.value);
+            return (
+              <div
+                key={feedback!.id}
+                className="w-20 h-20 rounded-full bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-1"
+                style={{ animation: "vp-feedback 1.5s ease-out forwards" }}
+              >
+                {icon}
+                {label && (
+                  <span className="text-white text-[11px] font-medium leading-none">
+                    {label}
+                  </span>
+                )}
+              </div>
+            );
+          })()
+        )}
       </div>
     </>
   );
