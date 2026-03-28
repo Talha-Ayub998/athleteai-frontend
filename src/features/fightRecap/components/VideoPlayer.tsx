@@ -49,6 +49,7 @@ export function VideoPlayer({
   const [mobileControlsVisible, setMobileControlsVisible] = useState(false);
   const lastPointerTypeRef = useRef<string>("mouse");
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showMobileControls = () => {
     setMobileControlsVisible(true);
@@ -59,9 +60,16 @@ export function VideoPlayer({
     );
   };
 
+  const resetInactivityTimer = () => {
+    setIsHovering(true);
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    inactivityTimerRef.current = setTimeout(() => setIsHovering(false), 2000);
+  };
+
   useEffect(() => {
     return () => {
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     };
   }, []);
 
@@ -118,8 +126,13 @@ export function VideoPlayer({
   return (
     <div
       className="video-container relative aspect-video bg-player rounded-lg overflow-hidden group animate-lift-in"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseEnter={resetInactivityTimer}
+      onMouseMove={resetInactivityTimer}
+      onMouseLeave={() => {
+        if (inactivityTimerRef.current)
+          clearTimeout(inactivityTimerRef.current);
+        setIsHovering(false);
+      }}
       onPointerDown={(e) => {
         lastPointerTypeRef.current = e.pointerType;
       }}
@@ -142,7 +155,7 @@ export function VideoPlayer({
       {controlsVisible && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity pointer-events-none">
           <div
-            className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 transition-transform pointer-events-auto"
+            className="w-20 h-20 cursor-pointer rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 transition-transform pointer-events-auto"
             onClick={(e) => {
               e.stopPropagation();
               togglePlay();
