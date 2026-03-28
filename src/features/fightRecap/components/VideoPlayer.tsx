@@ -15,6 +15,7 @@ import {
   Check,
 } from "lucide-react";
 import { useVideoPlayer } from "../hooks/useVideoPlayer";
+import { useVideoKeyboard } from "../hooks/useVideoKeyboard";
 import { Button } from "./ui/Button";
 import { Slider } from "./ui/Slider";
 
@@ -43,6 +44,7 @@ export function VideoPlayer({
     bufferedRanges,
     playbackRate,
     togglePlay,
+    seek,
     seekByPercent,
     setVolume,
     toggleMute,
@@ -117,30 +119,21 @@ export function VideoPlayer({
     }
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
-
-      if (e.code === "Space") {
-        e.preventDefault();
-        togglePlay();
-      } else if (e.key === "f" || e.key === "F") {
-        const container = videoRef.current?.parentElement;
-        if (!container) return;
-        if (document.fullscreenElement) {
-          void document.exitFullscreen();
-        } else {
-          void container.requestFullscreen();
-        }
-      } else if (e.key === "m" || e.key === "M") {
-        toggleMute();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [togglePlay, toggleMute, videoRef]);
+  useVideoKeyboard({
+    videoRef,
+    isPlaying,
+    volume,
+    currentTime,
+    playbackRate,
+    togglePlay,
+    toggleMute,
+    skipBackward,
+    skipForward,
+    setVolume,
+    seekByPercent,
+    seek,
+    setPlaybackRate,
+  });
 
   useEffect(() => {
     onTimeUpdate?.(currentTime);
@@ -229,7 +222,7 @@ export function VideoPlayer({
       />
 
       {(controlsVisible || isBuffering) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity duration-300 pointer-events-none">
           <div
             className="w-20 h-20 cursor-pointer rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 transition-transform pointer-events-auto"
             onClick={(e) => {
@@ -298,14 +291,14 @@ export function VideoPlayer({
 
         <div className="flex items-center justify-between gap-4 ">
           <div className="flex items-center gap-2">
-            {/* <Button
+            <Button
               variant="ghost"
               size="icon"
-              onClick={() => skipBackward(5)}
+              onClick={() => skipBackward(10)}
               className="text-foreground hover:bg-secondary/50 h-8 w-8"
             >
               <SkipBack className="w-4 h-4" />
-            </Button> */}
+            </Button>
 
             <Button
               variant="ghost"
@@ -320,14 +313,14 @@ export function VideoPlayer({
               )}
             </Button>
 
-            {/* <Button
+            <Button
               variant="ghost"
               size="icon"
-              onClick={() => skipForward(5)}
+              onClick={() => skipForward(10)}
               className="text-foreground hover:bg-secondary/50 h-8 w-8"
             >
               <SkipForward className="w-4 h-4" />
-            </Button> */}
+            </Button>
 
             <div className="flex items-center gap-2 group/volume">
               <Button
