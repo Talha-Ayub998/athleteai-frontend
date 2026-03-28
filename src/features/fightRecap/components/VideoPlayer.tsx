@@ -53,6 +53,7 @@ export function VideoPlayer({
   const [isHovering, setIsHovering] = useState(false);
   const [mobileControlsVisible, setMobileControlsVisible] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [dragProgress, setDragProgress] = useState<number | null>(null);
   const lastPointerTypeRef = useRef<string>("mouse");
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,7 +83,7 @@ export function VideoPlayer({
     };
   }, []);
 
-  const controlsVisible = isHovering || mobileControlsVisible || isDragging;
+  const controlsVisible = isHovering || mobileControlsVisible || isDragging || isSettingsOpen;
 
   const handleVideoClick = () => {
     if (lastPointerTypeRef.current === "touch") {
@@ -333,6 +334,7 @@ export function VideoPlayer({
             <VideoPlayerSettings
               playbackRate={playbackRate}
               setPlaybackRate={setPlaybackRate}
+              onOpenChange={setIsSettingsOpen}
             />
 
             <Button

@@ -14,6 +14,7 @@ type SettingsView = "main" | "playback" | "shortcuts";
 interface VideoPlayerSettingsProps {
   playbackRate: number;
   setPlaybackRate: (rate: number) => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const SPEED_OPTIONS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -46,10 +47,15 @@ const VIEW_HEIGHTS: Record<SettingsView, number> = {
 export function VideoPlayerSettings({
   playbackRate,
   setPlaybackRate,
+  onOpenChange,
 }: VideoPlayerSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<SettingsView>("main");
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    onOpenChange?.(isOpen);
+  }, [isOpen, onOpenChange]);
 
   // Close on click outside
   useEffect(() => {
