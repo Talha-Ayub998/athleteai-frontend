@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 import {
@@ -41,7 +41,7 @@ const formatSpeed = (bytesPerSecond: number) => {
 
 export default function UploadVideoPage() {
   const navigate = useNavigate();
-  const { createSessionForVideo, fetchVideos } = useFightRecapVideos();
+  const { createSessionForVideo } = useFightRecapVideos();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
@@ -66,11 +66,6 @@ export default function UploadVideoPage() {
     resetUploadResult,
   } = useUpload();
 
-  useEffect(() => {
-    if (uploadResult) {
-      void fetchVideos(true);
-    }
-  }, [uploadResult, fetchVideos]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "video/*": [] },
