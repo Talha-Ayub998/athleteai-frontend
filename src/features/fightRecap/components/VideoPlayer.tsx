@@ -209,7 +209,7 @@ export function VideoPlayer({
             {bufferedRanges.map((range, index) => (
               <div
                 key={`${range.startPercent}-${range.endPercent}-${index}`}
-                className="absolute top-0 h-full bg-secondary/80"
+                className="absolute top-0 h-full bg-white/30"
                 style={{
                   left: `${range.startPercent}%`,
                   width: `${Math.max(range.endPercent - range.startPercent, 0)}%`,
