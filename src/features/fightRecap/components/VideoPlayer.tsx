@@ -7,10 +7,15 @@ import {
   SkipBack,
   SkipForward,
   Maximize,
+  Minimize,
 } from "lucide-react";
 import { useVideoPlayer } from "../hooks/useVideoPlayer";
 import { useVideoKeyboard } from "../hooks/useVideoKeyboard";
-import { VideoPlayerFeedback, type FeedbackState, type FeedbackType } from "./VideoPlayerFeedback";
+import {
+  VideoPlayerFeedback,
+  type FeedbackState,
+  type FeedbackType,
+} from "./VideoPlayerFeedback";
 import { VideoPlayerSettings } from "./VideoPlayerSettings";
 import { Button } from "./ui/Button";
 import { Slider } from "./ui/Slider";
@@ -56,6 +61,7 @@ export function VideoPlayer({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [dragProgress, setDragProgress] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const lastPointerTypeRef = useRef<string>("mouse");
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,14 +97,18 @@ export function VideoPlayer({
   );
 
   useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
     return () => {
+      document.removeEventListener("fullscreenchange", handler);
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
       if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     };
   }, []);
 
-  const controlsVisible = isHovering || mobileControlsVisible || isDragging || isSettingsOpen;
+  const controlsVisible =
+    isHovering || mobileControlsVisible || isDragging || isSettingsOpen;
 
   const handleVideoClick = () => {
     if (lastPointerTypeRef.current === "touch") {
@@ -337,7 +347,11 @@ export function VideoPlayer({
               onClick={handleFullscreen}
               className="text-foreground hover:bg-secondary/50 h-8 w-8"
             >
-              <Maximize className="w-4 h-4" />
+              {isFullscreen ? (
+                <Minimize className="w-4 h-4" />
+              ) : (
+                <Maximize className="w-4 h-4" />
+              )}
             </Button>
           </div>
         </div>
