@@ -105,12 +105,15 @@ export function VideoPlayerSettings({
 
       {/* Panel */}
       <div
-        className={`absolute bottom-full right-0 mb-2 w-60 rounded-lg bg-black/60 backdrop-blur-sm overflow-hidden transition-all duration-200 origin-bottom-right ${
+        className={`absolute bottom-full right-0 mb-2 rounded-lg bg-black/60 backdrop-blur-sm overflow-hidden transition-all duration-200 origin-bottom-right w-52 sm:w-60 ${
           isOpen
             ? "opacity-100 scale-100 pointer-events-auto"
             : "opacity-0 scale-95 pointer-events-none"
         }`}
-        style={{ height: VIEW_HEIGHTS[view] }}
+        style={{
+          height: VIEW_HEIGHTS[view],
+          maxHeight: "70vh",
+        }}
       >
         {/* ── Main panel ── */}
         <div
@@ -119,15 +122,15 @@ export function VideoPlayerSettings({
         >
           {/* Playback speed row */}
           <button
-            className="w-full flex items-center justify-between px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+            className="w-full flex items-center justify-between px-3 py-2 text-sm sm:text-sm text-white hover:bg-white/10 transition-colors"
             onClick={() => setView("playback")}
           >
-            <div className="flex items-center gap-2">
-              <Gauge className="w-4 h-4 text-white/70" />
-              <span>Playback speed</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <Gauge className="w-4 h-4 text-white/70 flex-shrink-0" />
+              <span className="truncate">Playback speed</span>
             </div>
-            <div className="flex items-center gap-1 text-white/50">
-              <span className="text-xs">
+            <div className="flex items-center gap-1 text-white/50 flex-shrink-0 ml-2">
+              <span className="text-xs whitespace-nowrap">
                 {playbackRate === 1 ? "Normal" : `${playbackRate}x`}
               </span>
               <ChevronRight className="w-3 h-3" />
@@ -136,45 +139,47 @@ export function VideoPlayerSettings({
 
           {/* Shortcuts row */}
           <button
-            className="w-full flex items-center justify-between px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+            className="w-full flex items-center justify-between px-3 py-2 text-sm sm:text-sm text-white hover:bg-white/10 transition-colors"
             onClick={() => setView("shortcuts")}
           >
-            <div className="flex items-center gap-2">
-              <Keyboard className="w-4 h-4 text-white/70" />
-              <span>Shortcuts</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <Keyboard className="w-4 h-4 text-white/70 flex-shrink-0" />
+              <span className="truncate">Shortcuts</span>
             </div>
-            <ChevronRight className="w-3 h-3 text-white/50" />
+            <ChevronRight className="w-3 h-3 text-white/50 flex-shrink-0" />
           </button>
         </div>
 
         {/* ── Playback speed panel ── */}
         <div
-          className="absolute inset-x-0 top-0 py-1 transition-transform duration-200"
-          style={{ transform: slideX("playback") }}
+          className="absolute inset-x-0 top-0 transition-transform duration-200 flex flex-col"
+          style={{ transform: slideX("playback"), height: "100%" }}
         >
           <button
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/5"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/5 flex-shrink-0"
             onClick={() => setView("main")}
           >
-            <ArrowLeft className="w-4 h-4 text-white/70" />
-            <span>Playback speed</span>
+            <ArrowLeft className="w-4 h-4 text-white/70 flex-shrink-0" />
+            <span className="truncate">Playback speed</span>
           </button>
-          {SPEED_OPTIONS.map((rate) => (
-            <button
-              key={rate}
-              className="w-full flex items-center justify-between px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-              onClick={() => {
-                setPlaybackRate(rate);
-                setIsOpen(false);
-                setView("main");
-              }}
-            >
-              <span>{rate === 1 ? "Normal" : `${rate}x`}</span>
-              {rate === playbackRate && (
-                <Check className="w-4 h-4 text-primary" />
-              )}
-            </button>
-          ))}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {SPEED_OPTIONS.map((rate) => (
+              <button
+                key={rate}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                onClick={() => {
+                  setPlaybackRate(rate);
+                  setIsOpen(false);
+                  setView("main");
+                }}
+              >
+                <span>{rate === 1 ? "Normal" : `${rate}x`}</span>
+                {rate === playbackRate && (
+                  <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Shortcuts panel ── */}
@@ -186,21 +191,21 @@ export function VideoPlayerSettings({
             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors border-b border-white/5 flex-shrink-0"
             onClick={() => setView("main")}
           >
-            <ArrowLeft className="w-4 h-4 text-white/70" />
-            <span>Shortcuts</span>
+            <ArrowLeft className="w-4 h-4 text-white/70 flex-shrink-0" />
+            <span className="truncate">Shortcuts</span>
           </button>
           <div className="flex-1 min-h-0 overflow-y-auto">
             {SHORTCUTS.map(({ keys, label }) => (
               <div
                 key={label}
-                className="flex items-center justify-between px-3 py-[7px] hover:bg-white/10"
+                className="flex items-center justify-between px-3 py-[7px] hover:bg-white/10 text-xs sm:text-xs gap-2"
               >
-                <span className="text-xs text-white/60">{label}</span>
-                <div className="flex items-center gap-1">
+                <span className="text-white/60 truncate">{label}</span>
+                <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
                   {keys.map((k) => (
                     <kbd
                       key={k}
-                      className="bg-white/15 rounded px-1.5 py-0.5 text-[11px] font-mono text-white/80 leading-none"
+                      className="bg-white/15 rounded px-1 sm:px-1.5 py-0.5 text-[10px] sm:text-[11px] font-mono text-white/80 leading-none whitespace-nowrap"
                     >
                       {k}
                     </kbd>
