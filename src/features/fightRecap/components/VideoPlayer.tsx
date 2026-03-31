@@ -272,8 +272,8 @@ export function VideoPlayer({
           />
         </div>
 
-        <div className="flex items-center justify-between gap-4 ">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Button
               variant="ghost"
               size="icon"
@@ -305,7 +305,7 @@ export function VideoPlayer({
               <SkipForward className="w-4 h-4" />
             </Button>
 
-            <div className="flex items-center gap-2 group/volume">
+            <div className="flex items-center gap-1 sm:gap-2 group/volume">
               <Button
                 variant="ghost"
                 size="icon"
@@ -319,7 +319,7 @@ export function VideoPlayer({
                 )}
               </Button>
 
-              <div className="w-20 opacity-0 group-hover/volume:opacity-100 transition-opacity">
+              <div className="hidden sm:block w-20 opacity-0 group-hover/volume:opacity-100 transition-opacity">
                 <Slider
                   value={[isMuted ? 0 : volume * 100]}
                   max={100}
@@ -330,8 +330,8 @@ export function VideoPlayer({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-mono text-foreground/80">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <span className="text-xs sm:text-sm font-mono text-foreground/80">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
 
