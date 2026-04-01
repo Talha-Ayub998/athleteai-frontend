@@ -337,7 +337,7 @@ export default function UploadVideoPage() {
             // ── Upload form ────────────────────────────────────────────────
             <div className="rounded-lg border border-border bg-card p-6 space-y-5">
               {/* Mode selector tabs */}
-              <div className="flex gap-2 border-b border-border">
+              <div className="flex gap-2 ">
                 <button
                   onClick={() => setUploadMode("file")}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${

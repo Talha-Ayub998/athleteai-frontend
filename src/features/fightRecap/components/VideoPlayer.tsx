@@ -62,6 +62,7 @@ export function VideoPlayer({
   const [dragProgress, setDragProgress] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const lastPointerTypeRef = useRef<string>("mouse");
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -158,6 +159,43 @@ export function VideoPlayer({
     video.pause();
   }, [pauseWhenModalOpen, videoRef]);
 
+  // Auto-load and start buffering video data on mount
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Set load strategy to start loading metadata and first segments
+    video.load();
+
+    // Handle when we have enough data to play or when loading progresses
+    const handleLoadedMetadata = () => {
+      if (video.duration > 0) {
+        video.currentTime = 0;
+      }
+    };
+
+    const handleCanPlay = () => {
+      setIsInitialLoading(false);
+    };
+
+    const handleProgress = () => {
+      // Stop initial loading indicator once we start getting data
+      if (video.buffered.length > 0) {
+        setIsInitialLoading(false);
+      }
+    };
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("progress", handleProgress);
+
+    return () => {
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("progress", handleProgress);
+    };
+  }, []);
+
   const calcProgressPercent = (clientX: number) => {
     const bar = progressBarRef.current;
     if (!bar) return 0;
@@ -227,9 +265,13 @@ export function VideoPlayer({
         className="w-full h-full object-contain bg-black"
         src={videoSrc}
         onClick={handleVideoClick}
+        preload="auto"
       />
 
-      <VideoPlayerFeedback feedback={feedback} isBuffering={isBuffering} />
+      <VideoPlayerFeedback
+        feedback={feedback}
+        isBuffering={isBuffering || isInitialLoading}
+      />
 
       <div
         className={`video-controls p-2 sm:px-6 sm:py-4 transition-opacity duration-300 ${
