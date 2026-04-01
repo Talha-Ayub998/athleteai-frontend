@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, Home, CheckCircle2, Loader2 } from "lucide-react";
 import "../fightRecap.css";
 import { useUpload } from "../context/UploadContext";
 
@@ -49,7 +49,7 @@ export default function FightRecapLayout() {
 
   return (
     <section className="fight-recap-theme bg-background">
-      <div className="px-4 py-2 border-b border-border bg-background sticky top-0 z-30">
+      <div className="px-4 py-1 border-b border-border bg-background sticky top-0 z-30 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={handleBack}
@@ -57,6 +57,14 @@ export default function FightRecapLayout() {
         >
           <ArrowLeft className="w-4 h-4" />
           Back
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="inline-flex py-2 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          title="Go to home"
+        >
+          <Home className="w-5 h-5" />
         </button>
       </div>
       <Outlet />
