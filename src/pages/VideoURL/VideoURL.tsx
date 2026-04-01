@@ -1,5 +1,5 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-import VideoUploadComponent from "./components/VideoUploadComponent ";
+import VideoUploadComponent from "./components/VideoUploadComponent";
 
 const VideoURL = () => {
   return (

@@ -11,10 +11,11 @@ import axiosInstance from "../../../api/axiosInstance";
 export interface UploadedVideo {
   id: number;
   url: string;
-  s3_key: string;
-  file_name: string;
-  content_type: string;
-  file_size_bytes: number;
+  is_youtube_link: boolean;
+  s3_key: string | null;
+  file_name: string | null;
+  content_type: string | null;
+  file_size_bytes: number | null;
   file_hash: string | null;
   session_id: number | null;
   session_status: string | null;

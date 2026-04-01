@@ -268,7 +268,9 @@ const VideosList = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="max-w-full text-foreground font-medium [overflow-wrap:anywhere]">
-                            {video.file_name || "Untitled video"}
+                            {video.is_youtube_link
+                              ? `YouTube Video #${video.id}`
+                              : video.file_name || "Untitled video"}
                           </p>
                           {isCompletedSession && (
                             <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-green-300">
@@ -319,18 +321,42 @@ const VideosList = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                      <div className="col-span-2 min-w-0 sm:col-span-1">
-                        <p className="text-muted-foreground">Type</p>
-                        <p className="break-words text-foreground">
-                          {video.content_type || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Size</p>
-                        <p className="text-foreground">
-                          {formatFileSize(video.file_size_bytes)}
-                        </p>
-                      </div>
+                      {video.is_youtube_link ? (
+                        <>
+                          <div className="col-span-2 min-w-0 sm:col-span-1">
+                            <p className="text-muted-foreground">Type</p>
+                            <p className="break-words text-foreground">
+                              YouTube
+                            </p>
+                          </div>
+                          <div className="col-span-2 min-w-0 sm:col-span-3">
+                            <p className="text-muted-foreground">URL</p>
+                            <a
+                              href={video.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="break-words text-primary hover:underline"
+                            >
+                              {video.url}
+                            </a>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="col-span-2 min-w-0 sm:col-span-1">
+                            <p className="text-muted-foreground">Type</p>
+                            <p className="break-words text-foreground">
+                              {video.content_type || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Size</p>
+                            <p className="text-foreground">
+                              {formatFileSize(video.file_size_bytes || 0)}
+                            </p>
+                          </div>
+                        </>
+                      )}
                       <div>
                         <p className="text-muted-foreground">Video ID</p>
                         <p className="text-foreground">{video.id}</p>
@@ -366,7 +392,9 @@ const VideosList = () => {
           <p className="text-sm text-gray-600 dark:text-gray-300">
             Are you sure you want to delete{" "}
             <span className="font-medium [overflow-wrap:anywhere]">
-              {videoToDelete?.file_name || "this video"}
+              {videoToDelete?.is_youtube_link
+                ? `YouTube Video #${videoToDelete.id}`
+                : videoToDelete?.file_name || "this video"}
             </span>
             ? This action cannot be undone.
           </p>
