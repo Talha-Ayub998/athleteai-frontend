@@ -19,6 +19,7 @@ export interface CompleteUploadResponse {
   message: string;
   id: number;
   url: string;
+  is_youtube_link: boolean;
   s3_key: string;
   file_name: string;
   content_type: string;
