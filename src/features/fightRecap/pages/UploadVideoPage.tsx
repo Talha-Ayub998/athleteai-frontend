@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Eye,
   FileVideo,
+  Link as LinkIcon,
   Loader2,
   PencilLine,
   Upload,
@@ -16,6 +17,7 @@ import { Button } from "../components/ui/Button";
 import { Modal } from "../../../components/ui/modal";
 import { useFightRecapVideos } from "../context/FightRecapVideosContext";
 import { useUpload } from "../context/UploadContext";
+import axiosInstance from "../../../api/axiosInstance";
 
 const formatFileSize = (bytes: number) => {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
@@ -43,6 +45,14 @@ export default function UploadVideoPage() {
   const navigate = useNavigate();
   const { createSessionForVideo } = useFightRecapVideos();
 
+  // YouTube upload states
+  const [uploadMode, setUploadMode] = useState<"file" | "youtube">("file");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [youtubeError, setYoutubeError] = useState("");
+  const [youtubeLoading, setYoutubeLoading] = useState(false);
+  const [youtubeUploadResult, setYoutubeUploadResult] = useState<any>(null);
+
+  // File upload states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -144,6 +154,52 @@ export default function UploadVideoPage() {
     }
   };
 
+  const handleYoutubeAnnotate = async () => {
+    if (!youtubeUploadResult) return;
+    const hasSession =
+      youtubeUploadResult.session_id !== null &&
+      youtubeUploadResult.session_id !== undefined;
+
+    setCreatingSession(true);
+    setSessionError("");
+    try {
+      if (!hasSession) {
+        await createSessionForVideo(youtubeUploadResult.id);
+      }
+      navigate(`../annotate/${youtubeUploadResult.id}`);
+    } catch {
+      setSessionError("Failed to start annotation session. Please try again.");
+    } finally {
+      setCreatingSession(false);
+    }
+  };
+
+  const handleUploadYoutubeUrl = async () => {
+    if (!youtubeUrl.trim()) {
+      setYoutubeError("Please enter a YouTube URL.");
+      return;
+    }
+
+    setYoutubeError("");
+    setYoutubeLoading(true);
+
+    try {
+      const response = await axiosInstance.post("/reports/video-url/", {
+        video_url: youtubeUrl,
+      });
+      setYoutubeUploadResult(response.data);
+      setYoutubeUrl("");
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to process YouTube video URL. Please try again.";
+      setYoutubeError(errorMessage);
+    } finally {
+      setYoutubeLoading(false);
+    }
+  };
+
   const isCompletedSession =
     uploadResult?.session_status?.trim().toLowerCase() === "completed";
   const hasSession =
@@ -154,6 +210,18 @@ export default function UploadVideoPage() {
       ? "Continue Annotation"
       : "Start Annotation";
   const AnnotationIcon = isCompletedSession ? Eye : PencilLine;
+
+  const isYoutubeCompletedSession =
+    youtubeUploadResult?.session_status?.trim().toLowerCase() === "completed";
+  const youtubeHasSession =
+    youtubeUploadResult?.session_id !== null &&
+    youtubeUploadResult?.session_id !== undefined;
+  const youtubeAnnotationLabel = isYoutubeCompletedSession
+    ? "View Annotation"
+    : youtubeHasSession
+      ? "Continue Annotation"
+      : "Start Annotation";
+  const YoutubeAnnotationIcon = isYoutubeCompletedSession ? Eye : PencilLine;
 
   return (
     <div className="fight-recap-screen min-h-screen bg-background">
@@ -170,20 +238,33 @@ export default function UploadVideoPage() {
             </p>
           </div>
 
-          {uploadResult ? (
+          {uploadResult || youtubeUploadResult ? (
             // ── Success state ──────────────────────────────────────────────
             <div className="rounded-lg border border-border bg-card p-6 space-y-6">
               <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-4 text-green-800 dark:text-green-200">
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium">{uploadResult.message}</p>
-                    <p className="mt-1 text-sm [overflow-wrap:anywhere]">
-                      {uploadResult.file_name || "Untitled video"}
-                    </p>
-                    <p className="mt-1 text-sm opacity-80">
-                      {formatFileSize(uploadResult.file_size_bytes)}
-                    </p>
+                    {youtubeUploadResult ? (
+                      <>
+                        <p className="font-medium">
+                          {youtubeUploadResult.message}
+                        </p>
+                        <p className="mt-1 text-sm [overflow-wrap:anywhere]">
+                          {youtubeUploadResult.url}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium">{uploadResult?.message}</p>
+                        <p className="mt-1 text-sm [overflow-wrap:anywhere]">
+                          {uploadResult?.file_name || "Untitled video"}
+                        </p>
+                        <p className="mt-1 text-sm opacity-80">
+                          {formatFileSize(uploadResult?.file_size_bytes)}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -208,6 +289,7 @@ export default function UploadVideoPage() {
                 <Button
                   onClick={() => {
                     resetUploadResult();
+                    setYoutubeUploadResult(null);
                     setSelectedFile(null);
                   }}
                   variant="outline"
@@ -218,7 +300,13 @@ export default function UploadVideoPage() {
                   Upload Another
                 </Button>
                 <Button
-                  onClick={() => void handleAnnotate()}
+                  onClick={() => {
+                    if (youtubeUploadResult) {
+                      void handleYoutubeAnnotate();
+                    } else {
+                      void handleAnnotate();
+                    }
+                  }}
                   disabled={creatingSession}
                   className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
                 >
@@ -229,8 +317,17 @@ export default function UploadVideoPage() {
                     </>
                   ) : (
                     <>
-                      <AnnotationIcon className="h-4 w-4" />
-                      {annotationLabel}
+                      {youtubeUploadResult ? (
+                        <>
+                          <YoutubeAnnotationIcon className="h-4 w-4" />
+                          {youtubeAnnotationLabel}
+                        </>
+                      ) : (
+                        <>
+                          <AnnotationIcon className="h-4 w-4" />
+                          {annotationLabel}
+                        </>
+                      )}
                     </>
                   )}
                 </Button>
@@ -239,75 +336,104 @@ export default function UploadVideoPage() {
           ) : (
             // ── Upload form ────────────────────────────────────────────────
             <div className="rounded-lg border border-border bg-card p-6 space-y-5">
-              {/* Pending resume banner */}
-              {pendingResume && !isUploading && (
-                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-4 text-amber-800 dark:text-amber-200">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                      <div className="text-sm">
-                        <p>
-                          Incomplete upload:{" "}
-                          <span className="font-medium [overflow-wrap:anywhere]">
-                            {pendingResume.file_name}
-                          </span>
-                        </p>
-                        <p className="mt-0.5 text-xs opacity-80">
-                          {/* {pendingResume.completed_parts.length} of{" "}
+              {/* Mode selector tabs */}
+              <div className="flex gap-2 border-b border-border">
+                <button
+                  onClick={() => setUploadMode("file")}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    uploadMode === "file"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Upload className="inline h-4 w-4 mr-2" />
+                  Upload File
+                </button>
+                <button
+                  onClick={() => setUploadMode("youtube")}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    uploadMode === "youtube"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <LinkIcon className="inline h-4 w-4 mr-2" />
+                  YouTube Link
+                </button>
+              </div>
+
+              {uploadMode === "file" ? (
+                // File upload form
+                <div className="space-y-5">
+                  {/* Pending resume banner */}
+                  {pendingResume && !isUploading && (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-4 text-amber-800 dark:text-amber-200">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                          <div className="text-sm">
+                            <p>
+                              Incomplete upload:{" "}
+                              <span className="font-medium [overflow-wrap:anywhere]">
+                                {pendingResume.file_name}
+                              </span>
+                            </p>
+                            <p className="mt-0.5 text-xs opacity-80">
+                              {/* {pendingResume.completed_parts.length} of{" "}
                           {pendingResume.total_parts} parts uploaded —{" "} */}
-                          {Math.round(
-                            (pendingResume.completed_parts.length /
-                              pendingResume.total_parts) *
-                              100,
-                          )}
-                          % done
+                              {Math.round(
+                                (pendingResume.completed_parts.length /
+                                  pendingResume.total_parts) *
+                                  100,
+                              )}
+                              % done
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void clearResume()}
+                          className="shrink-0 text-sm font-medium underline underline-offset-2"
+                        >
+                          Discard
+                        </button>
+                      </div>
+
+                      <div className="mt-3">
+                        <p className="mb-2 text-xs opacity-80">
+                          Select the same file to resume where you left off:
                         </p>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleResumeFileSelect(file);
+                          }}
+                          className="block w-full text-sm text-amber-800 dark:text-amber-200 file:mr-3 file:rounded-md file:border-0 file:bg-amber-500/20 file:px-3 file:py-1.5 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-amber-500/30"
+                        />
+                        {resumeFileError && (
+                          <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                            {resumeFileError}
+                          </p>
+                        )}
+                        {resumeFile && (
+                          <Button
+                            onClick={() => void resume(resumeFile)}
+                            className="mt-3 w-full gap-2 bg-amber-600 text-white hover:bg-amber-700 sm:w-auto"
+                          >
+                            <Upload className="h-4 w-4" />
+                            Resume Upload
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void clearResume()}
-                      className="shrink-0 text-sm font-medium underline underline-offset-2"
-                    >
-                      Discard
-                    </button>
-                  </div>
+                  )}
 
-                  <div className="mt-3">
-                    <p className="mb-2 text-xs opacity-80">
-                      Select the same file to resume where you left off:
-                    </p>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleResumeFileSelect(file);
-                      }}
-                      className="block w-full text-sm text-amber-800 dark:text-amber-200 file:mr-3 file:rounded-md file:border-0 file:bg-amber-500/20 file:px-3 file:py-1.5 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-amber-500/30"
-                    />
-                    {resumeFileError && (
-                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
-                        {resumeFileError}
-                      </p>
-                    )}
-                    {resumeFile && (
-                      <Button
-                        onClick={() => void resume(resumeFile)}
-                        className="mt-3 w-full gap-2 bg-amber-600 text-white hover:bg-amber-700 sm:w-auto"
-                      >
-                        <Upload className="h-4 w-4" />
-                        Resume Upload
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Dropzone */}
-              <div
-                {...getRootProps()}
-                className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-16 text-center transition-colors
+                  {/* Dropzone */}
+                  <div
+                    {...getRootProps()}
+                    className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-16 text-center transition-colors
                   ${
                     isUploading
                       ? "cursor-not-allowed border-border opacity-50"
@@ -315,137 +441,200 @@ export default function UploadVideoPage() {
                         ? "cursor-pointer border-primary bg-primary/5"
                         : "cursor-pointer border-border hover:border-primary/40 hover:bg-muted/20"
                   }`}
-              >
-                <input {...getInputProps()} />
-                <Upload
-                  className={`mx-auto mb-4 h-12 w-12 ${isDragActive && !isUploading ? "text-primary" : "text-muted-foreground"}`}
-                />
-                {isDragActive && !isUploading ? (
-                  <p className="text-base font-medium text-primary">
-                    Drop your video here
-                  </p>
-                ) : (
-                  <>
-                    <p className="text-base font-medium text-foreground">
-                      Drag & drop your video here
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      or{" "}
-                      <span className="text-primary underline underline-offset-2">
-                        click to browse
-                      </span>
-                    </p>
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      MP4, MOV, AVI and other video formats supported
-                    </p>
-                  </>
-                )}
-              </div>
-
-              {/* Selected file */}
-              {selectedFile && !isUploading && (
-                <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
-                  <FileVideo className="h-5 w-5 shrink-0 text-primary" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">
-                      {selectedFile.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatFileSize(selectedFile.size)}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedFile(null)}
-                    className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Remove selected file"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-
-              {/* Upload progress */}
-              {isUploading && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
-                    <FileVideo className="h-5 w-5 shrink-0 text-primary" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">
-                        {selectedFile?.name ?? pendingResume?.file_name}
-                      </p>
-                      <p className="text-xs text-muted-foreground pt-1">
-                        {uploadSpeed > 0
-                          ? `${formatSpeed(uploadSpeed)} · Uploading...`
-                          : "Uploading..."}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-sm font-medium text-foreground">
-                      {uploadProgress}%
-                    </span>
-                  </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full bg-primary transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
+                    <input {...getInputProps()} />
+                    <Upload
+                      className={`mx-auto mb-4 h-12 w-12 ${isDragActive && !isUploading ? "text-primary" : "text-muted-foreground"}`}
                     />
+                    {isDragActive && !isUploading ? (
+                      <p className="text-base font-medium text-primary">
+                        Drop your video here
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-base font-medium text-foreground">
+                          Drag & drop your video here
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          or{" "}
+                          <span className="text-primary underline underline-offset-2">
+                            click to browse
+                          </span>
+                        </p>
+                        <p className="mt-3 text-xs text-muted-foreground">
+                          MP4, MOV, AVI and other video formats supported
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Selected file */}
+                  {selectedFile && !isUploading && (
+                    <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+                      <FileVideo className="h-5 w-5 shrink-0 text-primary" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">
+                          {selectedFile.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatFileSize(selectedFile.size)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFile(null)}
+                        className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        aria-label="Remove selected file"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Upload progress */}
+                  {isUploading && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+                        <FileVideo className="h-5 w-5 shrink-0 text-primary" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground [overflow-wrap:anywhere]">
+                            {selectedFile?.name ?? pendingResume?.file_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground pt-1">
+                            {uploadSpeed > 0
+                              ? `${formatSpeed(uploadSpeed)} · Uploading...`
+                              : "Uploading..."}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-sm font-medium text-foreground">
+                          {uploadProgress}%
+                        </span>
+                      </div>
+                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(fileError || uploadError) && (
+                    <p className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      {fileError || uploadError}
+                    </p>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end">
+                    {isUploading ? (
+                      <Button
+                        onClick={() => setShowCancelConfirm(true)}
+                        disabled={isCancelling || uploadProgress >= 100}
+                        variant="outline"
+                        className="w-full text-foreground sm:w-auto"
+                      >
+                        {isCancelling ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Cancelling...
+                          </>
+                        ) : (
+                          "Cancel Upload"
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => navigate("..")}
+                        variant="outline"
+                        className="w-full text-foreground sm:w-auto"
+                      >
+                        <ArrowLeftFromLine className="w-4 h-4 " />
+                        Cancel
+                      </Button>
+                    )}
+                    <Button
+                      onClick={handleUpload}
+                      disabled={isUploading || !selectedFile}
+                      className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+                    >
+                      {isUploading && !isCancelling ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          Upload
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                // YouTube upload form
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      YouTube Video URL
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="https://youtu.be/dQw4w9WgXcQ or https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                      value={youtubeUrl}
+                      onChange={(e) => {
+                        setYoutubeUrl(e.target.value);
+                        setYoutubeError("");
+                      }}
+                      disabled={youtubeLoading}
+                      className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Paste a YouTube video link to process it. Supports both
+                      youtu.be and youtube.com URLs.
+                    </p>
+                  </div>
+
+                  {youtubeError && (
+                    <p className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      {youtubeError}
+                    </p>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end">
+                    <Button
+                      onClick={() => navigate("..")}
+                      variant="outline"
+                      disabled={youtubeLoading}
+                      className="w-full text-foreground sm:w-auto"
+                    >
+                      <ArrowLeftFromLine className="w-4 h-4" />
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => void handleUploadYoutubeUrl()}
+                      disabled={youtubeLoading || !youtubeUrl.trim()}
+                      className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+                    >
+                      {youtubeLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <LinkIcon className="w-4 h-4" />
+                          Upload from YouTube
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               )}
-
-              {(fileError || uploadError) && (
-                <p className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  {fileError || uploadError}
-                </p>
-              )}
-
-              {/* Actions */}
-              <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end">
-                {isUploading ? (
-                  <Button
-                    onClick={() => setShowCancelConfirm(true)}
-                    disabled={isCancelling || uploadProgress >= 100}
-                    variant="outline"
-                    className="w-full text-foreground sm:w-auto"
-                  >
-                    {isCancelling ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Cancelling...
-                      </>
-                    ) : (
-                      "Cancel Upload"
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => navigate("..")}
-                    variant="outline"
-                    className="w-full text-foreground sm:w-auto"
-                  >
-                    <ArrowLeftFromLine className="w-4 h-4 " />
-                    Cancel
-                  </Button>
-                )}
-                <Button
-                  onClick={handleUpload}
-                  disabled={isUploading || !selectedFile}
-                  className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
-                >
-                  {isUploading && !isCancelling ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      Upload
-                    </>
-                  )}
-                </Button>
-              </div>
             </div>
           )}
         </div>
