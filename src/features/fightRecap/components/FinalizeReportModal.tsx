@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { AlertCircle, FileSpreadsheet, Loader2, X } from "lucide-react";
+import { AlertCircle, FileSpreadsheet, Loader2, X, Search } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Label } from "./ui/Label";
+import { useUserContext } from "../../../context/UserContext";
 
 export interface FinalizeReportPayload {
+  user_id?: number | null;
   filename: string;
   athlete: {
     name: string;
@@ -44,6 +46,9 @@ export function FinalizeReportModal({
   initialFilename = "",
   onSubmit,
 }: FinalizeReportModalProps) {
+  const { users, usersLoading, loadUsersList } = useUserContext();
+  const userSearchContainerRef = useRef<HTMLDivElement>(null);
+
   const [filename, setFilename] = useState("");
   const [athleteName, setAthleteName] = useState("");
   const [athleteEmail, setAthleteEmail] = useState("");
@@ -54,19 +59,51 @@ export function FinalizeReportModal({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [showUserSearch, setShowUserSearch] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+
+  // Close user dropdown on click away
+  useEffect(() => {
+    if (!showUserSearch) return;
+
+    const handleClickAway = (event: MouseEvent) => {
+      if (
+        userSearchContainerRef.current &&
+        !userSearchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowUserSearch(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickAway);
+    return () => document.removeEventListener("mousedown", handleClickAway);
+  }, [showUserSearch]);
+
+  // Load users when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    if (users === null || users.length === 0) {
+      void loadUsersList();
+    }
+  }, [isOpen, users, loadUsersList]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onClose();
+        if (showUserSearch) {
+          setShowUserSearch(false);
+        } else {
+          onClose();
+        }
       }
     };
 
     document.addEventListener("keydown", onEscape);
     return () => document.removeEventListener("keydown", onEscape);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, showUserSearch]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -79,6 +116,9 @@ export function FinalizeReportModal({
     setAthleteLanguage(DEFAULT_ATHLETE.language);
     setIsSubmitting(false);
     setSubmitError("");
+    setSelectedUserId(null);
+    setUserSearchQuery("");
+    setShowUserSearch(false);
   }, [isOpen, initialFilename]);
 
   useEffect(() => {
@@ -97,13 +137,26 @@ export function FinalizeReportModal({
     onClose();
   };
 
+  const selectedUser = Array.isArray(users)
+    ? users.find((u) => u.id === selectedUserId)
+    : null;
+
+  const filteredUsers = Array.isArray(users)
+    ? users.filter(
+        (u) =>
+          u.email.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+          u.username.toLowerCase().includes(userSearchQuery.toLowerCase()),
+      )
+    : [];
+
   const isFormComplete =
     filename.trim() &&
     athleteName.trim() &&
     athleteEmail.trim() &&
     athleteBelt.trim() &&
     athleteGym.trim() &&
-    athleteLanguage.trim();
+    athleteLanguage.trim() &&
+    selectedUserId !== null;
 
   const handleSubmit = async () => {
     if (!onSubmit || !isFormComplete) return;
@@ -111,6 +164,7 @@ export function FinalizeReportModal({
     setIsSubmitting(true);
     setSubmitError("");
     const result = await onSubmit({
+      user_id: selectedUserId,
       filename: filename.trim(),
       athlete: {
         name: athleteName.trim(),
@@ -158,7 +212,7 @@ export function FinalizeReportModal({
             Finalize Report
           </h2>
           <p className="text-sm text-muted-foreground">
-            Add the report filename and athlete details.
+            Add the report filename, select a user, and athlete details.
           </p>
         </div>
 
@@ -171,6 +225,75 @@ export function FinalizeReportModal({
               </div>
             </div>
           )}
+
+          {/* User Selection */}
+          <div className="space-y-2 relative" ref={userSearchContainerRef}>
+            <Label className="text-foreground">
+              Assign to User{" "}
+              {selectedUserId && <span className="text-primary">*</span>}
+            </Label>
+            <div className="relative">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowUserSearch(!showUserSearch)}
+                disabled={isSubmitting || usersLoading}
+                className="w-full border-border bg-secondary text-foreground justify-start flex gap-2"
+              >
+                <Search className="w-4 h-4" />
+                {selectedUser
+                  ? `${selectedUser.username} (${selectedUser.email})`
+                  : usersLoading
+                    ? "Loading users..."
+                    : "Select a user"}
+              </Button>
+
+              {showUserSearch && (
+                <div className="absolute top-full mt-1 left-0 right-0 z-50 border border-border bg-secondary rounded-md shadow-lg">
+                  <div className="p-2 border-b border-border">
+                    <Input
+                      placeholder="Search by name or email..."
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      className="border-border bg-card text-foreground"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {filteredUsers.length === 0 ? (
+                      <div className="p-3 text-sm text-muted-foreground text-center">
+                        {userSearchQuery
+                          ? "No users found"
+                          : usersLoading
+                            ? "Loading..."
+                            : "No users available"}
+                      </div>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedUserId(user.id);
+                            setShowUserSearch(false);
+                            setUserSearchQuery("");
+                          }}
+                          className={`w-full px-3 py-2 text-left text-sm transition-colors ${
+                            selectedUserId === user.id
+                              ? "bg-primary text-primary-foreground"
+                              : "hover:bg-white/10 text-foreground"
+                          }`}
+                        >
+                          <div className="font-medium">{user.username}</div>
+                          <div className="text-xs opacity-80">{user.email}</div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="space-y-2">
             <Label className="text-foreground">Filename</Label>
