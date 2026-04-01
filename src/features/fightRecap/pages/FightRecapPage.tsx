@@ -49,6 +49,22 @@ interface ErrorWithResponseData {
   message?: string;
 }
 
+const getYouTubeVideoId = (url: string): string | null => {
+  if (!url) return null;
+
+  // Handle youtu.be/VIDEO_ID format
+  let match = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (match) return match[1];
+
+  // Handle youtube.com/watch?v=VIDEO_ID format
+  match = url.match(
+    /(?:youtube\.com\/watch\?v=|youtube\.com\/.*v=)([a-zA-Z0-9_-]{11})/,
+  );
+  if (match) return match[1];
+
+  return null;
+};
+
 const getErrorMessage = (error: unknown, fallback: string) => {
   const normalizedError = error as ErrorWithResponseData;
   return (
@@ -956,18 +972,51 @@ const FightRecapPage = () => {
 
           {!isPageLoading && !fetchError && !sessionError && selectedVideo && (
             <>
-              <VideoPlayer
-                key={selectedVideo.id}
-                src={selectedVideo.playback_url || selectedVideo.url}
-                onTimeUpdate={handleTimeUpdate}
-                onDurationChange={setVideoDuration}
-                pauseWhenModalOpen={
-                  isModalOpen ||
-                  isDeclareResultModalOpen ||
-                  isFinalizeReportModalOpen ||
-                  isReopenAnnotationModalOpen
-                }
-              />
+              {selectedVideo.is_youtube_link ? (
+                // YouTube embed
+                (() => {
+                  const youtubeId = getYouTubeVideoId(selectedVideo.url);
+                  return youtubeId ? (
+                    <div
+                      className="relative w-full bg-black rounded-lg overflow-hidden"
+                      style={{ paddingBottom: "56.25%" }}
+                    >
+                      <iframe
+                        className="absolute top-0 left-0 w-full h-full"
+                        src={`https://www.youtube.com/embed/${youtubeId}`}
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      />
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-border bg-card p-6 text-center">
+                      <AlertCircle className="w-8 h-8 mx-auto mb-3 text-red-500" />
+                      <p className="text-foreground font-medium">
+                        Could not load YouTube video
+                      </p>
+                      <p className="text-muted-foreground text-sm mt-1">
+                        Unable to extract video ID from URL
+                      </p>
+                    </div>
+                  );
+                })()
+              ) : (
+                // Custom video player for uploaded files
+                <VideoPlayer
+                  key={selectedVideo.id}
+                  src={selectedVideo.playback_url || selectedVideo.url}
+                  onTimeUpdate={handleTimeUpdate}
+                  onDurationChange={setVideoDuration}
+                  pauseWhenModalOpen={
+                    isModalOpen ||
+                    isDeclareResultModalOpen ||
+                    isFinalizeReportModalOpen ||
+                    isReopenAnnotationModalOpen
+                  }
+                />
+              )}
 
               <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
@@ -975,7 +1024,9 @@ const FightRecapPage = () => {
                     Video
                   </p>
                   <h2 className="text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
-                    {selectedVideo.file_name || "Untitled video"}
+                    {selectedVideo.is_youtube_link
+                      ? `YouTube Video #${selectedVideo.id}`
+                      : selectedVideo.file_name || "Untitled video"}
                   </h2>
                 </div>
 
