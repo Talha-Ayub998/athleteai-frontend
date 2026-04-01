@@ -113,6 +113,8 @@ interface AnnotationSessionDetailsResponse {
   session: {
     id: number;
     title: string | null;
+    report_owner_user_id?: number | null;
+    report_owner_email?: string | null;
   };
   events: AnnotationSessionEventResponse[];
   match_results: AnnotationSessionMatchResultResponse[];
@@ -278,6 +280,10 @@ const FightRecapPage = () => {
   const [isReopeningAnnotation, setIsReopeningAnnotation] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [eventToDelete, setEventToDelete] = useState<FightEvent | null>(null);
+  const [sessionReportOwner, setSessionReportOwner] = useState<{
+    user_id: number | null;
+    email: string | null;
+  } | null>(null);
   const {
     videos,
     isLoading,
@@ -686,6 +692,7 @@ const FightRecapPage = () => {
     setIsSessionFinalized(false);
     setIsDownloadingXlsx(false);
     setVideoDuration(0);
+    setSessionReportOwner(null);
   }, [selectedVideo?.id]);
 
   useEffect(() => {
@@ -755,6 +762,19 @@ const FightRecapPage = () => {
         const mappedMatchResults = Array.isArray(response.data?.match_results)
           ? response.data.match_results.map(mapApiMatchResultToMatchResult)
           : [];
+
+        // Store report owner info if available
+        const reportOwner = response.data?.session;
+        if (
+          reportOwner?.report_owner_user_id ||
+          reportOwner?.report_owner_email
+        ) {
+          setSessionReportOwner({
+            user_id: reportOwner?.report_owner_user_id ?? null,
+            email: reportOwner?.report_owner_email ?? null,
+          });
+        }
+
         setEvents(mappedEvents);
         setMatchResults(mappedMatchResults);
       } catch (error) {
@@ -1094,6 +1114,32 @@ const FightRecapPage = () => {
                   </div>
                 )}
               </div>
+
+              {isCompletedSession && sessionReportOwner && (
+                <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Report Owner
+                    </p>
+                    <div className="mt-2 space-y-1">
+                      {sessionReportOwner.user_id && (
+                        <p className="text-sm text-foreground">
+                          <span className="text-muted-foreground">
+                            User ID:
+                          </span>{" "}
+                          {sessionReportOwner.user_id}
+                        </p>
+                      )}
+                      {sessionReportOwner.email && (
+                        <p className="text-sm text-foreground [overflow-wrap:anywhere]">
+                          <span className="text-muted-foreground">Email:</span>{" "}
+                          {sessionReportOwner.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-6">
                 {orderedMatchSections.map((section) => {

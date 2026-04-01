@@ -155,8 +155,7 @@ export function FinalizeReportModal({
     athleteEmail.trim() &&
     athleteBelt.trim() &&
     athleteGym.trim() &&
-    athleteLanguage.trim() &&
-    selectedUserId !== null;
+    athleteLanguage.trim();
 
   const handleSubmit = async () => {
     if (!onSubmit || !isFormComplete) return;
