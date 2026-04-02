@@ -64,7 +64,7 @@ export function FinalizeReportModal({
   initialFilename = "",
   onSubmit,
 }: FinalizeReportModalProps) {
-  const { users, usersLoading, loadUsersList } = useUserContext();
+  const { user: currentUser, users, usersLoading, loadUsersList } = useUserContext();
   const userSearchContainerRef = useRef<HTMLDivElement>(null);
 
   const [filename, setFilename] = useState("");
@@ -155,17 +155,20 @@ export function FinalizeReportModal({
     onClose();
   };
 
-  const selectedUser = Array.isArray(users)
-    ? users.find((u) => u.id === selectedUserId)
-    : null;
+  const allUsers = [
+    ...(currentUser ? [currentUser] : []),
+    ...(Array.isArray(users)
+      ? users.filter((u) => u.id !== currentUser?.id)
+      : []),
+  ];
 
-  const filteredUsers = Array.isArray(users)
-    ? users.filter(
-        (u) =>
-          u.email.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-          u.username.toLowerCase().includes(userSearchQuery.toLowerCase()),
-      )
-    : [];
+  const selectedUser = allUsers.find((u) => u.id === selectedUserId) ?? null;
+
+  const filteredUsers = allUsers.filter(
+    (u) =>
+      u.email.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+      u.username.toLowerCase().includes(userSearchQuery.toLowerCase()),
+  );
 
   const isValidEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -310,7 +313,14 @@ export function FinalizeReportModal({
                               : "hover:bg-white/10 text-foreground"
                           }`}
                         >
-                          <div className="font-medium">{user.username}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            {user.username}
+                            {user.id === currentUser?.id && (
+                              <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">
+                                You
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs opacity-80">{user.email}</div>
                         </button>
                       ))
