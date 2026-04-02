@@ -149,6 +149,8 @@ interface FinalizeReportResponse {
   message: string;
   session_id: number;
   report_id: number;
+  report_owner_user_id?: number | null;
+  report_owner_email?: string | null;
   s3_key: string;
   s3_url: string;
   match_count: number;
@@ -401,6 +403,17 @@ const FightRecapPage = () => {
 
       setIsSessionFinalized(true);
       updateVideo(selectedVideo.id, { session_status: "completed" });
+
+      if (
+        response.data?.report_owner_user_id ||
+        response.data?.report_owner_email
+      ) {
+        setSessionReportOwner({
+          user_id: response.data.report_owner_user_id ?? null,
+          email: response.data.report_owner_email ?? null,
+        });
+      }
+
       toast.success(
         response.data?.message || "Annotation session finalized successfully.",
       );
