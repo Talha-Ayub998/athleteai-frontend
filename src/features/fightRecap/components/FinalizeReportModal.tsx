@@ -1,4 +1,22 @@
 import { useEffect, useState, useRef } from "react";
+
+const LANGUAGES = [
+  "English",
+  "Spanish",
+  "Portuguese",
+  "French",
+  "German",
+  "Italian",
+  "Russian",
+  "Japanese",
+  "Korean",
+  "Mandarin Chinese",
+  "Arabic",
+  "Hindi",
+  "Dutch",
+  "Polish",
+  "Turkish",
+];
 import { createPortal } from "react-dom";
 import { AlertCircle, FileSpreadsheet, Loader2, X, Search } from "lucide-react";
 import { Button } from "./ui/Button";
@@ -362,13 +380,18 @@ export function FinalizeReportModal({
 
           <div className="space-y-2">
             <Label className="text-foreground">Language</Label>
-            <Input
+            <select
               value={athleteLanguage}
               onChange={(event) => setAthleteLanguage(event.target.value)}
-              placeholder="English"
-              className="border-border bg-secondary text-foreground"
               disabled={isSubmitting}
-            />
+              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {LANGUAGES.map((lang) => (
+                <option key={lang} value={lang} className="bg-card text-foreground">
+                  {lang}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex gap-3 pt-2">
