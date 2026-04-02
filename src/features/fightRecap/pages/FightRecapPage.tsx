@@ -15,6 +15,7 @@ import { Toaster, toast } from "react-hot-toast";
 import axiosInstance from "../../../api/axiosInstance";
 import { Modal } from "../../../components/ui/modal";
 import { VideoPlayer } from "../components/VideoPlayer";
+import { YouTubePlayer } from "../components/YouTubePlayer";
 import { EventTable } from "../components/EventTable";
 import { MatchResultsTable } from "../components/MatchResultsTable";
 import { AddEventModal } from "../components/AddEventModal";
@@ -997,19 +998,12 @@ const FightRecapPage = () => {
                 (() => {
                   const youtubeId = getYouTubeVideoId(selectedVideo.url);
                   return youtubeId ? (
-                    <div
-                      className="relative w-full bg-black rounded-lg overflow-hidden"
-                      style={{ paddingBottom: "56.25%" }}
-                    >
-                      <iframe
-                        className="absolute top-0 left-0 w-full h-full"
-                        src={`https://www.youtube.com/embed/${youtubeId}`}
-                        title="YouTube video player"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                      />
-                    </div>
+                    <YouTubePlayer
+                      key={youtubeId}
+                      videoId={youtubeId}
+                      onTimeUpdate={handleTimeUpdate}
+                      onDurationChange={setVideoDuration}
+                    />
                   ) : (
                     <div className="rounded-lg border border-border bg-card p-6 text-center">
                       <AlertCircle className="w-8 h-8 mx-auto mb-3 text-red-500" />
