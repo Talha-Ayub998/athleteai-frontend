@@ -149,10 +149,19 @@ export function FinalizeReportModal({
       )
     : [];
 
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  const emailError =
+    athleteEmail.trim() && !isValidEmail(athleteEmail)
+      ? "Enter a valid email address"
+      : "";
+
   const isFormComplete =
     filename.trim() &&
     athleteName.trim() &&
     athleteEmail.trim() &&
+    !emailError &&
     athleteBelt.trim() &&
     athleteGym.trim() &&
     athleteLanguage.trim();
@@ -322,9 +331,12 @@ export function FinalizeReportModal({
                 value={athleteEmail}
                 onChange={(event) => setAthleteEmail(event.target.value)}
                 placeholder="abc@gmail.com"
-                className="border-border bg-secondary text-foreground"
+                className={`border-border bg-secondary text-foreground ${emailError ? "border-red-500" : ""}`}
                 disabled={isSubmitting}
               />
+              {emailError && (
+                <p className="text-xs text-red-400">{emailError}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="text-foreground">Belt</Label>
