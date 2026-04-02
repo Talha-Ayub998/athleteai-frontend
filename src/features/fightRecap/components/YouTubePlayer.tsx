@@ -1,9 +1,7 @@
 import { useEffect, useRef } from "react";
 
-// Extend window with YouTube IFrame API globals
 declare global {
   interface Window {
-    YT: typeof YT;
     onYouTubeIframeAPIReady: (() => void) | undefined;
   }
 }
